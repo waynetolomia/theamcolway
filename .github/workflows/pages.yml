@@ -1,0 +1,45 @@
+name: Publish beta to GitHub Pages
+
+# Static beta: no Cloudflare. The game detects that /api/academy is missing and saves
+# each player's progress in their own browser. Set Settings → Pages → Source to "GitHub Actions".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Select browser storage (skips the /api/academy probe)
+        run: sed -i 's|<head>|<head>\n  <meta name="amcol-storage" content="local">|' public/game/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}game/index.html
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

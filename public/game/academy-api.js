@@ -1,4 +1,6 @@
 /** Server-authoritative account progress. There is intentionally no offline write queue. */
+import { academyFetch } from './local-academy.js';
+
 export class AcademyAPIError extends Error {
   constructor(code, message, status = 0, details = {}) {
     super(message); this.name = 'AcademyAPIError'; this.code = code; this.status = status; this.details = details;
@@ -6,7 +8,7 @@ export class AcademyAPIError extends Error {
 }
 
 export class AcademyAPI {
-  constructor({ onState = null, onError = null, endpoint = '/api/academy', fetcher = globalThis.fetch?.bind(globalThis) } = {}) {
+  constructor({ onState = null, onError = null, endpoint = '/api/academy', fetcher = academyFetch } = {}) {
     this.endpoint = endpoint; this.onState = onState; this.onError = onError; this.fetcher = fetcher;
     this.state = null; this.week = null; this.serverTime = null; this.revision = -1;
     this._pendingSleep = null;

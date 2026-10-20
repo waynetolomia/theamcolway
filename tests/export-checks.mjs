@@ -7,15 +7,22 @@ const root = new URL('../', import.meta.url);
 const read = path => readFileSync(new URL(path, root), 'utf8');
 const manifest = JSON.parse(read('source-assets.json'));
 assert.equal(manifest.sourceCommit, '3d7019d22655fb3b681f29e2eb0a977d040330c1');
+// Browser-save beta: these original files gained a hook into local-academy.js / asset-paths.js.
+// They are checked for that hook instead of the original hash.
+const BETA_EDITS = {
+  'public/game/academy-api.js': ["import { academyFetch } from './local-academy.js';", 'fetcher = academyFetch }'],
+  'public/game/app.js': ["import './asset-paths.js';", 'function saveNote()', "id=\"local-backup\""],
+  'public/game/academy-ui.js': ["import { isLocalMode } from './local-academy.js';", 'href="/auth/login"'],
+};
 let totalBytes = 0;
 for (const item of manifest.files) {
   const file = new URL(item.path, root);
   let data = readFileSync(file);
-  if (item.path === 'public/game/academy-ui.js') {
+  if (BETA_EDITS[item.path]) {
     const text = data.toString();
-    assert.ok(text.includes('href="/auth/login"'));
-    assert.ok(!text.includes('/signin-with-chatgpt'));
-    data = Buffer.from(text.replace('/auth/login', '/signin-with-chatgpt?return_to=%2Fgame%2Findex.html'));
+    for (const marker of BETA_EDITS[item.path]) assert.ok(text.includes(marker), `${item.path} is missing beta hook: ${marker}`);
+    totalBytes += statSync(file).size;
+    continue;
   }
   assert.equal(createHash('sha256').update(data).digest('hex'), item.sha256, `Source asset changed: ${item.path}`);
   assert.ok(statSync(file).size < 25 * 1024 * 1024, `Static asset exceeds Cloudflare's 25 MiB limit: ${item.path}`);

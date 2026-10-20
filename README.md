@@ -40,6 +40,21 @@ The local development account is the fixed `DEV_USER_ID` in `.dev.vars`. It is a
 
 `npm run build` runs **`wrangler deploy --dry-run`** to compile the Worker; it does not publish. Tests use terminal DOMs, generated signed JWTs and in-memory SQLite. They do not require a running web server or a Cloudflare account.
 
+## Beta without Cloudflare (browser saves)
+
+For beta testing, `public/` also runs on any static host, including GitHub Pages or a learning hub. When `/api/academy` is missing, the game applies the same course rules in the browser and saves each player's progress in that browser's localStorage. **Settings → Browser save backup** downloads or restores the save.
+
+- **GitHub Pages:** set **Settings → Pages → Source** to **GitHub Actions**. Each push to `main` runs the tests and publishes the game with the **Publish beta to GitHub Pages** workflow at `https://YOUR-ACCOUNT.github.io/REPO/` (the root redirects to `game/index.html`).
+- **Learning hub:** copy the `public/` folder to the hub, or embed the published game:
+  ```html
+  <iframe src="https://YOUR-ACCOUNT.github.io/REPO/game/index.html?storage=local"
+          title="THE AMCOL WAY" style="width:100%;height:85vh;border:0"
+          allow="fullscreen; autoplay"></iframe>
+  ```
+- **Forcing a mode:** `?storage=local` or `?storage=server` in the URL, or `<meta name="amcol-storage" content="local">` in `game/index.html`, skips detection.
+
+Beta limits: progress stays on one browser and device, and clearing site data erases it. Inside a hub iframe, the browser keeps a separate save per hub website. Players can bypass the weekly sleep allowance by clearing storage, and instructors cannot see their results. Use the Cloudflare deployment below when those matter.
+
 ## Deploy through GitHub
 
 ### 1. Create the repository
