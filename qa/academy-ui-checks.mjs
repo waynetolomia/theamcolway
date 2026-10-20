@@ -1029,28 +1029,56 @@ await test('wrong exact answers retain the attempt; correct answers complete the
   assert.equal(state().results[exactId].outcome, 'correct');
 });
 
-await test('open responses require reviewed criteria and keep an honest self-review record', async () => {
-  await mission(openId); await value('[data-answer]', 'I will practise introductions and clear directions.');
+await test('multiple-choice games are checked automatically: a wrong option fails, the right option completes', async () => {
+  const activity = getActivity(openId);
+  assert.ok(activity.questions.every(q => q.answers?.length && !q.criteria), 'No self-review work remains');
+  await mission(openId);
+  const choose = async (question, pickRight) => {
+    const index = question.options.findIndex(option => (option === question.answers[0]) === pickRight);
+    await click(`[data-choice="${index}"]`);
+    assert.equal(el('[data-answer]').value, question.options[index]);
+    assert.equal(el(`[data-choice="${index}"]`).getAttribute('aria-checked'), 'true');
+  };
+  for (const [i, q] of activity.questions.entries()) { if (i) await click(`[data-question="${i}"]`); await choose(q, i !== 0); }
   await click('#activity-submit');
-  assert.equal(state().results[openId]?.completed, undefined);
-  assert.match(el('#toast-stack').textContent, /criterion|criteria/);
-  for (const checkbox of document.querySelectorAll('[data-criterion]')) {
-    checkbox.checked = true; checkbox.dispatchEvent(new window.Event('change', { bubbles: true }));
-  }
-  await click('#activity-submit');
+  assert.notEqual(state().results[openId]?.completed, true, 'One wrong choice keeps the game open');
+  await click('[data-question="0"]'); await choose(activity.questions[0], true);
+  await click(`[data-question="${activity.questions.length - 1}"]`); await click('#activity-submit');
   assert.equal(state().results[openId].completed, true);
-  assert.equal(state().results[openId].outcome, 'self-reviewed');
-  assert.equal(state().results[openId].objectiveTotal, 0);
-  assert.equal(state().results[openId].answers[getActivity(openId).questions[0].id], 'I will practise introductions and clear directions.');
+  assert.equal(state().results[openId].outcome, 'correct');
 });
 
-await test('the Dome rehearses real slides and returns to the book speaking task', async () => {
+await test('sentence scrambles build the answer from tiles, and placed tiles can be removed', async () => {
   const id = state().assignments.find(id => getActivity(id).location === 'dome');
+  const activity = getActivity(id); assert.equal(activity.type, 'order');
   await mission(id);
-  for (let index = 0; index < 3; index++) await value(`[data-slide-body="${index}"]`, `My slide ${index + 1} explanation.`);
-  await click('#studio-rehearse'); assert.equal(currentWorld.slide?.title, getActivity(id).title);
-  await click('#slide-next'); await click('#slide-next'); await click('#slide-next');
-  assert.ok(el('[data-answer]')); assert.match(el('#dialog-eyebrow').textContent, /YEAR 1/);
+  for (const [i, q] of activity.questions.entries()) {
+    if (i) await click(`[data-question="${i}"]`);
+    assert.equal(q.format, 'scramble');
+    const used = new Set();
+    for (const word of q.answers[0].split(/\s+/)) {
+      const index = q.tokens.findIndex((token, k) => token === word && !used.has(k)); used.add(index);
+      await click(`[data-tile="${index}"]`);
+    }
+    assert.equal(el('[data-answer]').value, q.answers[0]);
+    if (i === 0) { // remove the last tile, then put it back
+      await click(`[data-placed="${q.tokens.length - 1}"]`); assert.notEqual(el('[data-answer]').value, q.answers[0]);
+      const missing = q.tokens.findIndex((_, k) => !document.querySelector(`[data-placed]`) || document.querySelector(`[data-tile="${k}"]`));
+      await click(`[data-tile="${missing}"]`); assert.equal(el('[data-answer]').value, q.answers[0]);
+    }
+  }
+  await click('#activity-submit');
+  assert.equal(state().results[id].completed, true);
+});
+
+await test('typed fill-in-the-blank games accept the book answer', async () => {
+  const id = state().assignments.find(id => getActivity(id).questions.some(q => q.format === 'blank'));
+  if (!id) return;
+  const activity = getActivity(id);
+  await mission(id);
+  assert.equal(el('[data-answer]').tagName, activity.questions[0].format === 'blank' ? 'INPUT' : el('[data-answer]').tagName);
+  await answerAll(activity);
+  assert.equal(state().results[id].completed, true);
 });
 
 await test('dorm travel, PT and sleep advance one day and preserve unfinished assignments', async () => {

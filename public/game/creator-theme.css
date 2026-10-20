@@ -68,6 +68,41 @@ body[data-mode=creator] .choice-button,body[data-mode=creator] .outfit-card{back
 body[data-mode=creator] .choice-button.active,body[data-mode=creator] .outfit-card.active{background:var(--navy-soft);border-color:var(--navy);color:var(--navy);box-shadow:inset 0 0 0 1px var(--gold)}
 body[data-mode=creator] .outfit-note{background:var(--gold-soft);color:#6c5a2c}
 
+/* Settings: background music track choice */
+.music-tracks{margin-top:10px;max-width:240px}
+.music-tracks button{font-size:11px}
+.music-tracks button.active{background:#0f2a4a;color:#fff;font-weight:700;box-shadow:inset 0 -2px 0 #c9a24a}
+
+/* Guided steps: name → customize → skills */
+.step-heading{font-size:13px;font-weight:800;letter-spacing:-.2px;margin:24px 0 -8px;padding-top:16px;border-top:1px solid var(--cool-line);color:var(--navy)}
+.tab-content>.step-heading:first-child{margin-top:16px;padding-top:0;border-top:0}
+.step-note{margin-top:26px;font-size:10px;color:var(--cool-muted);padding:10px 12px;border-radius:9px;background:var(--navy-soft)}
+.starter-traits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.starter-trait{display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;padding:10px 11px;border:1px solid var(--cool-line);border-radius:9px;background:#f8fafd;color:var(--navy);min-height:58px}
+.starter-trait strong{font-size:11px}
+.starter-trait small{font-size:9px;color:var(--cool-muted);line-height:1.4}
+.starter-trait.active{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:inset 0 -3px 0 var(--gold)}
+.starter-trait.active small{color:#f3e2b5}
+.starter-trait:disabled{cursor:default;opacity:.7}
+.starter-trait.active:disabled{opacity:1}
+.skill-preview{display:grid;gap:6px}
+.skill-chip{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--cool-line);border-radius:9px;background:#fff}
+.skill-chip strong{display:block;font-size:10.5px;color:var(--navy)}
+.skill-chip small{display:block;font-size:8.5px;color:var(--cool-muted);margin-top:2px;line-height:1.4}
+.skill-chip b{flex-shrink:0;font-size:9px;letter-spacing:.6px;color:var(--navy-2);background:var(--navy-soft);border-radius:20px;padding:4px 8px}
+.skill-chip.boosted{border-color:var(--gold);background:linear-gradient(90deg,var(--gold-soft),#fff 70%)}
+.skill-chip.boosted b{background:var(--gold);color:var(--navy)}
+.creator-steps-nav{display:flex;gap:8px;margin-bottom:8px}
+.creator-steps-nav .button{flex:1;min-height:42px}
+.creator-steps-nav .button.primary{flex:2;justify-content:space-between}
+.creator-steps-nav .button:disabled{opacity:.45;cursor:default}
+.creator-steps-nav:has(#creator-next[hidden]) #creator-back{flex:0 0 auto}
+#creator-next[hidden],#start-journey[hidden]{display:none}
+body[data-mode=creator] .creator-steps-nav .button.secondary{background:#fff;border-color:var(--cool-line);color:var(--navy)}
+body[data-mode=creator] .creator-steps-nav .button.primary{background:var(--navy);color:#fff}
+body[data-mode=creator] .creator-steps-nav .button.primary svg{color:var(--gold)}
+body[data-mode=creator] .creator-tabs button span{color:var(--gold-deep);opacity:1}
+
 body[data-mode=creator] .creator-footer{border-color:var(--cool-line)}
 body[data-mode=creator] #creator .button.primary{background:var(--navy);color:#fff}
 body[data-mode=creator] #creator .button.primary:hover{background:var(--navy-2);box-shadow:0 6px 20px #0f2a4a33}

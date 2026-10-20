@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="camera-controls.css">
   <link rel="stylesheet" href="rpg-campus.css">
   <link rel="stylesheet" href="creator-theme.css">
+  <link rel="stylesheet" href="minigames.css">
 </head>
 <body data-mode="creator">
   <header class="topbar">
@@ -65,32 +66,28 @@
       <aside class="creator-panel">
         <div class="panel-top"><div><span class="eyebrow">YOUR CADET</span><h2>Make yourself at home.</h2></div><button class="icon-button" id="randomize" title="Randomize appearance" aria-label="Randomize appearance"><span data-icon="shuffle"></span></button></div>
         <div class="creator-tabs" role="tablist" aria-label="Character options">
-          <button class="active" data-tab="identity" role="tab" aria-selected="true" aria-controls="tab-identity"><span>01</span> Identity</button>
-          <button data-tab="appearance" role="tab" aria-selected="false" aria-controls="tab-appearance"><span>02</span> Look</button>
-          <button data-tab="uniform" role="tab" aria-selected="false" aria-controls="tab-uniform"><span>03</span> Outfit</button>
+          <button class="active" data-tab="name" role="tab" aria-selected="true" aria-controls="tab-name"><span>01</span> Name</button>
+          <button data-tab="customize" role="tab" aria-selected="false" aria-controls="tab-customize"><span>02</span> Customize</button>
+          <button data-tab="skills" role="tab" aria-selected="false" aria-controls="tab-skills"><span>03</span> Skills</button>
         </div>
         <div class="panel-fields">
-          <div class="tab-content active" id="tab-identity" role="tabpanel">
+          <div class="tab-content active" id="tab-name" role="tabpanel">
             <label class="field-label" for="cadet-name">What should we call you?</label>
             <input id="cadet-name" maxlength="28" autocomplete="off" value="Alex" placeholder="Your cadet’s name">
             <span class="field-hint">A first name or nickname is perfect.</span>
             <label class="field-label" id="gender-label">Character gender</label><div class="segmented" id="gender-options" role="group" aria-labelledby="gender-label"></div>
-            <label class="field-label" id="major-label">Your major</label><div class="segmented" id="major-options" role="group" aria-labelledby="major-label"></div>
-            <p class="field-hint" id="major-note">DECK: navigation and bridge work. ENGINE: machinery and engineering.</p>
             <label class="field-label" for="cadet-origin">Home port</label>
             <select id="cadet-origin"><option>Thailand</option><option>Philippines</option><option>Indonesia</option><option>Vietnam</option><option>Malaysia</option><option>India</option><option>Sri Lanka</option><option>China</option><option>Japan</option><option>South Korea</option><option>Greece</option><option>Norway</option><option>United Kingdom</option><option>Nigeria</option><option>South Africa</option><option>Brazil</option><option>United States</option><option>Somewhere else</option></select>
-            <label class="field-label">What’s your cadet energy?</label>
-            <div class="trait-options" id="trait-options"></div>
-            <div class="path-callout"><span data-icon="anchor"></span><div><strong id="creator-path-title">Deck officer pathway</strong><p id="creator-path-copy">Your long-term destination: captain.</p></div><span data-icon="arrow-up-right"></span></div>
+            <p class="step-note">Next, customize how your cadet looks.</p>
           </div>
-          <div class="tab-content" id="tab-appearance" role="tabpanel" hidden>
+          <div class="tab-content" id="tab-customize" role="tabpanel" hidden>
+            <h3 class="step-heading">Look</h3>
             <label class="field-label">Skin tone</label><div class="swatches" id="skin-options"></div>
             <label class="field-label">Hair style</label><div class="choice-grid four" id="hair-options"></div>
             <label class="field-label">Hair color</label><div class="swatches" id="hair-color-options"></div>
             <label class="field-label">Build</label><div class="segmented" id="body-options"></div>
             <p class="field-hint appearance-note">All cadets have the same learning opportunities. Choose the look that feels like you.</p>
-          </div>
-          <div class="tab-content" id="tab-uniform" role="tabpanel" hidden>
+            <h3 class="step-heading">Outfit</h3>
             <label class="field-label">First-day outfit</label><div class="outfit-options" id="outfit-options"></div>
             <label class="field-label" id="uniform-bottom-label">Uniform bottoms</label><div class="segmented" id="uniform-bottom-options" role="group" aria-labelledby="uniform-bottom-label"></div>
             <p class="field-hint" id="uniform-bottom-note">White long sleeves with black pants.</p>
@@ -98,8 +95,18 @@
             <label class="field-label">The finishing touch</label><div class="segmented" id="accessory-options"></div>
             <div class="outfit-note"><span data-icon="sparkles"></span>Workshop: one-piece suit. Lifeboat: immersion suit. Dorm: automatic white shirt and navy shorts.</div>
           </div>
+          <div class="tab-content" id="tab-skills" role="tabpanel" hidden>
+            <label class="field-label" id="major-label">Your major</label><div class="segmented" id="major-options" role="group" aria-labelledby="major-label"></div>
+            <p class="field-hint" id="major-note">DECK: navigation and bridge work. ENGINE: machinery and engineering.</p>
+            <div class="path-callout"><span data-icon="anchor"></span><div><strong id="creator-path-title">Deck officer pathway</strong><p id="creator-path-copy">Your long-term destination: captain.</p></div><span data-icon="arrow-up-right"></span></div>
+            <label class="field-label" id="starter-trait-label">Choose two starter traits</label>
+            <p class="field-hint" id="starter-trait-note">Each trait adds +2 skill XP whenever a new mini-game trains its skills.</p>
+            <div class="starter-traits" id="starter-trait-options" role="group" aria-labelledby="starter-trait-label"></div>
+            <label class="field-label">Your nine skills</label>
+            <div class="skill-preview" id="skill-preview"></div>
+          </div>
         </div>
-        <div class="creator-footer"><button id="start-journey" class="button primary large"><span>Begin my journey</span><span data-icon="arrow-right"></span></button><p><span class="live-dot"></span> <span id="save-note">Your book journey saves to your signed-in academy account.</span></p></div>
+        <div class="creator-footer"><div class="creator-steps-nav"><button id="creator-back" class="button secondary" type="button">Back</button><button id="creator-next" class="button primary" type="button"><span>Next</span><span data-icon="arrow-right"></span></button></div><button id="start-journey" class="button primary large"><span>Begin my journey</span><span data-icon="arrow-right"></span></button><p><span class="live-dot"></span> <span id="save-note">Your book journey saves to your signed-in academy account.</span></p></div>
       </aside>
       <div class="creator-bottom"><span>CREATE. EXPLORE. BECOME.</span><span>01 — AMCOL MAIN CAMPUS</span></div>
     </section>

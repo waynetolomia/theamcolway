@@ -12,7 +12,7 @@ This is the **GitHub deployment export of game version 11**, source commit `3d70
 | --- | --- |
 | Character and world | Male/female cadets; DECK/ENGINE majors; campus, two four-storey academic buildings, Atlantic simulator rooms, separate dormitory; mobile joystick, walking/running and rotating camera |
 | Staff and first day | Fourteen NPC introductions, staff role dialogue, 27 staff missions, Tr. Dream’s end-of-Year-2 sea-training review |
-| Book course | 381 required mini-games and 1,624 individual tasks across four years/eight semesters; 248 book-page images and original PDF |
+| Book course | 381 required mini-games (about 2,080 auto-checked questions) across four years/eight semesters: vocabulary, reading comprehension, reading trivia, fill in the blanks, sentence scrambles, grammar, listening, safety, COLREG, maritime maths and science; 248 book-page images and original PDF |
 | Safety and fitness | Eight rotating lifeboat safety mini-games; PT, running and football; workshop suit and immersion-suit entry requirements |
 | Final assessment | A saved random set of 50 Loma Lounge mini-games drawn from 273 candidates: 20 major-specific and 30 shared; at most five new final completions per game day |
 | Progression | Academic Office mission board, daily release of assignments, required dorm fitness before sleep, five successful sleeps per real week |
@@ -39,6 +39,24 @@ Open `http://127.0.0.1:8787` when running your own local server. On Windows, cop
 The local development account is the fixed `DEV_USER_ID` in `.dev.vars`. It is accepted only when `DEV_MODE=true`, `ENVIRONMENT=development`, and the request URL is `localhost`, `127.0.0.1` or `[::1]`. Production requests cannot use this mode. Local D1 data stays in your local `.wrangler/` directory and is excluded from Git.
 
 `npm run build` runs **`wrangler deploy --dry-run`** to compile the Worker; it does not publish. Tests use terminal DOMs, generated signed JWTs and in-memory SQLite. They do not require a running web server or a Cloudflare account.
+
+## Editing the mini-games
+
+The 381 book games are generated, not hand-edited. Edit a question bank, then rebuild and test:
+
+| What | Where |
+| --- | --- |
+| Reading comprehension answers (from the book’s own questions) | `scripts/minigames/reading/unit-01.mjs` … `unit-10.mjs`, `finals.mjs` |
+| COLREG 1972, safety, grammar | `scripts/minigames/banks/colreg.mjs`, `safety.mjs`, `grammar.mjs` |
+| Maths and science calculations | `scripts/minigames/banks/math.mjs`, `science.mjs` |
+| Vocabulary, trivia, scrambles, listening | Taken automatically from the book text in `scripts/minigames/source/book-activities.json` |
+
+```sh
+npm run build:minigames   # rewrites ACTIVITIES in public/game/book-course.js and instructor/MINIGAME_ANSWER_KEY.json
+npm test
+```
+
+Game ids, semesters and locations never change, so saved progress stays valid after a rebuild. The full answer key for teachers is `instructor/MINIGAME_ANSWER_KEY.json`.
 
 ## Beta without Cloudflare (browser saves)
 

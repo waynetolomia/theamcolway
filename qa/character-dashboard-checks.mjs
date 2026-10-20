@@ -15,11 +15,13 @@ async function checkAsync(name, work) { await work(); passed++; console.log(`✓
 const baseProfile = { name: 'Alex', origin: 'Thailand', gender: 'male', major: 'deck', uniformBottom: 'pants', outfit: 'cadet',
   skin: '#b97850', hairColor: '#292327', hairStyle: 'swept', accent: '#198879', body: 'regular', accessory: 'cap' };
 const bookExact = ACTIVITIES.find(activity => activity.questions.some(question => question.answers?.length));
-const bookReview = ACTIVITIES.find(activity => activity.reviewMode === 'self-review');
+// A second, different book game (every book game is now auto-checked).
+const bookReview = ACTIVITIES.find(activity => activity.id !== bookExact.id && activity.type !== bookExact.type);
 const wayne = NPC_MISSIONS.find(mission => mission.npcId === 'wayne');
 const maths = NPC_MISSIONS.find(mission => mission.npcId === 'aphisit');
 const science = NPC_MISSIONS.find(mission => mission.npcId === 'anne');
-const workshop = ACTIVITIES.find(activity => activity.location === 'workshop' && activity.reviewMode === 'self-review');
+// Older saves may still hold self-reviewed results for a Workshop slot; the dashboard must display them.
+const workshop = ACTIVITIES.find(activity => activity.location === 'workshop');
 
 check('Uniforms normalize strict gender cuts, saved major, legacy polos, and display-only dorm clothes', () => {
   for (const outfit of ['cadet', 'coverall', 'immersion', 'maritime', 'maritime-white']) {

@@ -78,6 +78,9 @@ export function getGameSkillIds(source, value, activities = []) {
         : item.major === 'deck' ? ['navigation', 'english'] : ['english'];
   }
   if (source === 'book') {
+    // Subject games train their own subject first.
+    const subject = { math: ['maths', 'navigation'], science: ['science', 'engineering'], colreg: ['navigation', 'safety'], safety: ['safety', 'english'] }[item.type];
+    if (subject) return [...subject];
     let domain = null;
     if (item.room === 'gmdss' || [5, 6].includes(Number(item.unit))) domain = 'radio';
     else if (item.room === 'ecdis' || item.room === 'bridge' || [3, 4, 7, 8].includes(Number(item.unit))) domain = 'navigation';

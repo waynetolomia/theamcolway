@@ -1,5 +1,6 @@
 import './asset-paths.js';
-import { createMusic } from './music.js';
+import { createMusic, MUSIC_TRACKS } from './music.js';
+import { RPG_SKILLS, RPG_TRAITS } from './rpg-progress.js';
 import { detectStorageMode, isLocalMode, isPersistent, downloadLocalBackup, restoreLocalBackup } from './local-academy.js';
 import { CAMPUS, DORM, ATLANTIC, STATIONS, DORM_STATIONS, ATLANTIC_STATIONS, NPC_STATIONS, WORKSHOP_STATIONS, SAFETY_STATIONS, REST_STATIONS, LOMA_ENTRANCES, ACTIVITY_LOCATIONS } from './campus.js';
 import { renderCampusMap, renderDormMap, renderAtlanticMap } from './map-view.js';
@@ -55,11 +56,11 @@ const ICONS = {
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ICONS.compass}</svg>`;
 function paintIcons(scope=document){ $$('[data-icon]',scope).forEach(el => el.innerHTML=icon(el.dataset.icon)); }
 const SETTINGS_KEY='seapath.settings.v1', WORLD_KEY='seapath.world.v2';
-let storageOK=true, initialSave=null, prefs={sound:false,quality:'high',music:true}, savedWorld=null;
+let storageOK=true, initialSave=null, prefs={sound:false,quality:'high',music:true,musicTrack:MUSIC_TRACKS[0].id}, savedWorld=null;
 try {
   initialSave=normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'));
   const p=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null');
-  if(p&&typeof p==='object')prefs={sound:p.sound===true,quality:p.quality==='low'?'low':'high',music:p.music!==false};
+  if(p&&typeof p==='object')prefs={sound:p.sound===true,quality:p.quality==='low'?'low':'high',music:p.music!==false,musicTrack:MUSIC_TRACKS.some(t=>t.id===p.musicTrack)?p.musicTrack:MUSIC_TRACKS[0].id};
   savedWorld=JSON.parse(localStorage.getItem(WORLD_KEY)||'null');
 } catch { storageOK=false; }
 // The former prototype save is retained for its character and appearance only.
@@ -73,14 +74,17 @@ let currentZone=Object.hasOwn(districts,savedWorld?.zone)?savedWorld.zone:'campu
 const validPosition=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z);
 const positions={campus:validPosition(savedWorld?.campus)?savedWorld.campus:state.position||{...CAMPUS.spawn},dorm:validPosition(savedWorld?.dorm)?savedWorld.dorm:{...DORM.spawn},atlantic:validPosition(savedWorld?.atlantic)?savedWorld.atlantic:{...ATLANTIC.spawn}};
 const dialog=$('#game-dialog');
-const music=createMusic({onAvailability:()=>updateMusicControls()});
-function musicLabel(){return music.available===false?'Add assets/BG.mp3 to play background music.':prefs.music?'Background music on. Turn off.':'Background music off. Turn on.';}
+const music=createMusic({track:prefs.musicTrack,onAvailability:()=>updateMusicControls()});
+const trackFile=()=>MUSIC_TRACKS.find(t=>t.id===music.track)?.file||'the music file';
+function musicLabel(){return music.available===false?`Add assets/${trackFile()} to play this background track.`:prefs.music?'Background music on. Turn off.':'Background music off. Turn on.';}
+function chooseTrack(id){if(id===prefs.musicTrack)return;prefs.musicTrack=id;savePrefs();music.setTrack(id);if(!prefs.music){prefs.music=true;music.setEnabled(true);}updateMusicControls();}
 function updateMusicControls(){
   const on=prefs.music&&music.available!==false;
   const button=$('#music-btn');if(button){button.innerHTML=icon(on?'music':'music-off');button.setAttribute('aria-pressed',String(on));button.setAttribute('aria-label',musicLabel());button.title=musicLabel();}
   const toggle=$('#music-toggle');if(toggle){toggle.textContent=music.available===false?'No music file':prefs.music?'Music on':'Music off';toggle.setAttribute('aria-pressed',String(prefs.music));toggle.disabled=music.available===false;}
+  $$('[data-music-track]').forEach(b=>{const on=b.dataset.musicTrack===prefs.musicTrack;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
 }
-function toggleMusic(){if(music.available===false){toast('Background music will play once BG.mp3 is added to the game’s assets folder.');return;}prefs.music=!prefs.music;savePrefs();music.setEnabled(prefs.music);updateMusicControls();}
+function toggleMusic(){if(music.available===false){toast(`This track will play once ${trackFile()} is in the game’s assets folder. Try the other track in Settings.`);return;}prefs.music=!prefs.music;savePrefs();music.setEnabled(prefs.music);updateMusicControls();}
 music.setEnabled(prefs.music);
 // Keep listening labs and voice playback clear: the music softens while any dialog is open.
 if(typeof MutationObserver==='function')new MutationObserver(()=>music.setQuiet(dialog.open)).observe(dialog,{attributes:true,attributeFilter:['open']});
@@ -89,7 +93,32 @@ const canonicalLocation=id=>id==='loma-lounge-east'?'loma-lounge':id==='cafe-wes
 const skinColors=[['#f2d0b0','Light'],['#dca479','Warm light'],['#b97850','Medium'],['#98603e','Warm brown'],['#72482f','Brown'],['#4c3026','Deep']];
 const hairColors=[['#292327','Dark'],['#523426','Chestnut'],['#956347','Brown'],['#c2a071','Sandy'],['#b54f39','Auburn'],['#77767c','Silver']];
 const accents=[['#198879','Sea green'],['#284b79','Ocean blue'],['#b46649','Terracotta'],['#84709c','Lilac'],['#d3a850','Golden yellow']];
-const traitOptions=[{value:'Curious',icon:'sparkles',description:'There’s always more to discover.'},{value:'Steady',icon:'shield',description:'A calm mind, even in a storm.'},{value:'Sociable',icon:'heart',description:'Every crew starts with a connection.'}];
+// Creator steps: name → customize → skills. Starter traits are saved to the account when the journey begins.
+const CREATOR_STEPS=['name','customize','skills'],STARTER_KEY='amcol.starter-traits.v1';
+let creatorStep='name',starterTraits=[];
+try{const saved=JSON.parse(localStorage.getItem(STARTER_KEY)||'[]');if(Array.isArray(saved))starterTraits=saved.filter(id=>RPG_TRAITS.some(t=>t.id===id)).slice(0,2);}catch{}
+function accountTraits(){return academy?.getState()?.rpg?.traits||null;}
+function buildSkillStep(){
+  const account=accountTraits(),locked=account?.locked===true;
+  if(account?.selected?.length===2&&(locked||!creatorDirty))starterTraits=[...account.selected];
+  const boosted=new Set(starterTraits.flatMap(id=>RPG_TRAITS.find(t=>t.id===id)?.skillIds||[]));
+  $('#starter-trait-note').textContent=locked?'Your starter traits are locked for this journey after your first rewarded mini-game.':`Each trait adds +2 skill XP whenever a new mini-game trains its skills. ${starterTraits.length}/2 chosen.`;
+  $('#starter-trait-options').innerHTML=RPG_TRAITS.map(t=>{const on=starterTraits.includes(t.id);return `<button type="button" class="starter-trait${on?' active':''}" data-trait="${t.id}" aria-pressed="${on}" ${locked?'disabled':''}><strong>${escapeHTML(t.label)}</strong><small>${t.skillIds.map(id=>escapeHTML(RPG_SKILLS.find(s=>s.id===id)?.label||id)).join(' · ')}</small></button>`;}).join('');
+  const skills=academy?.getState()?.rpg?.skills||[];
+  $('#skill-preview').innerHTML=RPG_SKILLS.map(s=>{const level=skills.find(x=>x.id===s.id)?.level||1;return `<div class="skill-chip${boosted.has(s.id)?' boosted':''}"><span><strong>${escapeHTML(s.label)}</strong><small>${escapeHTML(s.description)}</small></span><b>LV ${level}${boosted.has(s.id)?' · +2':''}</b></div>`;}).join('');
+  $('#starter-trait-options').onclick=e=>{const b=e.target.closest('[data-trait]');if(!b||b.disabled)return;const id=b.dataset.trait;starterTraits=starterTraits.includes(id)?starterTraits.filter(x=>x!==id):[...starterTraits,id].slice(-2);creatorDirty=true;try{localStorage.setItem(STARTER_KEY,JSON.stringify(starterTraits));}catch{}buildSkillStep();playTone();};
+}
+function updateStepNav(){
+  const index=CREATOR_STEPS.indexOf(creatorStep),last=index===CREATOR_STEPS.length-1;
+  $('#creator-back').disabled=index===0;$('#creator-next').hidden=last;
+  $('#creator-next span:first-child').textContent=last?'':`Next: ${['Name','Customize','Skills'][index+1]}`;
+  // Returning cadets can save from any step; new cadets finish on Skills.
+  $('#start-journey').hidden=!(last||editing||hasSave);
+}
+function nextStep(direction=1){
+  if(direction>0&&creatorStep==='name'&&!$('#cadet-name').value.trim()){$('#cadet-name').focus();toast('Give your cadet a name first.');return;}
+  const index=Math.max(0,Math.min(CREATOR_STEPS.length-1,CREATOR_STEPS.indexOf(creatorStep)+direction));selectTab(CREATOR_STEPS[index]);playTone();
+}
 
 function save(){if(!hasSave)return;try{state.character={...character};localStorage.setItem(STORAGE_KEY,JSON.stringify(state));storageOK=true;}catch{storageOK=false;}}
 function saveWorld(){try{localStorage.setItem(WORLD_KEY,JSON.stringify({zone:currentZone,...positions}));}catch{storageOK=false;}}
@@ -124,7 +153,6 @@ function celebrate(){
   for(let i=0;i<38;i++){const p=document.createElement('i');p.className='confetti';p.style.left=`${Math.random()*100}%`;p.style.background=['#82b891','#d6ac57','#d7eabc','#b9ced1','#dda68b'][i%5];p.style.animationDelay=`${Math.random()*.7}s`;p.style.animationDuration=`${2+Math.random()}s`;document.body.append(p);setTimeout(()=>p.remove(),4000);}
 }
 function buildCreatorControls(){
-  $('#trait-options').innerHTML=traitOptions.map(t=>`<button class="trait-button${character.trait===t.value?' active':''}" data-value="${t.value}" type="button" aria-pressed="${character.trait===t.value}"><span class="trait-icon">${icon(t.icon)}</span><span><strong>${t.value}</strong><small>${t.description}</small></span><span class="radio-dot"></span></button>`).join('');
   const swatches=(id,key,colors)=>{ $(id).innerHTML=colors.map(([value,label])=>`<button type="button" class="swatch${character[key]===value?' active':''}" data-value="${value}" style="--swatch:${value}" title="${label}" aria-label="${label}" aria-pressed="${character[key]===value}"></button>`).join(''); $(id).onclick=e=>{const b=e.target.closest('[data-value]');if(b)choose(key,b.dataset.value);};};
   swatches('#skin-options','skin',skinColors);swatches('#hair-color-options','hairColor',hairColors);swatches('#accent-options','accent',accents);
   $('#hair-options').innerHTML=[['crop','Cropped'],['swept','Swept'],['bob','Bob'],['bun','Bun']].map(([value,label])=>`<button class="choice-button${character.hairStyle===value?' active':''}" data-value="${value}" aria-pressed="${character.hairStyle===value}">${icon('hair')}${label}</button>`).join('');
@@ -140,7 +168,7 @@ function buildCreatorControls(){
   segments('#accessory-options','accessory',[['none','None'],['glasses','Glasses'],['cap','Cadet cap']]);
   $('#outfit-options').innerHTML=[['cadet','Campus uniform','#ffffff'],['maritime-white','Maritime white uniform','#f8faf7'],['maritime','Maritime navy uniform','#17344b'],['coverall','Workshop suit','#38566b'],['immersion','Immersion suit','#e96528']].map(([value,label,color])=>`<button class="outfit-card${character.outfit===value?' active':''}" data-value="${value}" aria-pressed="${character.outfit===value}"><span style="color:${color};filter:drop-shadow(0 1px 0 #92a294)">${icon('shirt')}</span>${label}</button>`).join('');
   updateCreatorMajor();
-  $('#trait-options').onclick=e=>{const b=e.target.closest('[data-value]');if(b)choose('trait',b.dataset.value);};
+  buildSkillStep();
   $('#hair-options').onclick=e=>{const b=e.target.closest('[data-value]');if(b)choose('hairStyle',b.dataset.value);};
   $('#outfit-options').onclick=e=>{const b=e.target.closest('[data-value]');if(b)choose('outfit',b.dataset.value);};
 }
@@ -155,12 +183,13 @@ function updateCreator(){
   $('#preview-name').textContent=character.name;buildCreatorControls();
   $('#start-journey span:first-child').textContent=editing?'Save & return to campus':hasSave?'Continue my journey':'Begin my journey';
   $('#save-note').textContent=saveNote();
-  updateCreatorMajor();
+  updateCreatorMajor();updateStepNav();
   world?.setCharacter(character);
 }
 function selectTab(key){
   $$('.creator-tabs button').forEach(b=>{const selected=b.dataset.tab===key;b.classList.toggle('active',selected);b.setAttribute('aria-selected',selected);b.tabIndex=selected?0:-1;});
   $$('.tab-content').forEach(c=>{c.hidden=c.id!==`tab-${key}`;c.classList.toggle('active',!c.hidden);});
+  if(CREATOR_STEPS.includes(key))creatorStep=key;updateStepNav();$('.panel-fields').scrollTop=0;
 }
 async function beginJourney(){
   const name=$('#cadet-name').value.trim();if(!name){$('#cadet-name').focus();toast('Give your cadet a name to begin.');return;}
@@ -168,7 +197,8 @@ async function beginJourney(){
   state.character=createState(character).character;character={...state.character};hasSave=true;editing=false;creatorDirty=false;
   mode='world';document.body.dataset.mode='world';$('#creator').hidden=true;$('#world-ui').hidden=false;
   world?.setCharacter(character);world?.setMode('world');world?.setZone(currentZone,positions[currentZone]);world?.setPosition(positions[currentZone]);if(engineAvailable)positions[currentZone]=world.getPosition();world?.setPaused(false);
-  save();saveWorld();updateHUD();updateTouchState();await academy.start(character,{editing:wasEditing});
+  save();saveWorld();updateHUD();updateTouchState();const started=await academy.start(character,{editing:wasEditing});
+  if(started&&starterTraits.length===2)await academy.applyStarterTraits(starterTraits);
 }
 function editCadet(){closeDialog();mode='creator';editing=true;creatorDirty=false;character={...state.character};document.body.dataset.mode='creator';$('#creator').hidden=false;$('#world-ui').hidden=true;world?.setMode('creator');world?.setPaused(false);updateTouchState();updateCreator();}
 function openDialog(title,eyebrow,html,key='info'){
@@ -269,10 +299,10 @@ function openJourney(){
   openDialog('A first day. A lifetime of horizons.',character.major==='engine'?'YOUR JOURNEY TO CHIEF ENGINEER':'YOUR JOURNEY TO CAPTAIN',`<p class="dialog-copy">Create your cadet and explore AMCOL. Your first chapter covers the complete <strong>Maritime English 3.17 Plus</strong> student book across four game years and eight semesters, plus staff missions in English, maths, science, and cadet life.</p><h3 class="section-heading">Phase 1 · The academy · Playable now</h3><div class="year-timeline">${['Joining & ship life','Watchkeeping & passage','Radio, port & cargo','Machinery & leadership'].map((n,i)=>`<div class="year-node ${s?.graduated||year>i+1?'done':year===i+1?'current':''}"><div class="year-dot">${s?.graduated||year>i+1?'✓':i+1}</div><strong>Year ${i+1}</strong><small>${n}</small></div>`).join('')}</div><div class="career-list"><div class="career-row"><span class="career-badge">${icon('book')}</span><div><h3>Student → academy graduate</h3><p>${ACTIVITIES.length} required book mini-games, ${NPC_MISSIONS.length} staff missions including Tr. Dream’s Year 2 sea-training review and optional challenges with Chief Engineer Asawin, Engineer Gerald, Tr. Amara, Tr. Bank, and Tr. Duke. Choose DECK or ENGINE and begin by meeting all ${NPCS.length} staff members. In Year 4, Semester 2, pass all 50 random Loma Lounge final games; at most five first completions per game day. Exercise and sleep at the dorm to begin a new game day.</p></div><span class="phase-pill">PLAYABLE</span></div>${[['ship','Shipboard cadet','Your first vessel, watch, and crew.'],...(character.major==='engine'?[['settings','Engine officer → second engineer','Machinery, maintenance, and leading an engineering team.'],['settings','Chief engineer','Lead the vessel’s engineering department.']]:[['compass','Deck officer → chief officer','Navigation, responsibility, and leading a team.'],['anchor','Captain','Bring your knowledge and crew together.']])].map(([sym,title,description])=>`<div class="career-row future"><span class="career-badge">${icon(sym)}</span><div><h3>${title}</h3><p>${description}</p></div><span class="phase-pill">FUTURE PHASE</span></div>`).join('')}</div><p class="campus-footnote">The eight-semester arrangement is the game’s learning progression. Completing it awards an in-game academy achievement.</p><div class="dialog-actions">${htmlButton('journey-book','View the course book','secondary','book')}${htmlButton('journey-return',mode==='world'?'Back to my adventure':'Create my cadet')}</div>`,'journey');$('#journey-return').onclick=closeDialog;$('#journey-book').onclick=openSources;
 }
 function openSettings(){
-  openDialog('Make the journey yours.','GAME SETTINGS',`<div class="settings-row"><div><h3>Game sounds</h3><p>Gentle feedback for learning and milestones.</p></div><button id="sound-toggle" class="button secondary" aria-pressed="${prefs.sound}">${prefs.sound?'Sound on':'Sound off'}</button></div><div class="settings-row"><div><h3>Background music</h3><p>${music.available===false?'Add <code>BG.mp3</code> to the game’s assets folder to play soft, looping music.':'Soft, looping music. It quietens while a dialog is open.'}</p></div><button id="music-toggle" class="button secondary"></button></div><div class="settings-row"><div><h3>Graphics quality</h3><p>Choose lighter graphics on a slower device.</p></div><select id="quality-select" aria-label="Graphics quality"><option value="high" ${prefs.quality==='high'?'selected':''}>Beautiful</option><option value="low" ${prefs.quality==='low'?'selected':''}>Lightweight</option></select></div><div class="settings-row"><div><h3>Export your academy record</h3><p>Download your responses and semester achievements.</p></div><button id="export-save" class="button secondary" ${!academy.ready?'disabled':''}>${icon('download')} Export</button></div><div class="settings-row"><div><h3>Import a character</h3><p>Reuse a cadet’s appearance from an earlier academy save.</p></div><button id="import-save" class="button secondary">${icon('upload')} Import</button><input id="save-file" type="file" accept=".json,application/json" hidden></div>${isLocalMode()?`<div class="settings-row"><div><h3>Browser save backup</h3><p>Beta progress lives only in this browser. Download a backup before clearing browser data or switching devices.</p></div><div class="dialog-actions"><button id="local-backup" class="button secondary">${icon('download')} Download</button><button id="local-restore" class="button secondary">${icon('upload')} Restore</button></div><input id="local-restore-file" type="file" accept=".json,application/json" hidden></div>`:''}<div class="settings-row"><div><h3>A brand-new story</h3><p>Restart your book course. Used weekly resets stay on your account.</p></div><button id="new-game" class="button secondary">New journey</button></div><p class="settings-footnote">${isLocalMode()?'Beta mode: your completed work, game day, and weekly allowance save in this browser only.':'Your completed work, game day, and weekly allowance save to your academy account.'} Your map position, appearance preferences, and unsubmitted drafts also use this browser. Voice playback uses an available device voice.</p>${!storageOK?'<p class="save-warning">Local drafts cannot be saved in this browser. Submit completed work while connected.</p>':''}`,'settings');
+  openDialog('Make the journey yours.','GAME SETTINGS',`<div class="settings-row"><div><h3>Game sounds</h3><p>Gentle feedback for learning and milestones.</p></div><button id="sound-toggle" class="button secondary" aria-pressed="${prefs.sound}">${prefs.sound?'Sound on':'Sound off'}</button></div><div class="settings-row"><div><h3>Background music</h3><p>Soft, looping music. Choose a track; it quietens while a dialog is open.</p><div class="segmented music-tracks" role="group" aria-label="Background music track">${MUSIC_TRACKS.map(t=>`<button type="button" data-music-track="${t.id}">${escapeHTML(t.label)}</button>`).join('')}</div></div><button id="music-toggle" class="button secondary"></button></div><div class="settings-row"><div><h3>Graphics quality</h3><p>Choose lighter graphics on a slower device.</p></div><select id="quality-select" aria-label="Graphics quality"><option value="high" ${prefs.quality==='high'?'selected':''}>Beautiful</option><option value="low" ${prefs.quality==='low'?'selected':''}>Lightweight</option></select></div><div class="settings-row"><div><h3>Export your academy record</h3><p>Download your responses and semester achievements.</p></div><button id="export-save" class="button secondary" ${!academy.ready?'disabled':''}>${icon('download')} Export</button></div><div class="settings-row"><div><h3>Import a character</h3><p>Reuse a cadet’s appearance from an earlier academy save.</p></div><button id="import-save" class="button secondary">${icon('upload')} Import</button><input id="save-file" type="file" accept=".json,application/json" hidden></div>${isLocalMode()?`<div class="settings-row"><div><h3>Browser save backup</h3><p>Beta progress lives only in this browser. Download a backup before clearing browser data or switching devices.</p></div><div class="dialog-actions"><button id="local-backup" class="button secondary">${icon('download')} Download</button><button id="local-restore" class="button secondary">${icon('upload')} Restore</button></div><input id="local-restore-file" type="file" accept=".json,application/json" hidden></div>`:''}<div class="settings-row"><div><h3>A brand-new story</h3><p>Restart your book course. Used weekly resets stay on your account.</p></div><button id="new-game" class="button secondary">New journey</button></div><p class="settings-footnote">${isLocalMode()?'Beta mode: your completed work, game day, and weekly allowance save in this browser only.':'Your completed work, game day, and weekly allowance save to your academy account.'} Your map position, appearance preferences, and unsubmitted drafts also use this browser. Voice playback uses an available device voice.</p>${!storageOK?'<p class="save-warning">Local drafts cannot be saved in this browser. Submit completed work while connected.</p>':''}`,'settings');
   $('#sound-toggle').onclick=()=>{prefs.sound=!prefs.sound;savePrefs();$('#sound-toggle').textContent=prefs.sound?'Sound on':'Sound off';$('#sound-toggle').setAttribute('aria-pressed',prefs.sound);playTone('success');};
   $('#quality-select').onchange=e=>{prefs.quality=e.target.value;world?.setQuality(prefs.quality);savePrefs();};$('#export-save').onclick=()=>academy.exportRecord();$('#import-save').onclick=()=>$('#save-file').click();$('#save-file').onchange=e=>importSave(e.target.files[0]);$('#new-game').onclick=confirmNewJourney;
-  $('#music-toggle').onclick=toggleMusic;updateMusicControls();
+  $('#music-toggle').onclick=toggleMusic;$$('[data-music-track]').forEach(b=>b.onclick=()=>chooseTrack(b.dataset.musicTrack));updateMusicControls();
   if(isLocalMode()){$('#local-backup').onclick=()=>{downloadLocalBackup();toast('Your browser save is downloading. Keep the file somewhere safe.');};$('#local-restore').onclick=()=>$('#local-restore-file').click();$('#local-restore-file').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(!confirm('Replace the progress saved in this browser with this backup?'))return;try{const name=await restoreLocalBackup(file);toast(`Restored ${name}. Reloading…`);setTimeout(()=>location.reload(),800);}catch(error){toast(error.message);}};}
 }
 async function importSave(file){
@@ -286,10 +316,11 @@ function confirmNewJourney(){
   if(!academy.ready){toast('Connect your current cadet before starting a new book journey.');if(mode==='world')academy.start(character);return;}
   const s=academy.getState();
   openDialog('Ready for a new beginning?','NEW JOURNEY',`<p class="dialog-copy">Restart <strong>${escapeHTML(s.profile.name)}’s book course</strong> at Year 1, Semester 1. This replaces your current course answers and achievements. You have <strong>${s.week.remaining} of 5 day resets</strong> left this real week; starting again keeps that allowance.</p><div class="dialog-actions">${htmlButton('reset-export','Export my current record','secondary','download')}${htmlButton('reset-cancel','Keep my journey','secondary','')}${htmlButton('reset-confirm','Restart the book course','danger','')}</div>`,'confirm-reset');
-  $('#reset-export').onclick=()=>academy.exportRecord();$('#reset-cancel').onclick=closeDialog;$('#reset-confirm').onclick=async()=>{const result=await academy.newJourney(character);if(!result)return;currentZone='campus';positions.campus={...CAMPUS.spawn};positions.dorm={...DORM.spawn};positions.atlantic={...ATLANTIC.spawn};saveWorld();editCadet();selectTab('identity');toast('Your new book journey is ready. Weekly resets keep their existing allowance.');};
+  $('#reset-export').onclick=()=>academy.exportRecord();$('#reset-cancel').onclick=closeDialog;$('#reset-confirm').onclick=async()=>{const result=await academy.newJourney(character);if(!result)return;currentZone='campus';positions.campus={...CAMPUS.spawn};positions.dorm={...DORM.spawn};positions.atlantic={...ATLANTIC.spawn};saveWorld();editCadet();selectTab('name');toast('Your new book journey is ready. Weekly resets keep their existing allowance.');};
 }
 function connectUI(){
-  paintIcons();updateCreator();selectTab('identity');
+  paintIcons();updateCreator();selectTab('name');
+  $('#creator-next').onclick=()=>nextStep(1);$('#creator-back').onclick=()=>nextStep(-1);
   $('#cadet-name').oninput=e=>{creatorDirty=true;character.name=e.target.value;$('#preview-name').textContent=character.name.trim()||'Your cadet';};$('#cadet-origin').onchange=e=>{creatorDirty=true;character.origin=e.target.value;};
   $$('.creator-tabs [data-tab]').forEach((b,i)=>{b.onclick=()=>selectTab(b.dataset.tab);b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const buttons=$$('.creator-tabs [data-tab]');const next=buttons[(i+(e.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length];selectTab(next.dataset.tab);next.focus();};});
   $('#randomize').onclick=()=>{creatorDirty=true;for(const [key,arr] of Object.entries({skin:skinColors.map(c=>c[0]),hairColor:hairColors.map(c=>c[0]),hairStyle:['crop','swept','bob','bun'],outfit:['cadet','maritime-white','maritime','coverall','immersion'],accent:accents.map(c=>c[0]),body:['slim','regular','broad'],accessory:['none','glasses','cap']}))character[key]=arr[Math.floor(Math.random()*arr.length)];buildCreatorControls();world?.setCharacter(character);playTone();};
