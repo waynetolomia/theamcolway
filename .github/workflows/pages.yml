@@ -1,10 +1,11 @@
 name: Publish beta to GitHub Pages
 
 # Static beta: no Cloudflare. The game detects that /api/academy is missing and saves
-# each player's progress in their own browser. Set Settings → Pages → Source to "GitHub Actions".
+# each player's progress in their own browser.
+# Default setup: Settings → Pages → "Deploy from a branch" (main, / root). The root index.html
+# opens public/game/, so this workflow is not needed. Run it manually only if you switch
+# the Pages source to "GitHub Actions" (it then publishes public/ as the site root).
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
