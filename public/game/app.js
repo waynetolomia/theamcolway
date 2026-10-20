@@ -119,7 +119,10 @@ function updateStepNav(){
   $('#creator-back').disabled=index===0;$('#creator-next').hidden=last;
   $('#creator-next span:first-child').textContent=last?'':`Next: ${['Name','Customize','Skills'][index+1]}`;
   // Returning cadets can save from any step; new cadets finish on Skills.
-  $('#start-journey').hidden=!(last||editing||hasSave);
+  // Back, Next and the start button share one row, so the start label shortens when Next is shown.
+  const start=$('#start-journey');start.hidden=!(last||editing||hasSave);
+  start.querySelector('span').textContent=!last?'Save':editing?'Save & return':hasSave?'Continue journey':'Begin my journey';
+  start.classList.toggle('secondary',!last);start.classList.toggle('primary',last);
 }
 function nextStep(direction=1){
   if(direction>0&&creatorStep==='name'&&!$('#cadet-name').value.trim()){$('#cadet-name').focus();toast('Give your cadet a name first.');return;}

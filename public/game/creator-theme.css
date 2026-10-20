@@ -92,12 +92,33 @@ body[data-mode=creator] .outfit-note{background:var(--gold-soft);color:#6c5a2c}
 .skill-chip b{flex-shrink:0;font-size:9px;letter-spacing:.6px;color:var(--navy-2);background:var(--navy-soft);border-radius:20px;padding:4px 8px}
 .skill-chip.boosted{border-color:var(--gold);background:linear-gradient(90deg,var(--gold-soft),#fff 70%)}
 .skill-chip.boosted b{background:var(--gold);color:var(--navy)}
-.creator-steps-nav{display:flex;gap:8px;margin-bottom:8px}
-.creator-steps-nav .button{flex:1;min-height:42px}
-.creator-steps-nav .button.primary{flex:2;justify-content:space-between}
+/* Back, Next and Begin share one compact row so the footer always fits on screen. */
+.creator-steps-nav{display:flex;align-items:stretch;gap:8px}
+.creator-steps-nav .button{flex:1 1 0;min-width:0;min-height:42px;height:42px;padding:0 14px;font-size:12px;white-space:nowrap}
+.creator-steps-nav .button.primary{flex:2 1 0;justify-content:space-between}
+.creator-steps-nav .button>span:first-child{overflow:hidden;text-overflow:ellipsis}
+.creator-steps-nav .button svg{flex:none;width:17px;height:17px}
+.creator-steps-nav #creator-back{flex:0 0 auto}
 .creator-steps-nav .button:disabled{opacity:.45;cursor:default}
-.creator-steps-nav:has(#creator-next[hidden]) #creator-back{flex:0 0 auto}
 #creator-next[hidden],#start-journey[hidden]{display:none}
+.creator-footer{padding-top:12px;padding-bottom:12px}
+.creator-footer p{margin-top:8px}
+
+/* Landscape phones: a tighter panel so the footer buttons stay on screen. */
+@media(max-height:500px) and (orientation:landscape){
+  #creator .creator-panel{top:6px;bottom:6px;max-height:none;border-radius:16px}
+  #creator .panel-top{padding:8px 14px 4px}
+  #creator .panel-top h2{display:none}
+  #creator .panel-top .icon-button{width:28px;height:28px;min-height:28px}
+  #creator .creator-tabs{margin:0 14px}
+  #creator .creator-tabs button{padding:6px 0 7px;min-height:0}
+  #creator .panel-fields{padding:0 14px 8px;min-height:0}
+  #creator .field-label{margin:12px 0 6px}
+  #creator .creator-footer{padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}
+  #creator .creator-footer p{display:none}
+  #creator .creator-steps-nav .button{height:38px;min-height:38px;font-size:11px}
+  #creator .creator-bottom{display:none}
+}
 body[data-mode=creator] .creator-steps-nav .button.secondary{background:#fff;border-color:var(--cool-line);color:var(--navy)}
 body[data-mode=creator] .creator-steps-nav .button.primary{background:var(--navy);color:#fff}
 body[data-mode=creator] .creator-steps-nav .button.primary svg{color:var(--gold)}
