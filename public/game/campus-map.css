@@ -1,0 +1,120 @@
+/* Exact shared-coordinate campus diagram; scoped to avoid the app's icon rules. */
+.amcol-map-scroll{width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#aabeb1 #edf2e8;border:1px solid #dce5d8;border-radius:17px;background:#fafaf4;margin:18px 0 8px}
+.amcol-map-scroll .amcol-campus-map,.amcol-campus-map{display:block;width:100%;min-width:560px;max-width:none;height:auto;aspect-ratio:900 / 1250;fill:none;stroke:none;overflow:visible;font-family:'DM Sans',Arial,sans-serif;isolation:isolate}
+.amcol-campus-map text{stroke:none;fill:#254b4c;pointer-events:none;font-family:'DM Sans',Arial,sans-serif}
+.amcol-map-paper{fill:#fafaf4;stroke:none}
+.amcol-map-kicker{font-size:14px;font-weight:800;letter-spacing:1.5px}
+.amcol-map-legend{font-size:12px;font-weight:600;fill:#61766a!important}
+.amcol-map-legend-dot{fill:#166957;stroke:#fff;stroke-width:2}
+.amcol-map-legend-pacific{fill:#3c7894}
+.amcol-map-legend-atlantic{fill:#183f53}
+.amcol-map-orientation{font-size:11px;font-weight:700;letter-spacing:2px;fill:#7b8e7e!important}
+.amcol-map-grounds{fill:#edf2e6;stroke:none}
+.amcol-map-perimeter{fill:none;stroke:#a5b89e;stroke-width:1.6;stroke-dasharray:5 5;pointer-events:none}
+.amcol-map-path{fill:none;stroke:#fffdf5;stroke-width:12;stroke-linecap:round;stroke-linejoin:round}
+.amcol-map-oval{fill:#e4e2d5;stroke:#b8bbaa;stroke-width:1.5}
+.amcol-map-oval-inner{fill:none;stroke:#ced1bf;stroke-width:1;stroke-dasharray:3 4}
+.amcol-map-building{cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.amcol-map-building-shadow{fill:#254b4c12;stroke:none;pointer-events:none}
+.amcol-map-building-face{fill:#e2e9e1;stroke:#a8bcad;stroke-width:1.7;transition:stroke .16s,stroke-width .16s,filter .16s}
+.amcol-map-building:hover .amcol-map-building-face,.amcol-map-building:focus-visible .amcol-map-building-face{stroke:#b17c28;stroke-width:4;filter:brightness(1.035)}
+.amcol-map-building:focus-visible{outline:none}
+.amcol-map-label{font-size:15px;font-weight:800;letter-spacing:.15px;pointer-events:none}
+.amcol-map-imd .amcol-map-building-face{fill:#d5e4ce;stroke:#8bb28a}
+.amcol-map-cruise .amcol-map-building-face{fill:#dcecea;stroke:#94b5b3}
+.amcol-map-cruise .amcol-map-label{font-size:11px}
+.amcol-map-pacific .amcol-map-building-face{fill:#3c7894;stroke:#2e657e}
+.amcol-map-pacific .amcol-map-label{font-size:16px;letter-spacing:.8px}
+.amcol-map-atlantic .amcol-map-building-face{fill:#183f53;stroke:#123345}
+.amcol-map-atlantic .amcol-map-label{font-size:15px;letter-spacing:.8px}
+.amcol-campus-map text.amcol-map-inverse,.amcol-campus-map text.amcol-map-inverse tspan{fill:#fffef5}
+.amcol-map-workshop .amcol-map-building-face{fill:#e1e5de;stroke:#87978c}
+.amcol-map-workshop .amcol-map-label{font-size:13px;letter-spacing:.2px}
+.amcol-map-dome .amcol-map-building-face{fill:#e1e8dc;stroke:#a3b7a1;stroke-width:2}
+.amcol-map-dome-label{font-size:30px;letter-spacing:3px;fill:#436757!important}
+.amcol-map-small{font-size:10px;letter-spacing:1.2px;fill:#6e8971!important}
+.amcol-map-roof{fill:none;stroke:#bccdb6;stroke-width:1.4;pointer-events:none}
+.amcol-map-academic .amcol-map-building-face{fill:#f2c8a5;stroke:#cb946c}
+.amcol-map-academic .amcol-map-label{font-size:12px;letter-spacing:0}
+.amcol-map-garden .amcol-map-building-face{fill:#dfeacf;stroke:#a4bf92}
+.amcol-map-garden-label{font-size:11.5px;letter-spacing:.05px}
+.amcol-map-palm path{fill:none;stroke:#6d996b;stroke-width:2;stroke-linecap:round;pointer-events:none}
+.amcol-map-cafe .amcol-map-building-face{fill:#315c82;stroke:#254b6e}
+.amcol-map-cafe .amcol-map-label{fill:#fffdf1;font-size:13px}
+.amcol-map-door{fill:#91a78d;stroke:#fffdf5;stroke-width:2;pointer-events:none}
+.amcol-map-pacific .amcol-map-door{fill:#3c7894}
+.amcol-map-atlantic .amcol-map-door{fill:#183f53}
+.amcol-map-road{fill:#e3e5db;stroke:#d4dccf;stroke-width:1}
+.amcol-map-road-line{fill:none;stroke:#fafaf4;stroke-width:2;stroke-dasharray:12 12}
+.amcol-map-road-label{font-size:12px;font-weight:700;letter-spacing:1.7px;fill:#76866e!important}
+.amcol-map-entry-hit{fill:#edf2e601;stroke:none}
+.amcol-map-entry-line{fill:none;stroke:#7e9b76;stroke-width:3;stroke-linecap:round}
+.amcol-map-entry-badge{fill:#20786a;stroke:#fffdf5;stroke-width:3}
+.amcol-map-entry-arrow{fill:none;stroke:#fffdf5;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.amcol-map-entry-name{font-size:14px;font-weight:800;letter-spacing:.2px}
+.amcol-map-entry-small{font-size:10px;font-weight:600;letter-spacing:1px;fill:#7c8f75!important}
+.amcol-map-entrance:hover .amcol-map-entry-badge,.amcol-map-entrance:focus-visible .amcol-map-entry-badge{stroke:#d3a850;stroke-width:5}
+.amcol-map-cadet{pointer-events:none}
+.amcol-map-cadet-halo{fill:#20786a22;stroke:#fffdf566;stroke-width:1}
+.amcol-map-cadet-dot{fill:#146b56;stroke:#fffefa;stroke-width:3}
+.amcol-map-cadet-center{fill:#d3edb0;stroke:none}
+.amcol-map-offsite>rect{fill:#f0f2e9;stroke:#dce3d4;stroke-width:1}
+.amcol-map-offsite>path{fill:none;stroke:#829576;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.amcol-map-offsite-title{font-size:11px;font-weight:800;letter-spacing:.8px;fill:#637c5c!important}
+.amcol-map-offsite-copy{font-size:11px;fill:#7b8b70!important}
+.amcol-map-offsite-action{font-size:11px;font-weight:800;letter-spacing:.7px;fill:#3d7564!important}
+.amcol-map-offsite:hover>rect,.amcol-map-offsite:focus-visible>rect{stroke:#b17c28;stroke-width:3}
+.amcol-map-scroll .amcol-dorm-map,.amcol-dorm-map{aspect-ratio:900 / 825}
+.amcol-dorm-hall{fill:#e3e7df;stroke:#98b1a2}
+.amcol-dorm-hall-label{font-size:15px;letter-spacing:.4px}
+.amcol-dorm-bed rect{fill:#9ebdc0;stroke:#789f9e;stroke-width:1.5}.amcol-dorm-bed path{stroke:#e7f0e4;stroke-width:7}
+.amcol-dorm-yard{fill:#aec5c0;stroke:#799e93}
+.amcol-dorm-mats rect{fill:#477d7a;stroke:#ecf0dd;stroke-width:1.5}
+.amcol-dorm-track{fill:#cb9c85;stroke:#b18470}.amcol-dorm-lane{fill:none;stroke:#f7e6d2;stroke-width:1.4;pointer-events:none}
+.amcol-dorm-track-label{font-size:10px;font-weight:800;letter-spacing:.5px;fill:#fff9e8!important}
+.amcol-dorm-field{fill:#69966e;stroke:#f1f0dc;stroke-width:2}
+.amcol-dorm-field-line{fill:none;stroke:#c9d9ba;stroke-width:1.6;pointer-events:none}
+.amcol-dorm-goal{fill:#eef2df99;stroke:#f8f6e8;stroke-width:1.5}
+.amcol-dorm-shuttle{fill:#d6e4df;stroke:#8ab0a1}.amcol-dorm-shuttle-label{font-size:11px;letter-spacing:.4px}
+.amcol-map-staff-pin,.amcol-map-staff-card{cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.amcol-map-staff-hit{fill:#fff0;stroke:none}
+.amcol-map-staff-halo{fill:#fffdf2;stroke:var(--staff-color,#467eae);stroke-width:1.4;pointer-events:none}
+.amcol-map-staff-dot{fill:var(--staff-color,#467eae);stroke:#fffdf2;stroke-width:1.7;pointer-events:none}
+.amcol-campus-map .amcol-map-staff-number{font-size:14px;font-weight:800;fill:#fff;pointer-events:none}
+.amcol-map-staff-pin:hover .amcol-map-staff-halo,.amcol-map-staff-pin:focus-visible .amcol-map-staff-halo{stroke:#173f4b;stroke-width:4;fill:#ffe7ae}
+.amcol-map-staff-card>rect{fill:#fffdf7;stroke:#dae3d5;stroke-width:1.5;transition:stroke .15s,fill .15s}
+.amcol-map-staff-card:hover>rect,.amcol-map-staff-card:focus-visible>rect{fill:#fff2d8;stroke:var(--staff-color,#467eae);stroke-width:3}
+.amcol-campus-map .amcol-map-staff-name{font-size:15px;font-weight:800;fill:#234b4d}
+.amcol-campus-map .amcol-map-staff-role{font-size:11px;font-weight:600;fill:#697d71}
+.amcol-map-gear-pin,.amcol-map-gear-card{cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.amcol-map-gear-hit{fill:#fff0;stroke:none}
+.amcol-map-gear-badge{fill:#d8733f;stroke:#fffdf2;stroke-width:2}
+.amcol-map-gear-suit{fill:#fff3df;stroke:#fff3df;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.amcol-map-gear-pin:hover .amcol-map-gear-badge,.amcol-map-gear-pin:focus-visible .amcol-map-gear-badge{stroke:#653e25;stroke-width:4;fill:#b95a2e}
+.amcol-map-gear-card>rect{fill:#fcf0df;stroke:#d8b38c;stroke-width:1.5;transition:stroke .15s,fill .15s}
+.amcol-map-gear-card .amcol-map-gear-suit{fill:#d8733f;stroke:#d8733f}
+.amcol-map-gear-card:hover>rect,.amcol-map-gear-card:focus-visible>rect{fill:#ffe6c7;stroke:#9c562d;stroke-width:3}
+.amcol-campus-map .amcol-map-gear-title{font-size:11px;font-weight:800;letter-spacing:.8px;fill:#824b2e}
+.amcol-campus-map .amcol-map-gear-copy{font-size:11px;fill:#916b50}
+.amcol-campus-map .amcol-map-gear-action{font-size:11px;font-weight:800;letter-spacing:.7px;fill:#974f2a}
+@media(max-width:700px){.amcol-map-scroll{margin-top:14px;border-radius:12px;max-width:100%}.amcol-map-scroll .amcol-campus-map{min-width:640px}}
+@media(prefers-reduced-motion:reduce){.amcol-map-building-face,.amcol-map-staff-card>rect,.amcol-map-gear-card>rect{transition:none}}
+
+.amcol-map-stage{fill:#366d84;stroke:#28566c;stroke-width:1.4}.amcol-campus-map .amcol-map-stage-label{fill:#fffdf1;font-size:10px;font-weight:700;letter-spacing:.4px}
+.amcol-map-loma-lounge .amcol-map-building-face{fill:#538354;stroke:#3e6b41}.amcol-map-loma-lounge .amcol-map-label{fill:#fffdf1;font-size:13px}
+.amcol-map-teacher-plaza{fill:#efdfb0;stroke:#d7c38f;stroke-width:1}.amcol-campus-map .amcol-map-teacher-title{fill:#72603b;font-size:9px;font-weight:800;letter-spacing:.7px}
+.amcol-map-lifeboat-pad{fill:#e3ddca;stroke:#bdb79f;stroke-width:1.4}.amcol-map-lifeboat-hull{fill:#ef7830;stroke:#b65a2e;stroke-width:1.8}.amcol-map-lifeboat-canopy{fill:#ff9e4a;stroke:#df7131;stroke-width:1.2}.amcol-map-lifeboat-window{fill:#366a7c;stroke:#f9ce8f;stroke-width:1}.amcol-map-lifeboat-hatch{fill:#ec8136;stroke:#ffe4b6;stroke-width:1.5}
+.amcol-campus-map .amcol-map-lifeboat-title{fill:#875032;font-size:12px;font-weight:800;letter-spacing:.7px}.amcol-campus-map .amcol-map-lifeboat-subtitle{fill:#8c673e;font-size:9px;font-weight:700;letter-spacing:.25px}
+.amcol-map-lifeboat:hover .amcol-map-lifeboat-pad,.amcol-map-lifeboat:focus-visible .amcol-map-lifeboat-pad{fill:#f5e3bf;stroke:#aa6a34;stroke-width:3}
+.amcol-map-safety-card{cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}.amcol-map-safety-card>rect{fill:#fbe9cc;stroke:#d9b37e;stroke-width:1.5}.amcol-map-safety-card>path{fill:#eb8137;stroke:#a85b2f;stroke-width:1.4}.amcol-map-safety-card:hover>rect,.amcol-map-safety-card:focus-visible>rect{fill:#ffe0ad;stroke:#9c562d;stroke-width:3}
+.amcol-campus-map .amcol-map-safety-title{fill:#824b2e;font-size:11px;font-weight:800;letter-spacing:.8px}.amcol-campus-map .amcol-map-safety-copy{fill:#855f40;font-size:11px}.amcol-campus-map .amcol-map-safety-action{fill:#974f2a;font-size:11px;font-weight:800;letter-spacing:.7px}
+
+.amcol-map-loma-lounge .amcol-map-label{font-size:11px;letter-spacing:0}.amcol-map-loma-lounge .amcol-map-label tspan:last-child{font-size:8px;letter-spacing:.1px}
+.amcol-map-loma-door,.amcol-map-loma-card{cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}.amcol-map-loma-door>circle{fill:#fffdf0;stroke:#51736b;stroke-width:2}.amcol-map-loma-door>text{fill:#315c58;font-size:11px;font-weight:800}.amcol-map-loma-door:hover>circle,.amcol-map-loma-door:focus-visible>circle{stroke:#a76d2b;stroke-width:3;fill:#ffe7ba}
+.amcol-map-loma-card>rect{fill:#edf2e6;stroke:#bbcbb2;stroke-width:1.5}.amcol-map-loma-card:hover>rect,.amcol-map-loma-card:focus-visible>rect{fill:#fff0d4;stroke:#a76d2b;stroke-width:3}.amcol-campus-map .amcol-map-loma-side{fill:#4f765e;font-size:18px;font-weight:800}.amcol-campus-map .amcol-map-loma-name{fill:#264f4b;font-size:13px;font-weight:800}.amcol-campus-map .amcol-map-loma-subtitle{fill:#617967;font-size:11px}
+.amcol-map-gear-badge{fill:#365c75}.amcol-map-gear-card .amcol-map-gear-suit{fill:#365c75;stroke:#365c75}
+
+.amcol-map-pacific-entry{cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}.amcol-map-pacific-entry>circle{fill:#347590;stroke:#fffdf0;stroke-width:2}.amcol-map-pacific-entry>path{fill:none;stroke:#fffdf0;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.amcol-campus-map .amcol-map-pacific-entry>text{fill:#305f71;font-size:8px;font-weight:800;letter-spacing:.1px}.amcol-map-pacific-entry:hover>circle,.amcol-map-pacific-entry:focus-visible>circle{fill:#225a72;stroke:#d2a458;stroke-width:4}
+.amcol-map-scroll .amcol-atlantic-map,.amcol-atlantic-map{aspect-ratio:900 / 1020}.amcol-atlantic-ground{fill:#d4ded6;stroke:#a6b9ac;stroke-width:1.6}.amcol-atlantic-hall{fill:#f4eedc;stroke:none}.amcol-atlantic-hall-route{fill:none;stroke:#b8b89a;stroke-width:2;stroke-dasharray:5 7}.amcol-atlantic-open-door{fill:none;stroke:#f4eedc;stroke-width:8;stroke-linecap:butt}.amcol-atlantic-door-route{fill:none;stroke:#859e8c;stroke-width:2;stroke-dasharray:4 3}
+.amcol-atlantic-room .amcol-map-building-face{stroke-width:2}.amcol-campus-map .amcol-atlantic-room-title{fill:#294f54;font-size:15px;font-weight:800;letter-spacing:.3px}.amcol-campus-map .amcol-atlantic-room-subtitle{fill:#5d776e;font-size:10px;font-weight:700;letter-spacing:.5px}.amcol-campus-map .amcol-atlantic-hall-label{fill:#888665;font-size:11px;font-weight:700;letter-spacing:2px}.amcol-atlantic-desk{fill:#d0b38d;stroke:#9b815e;stroke-width:1.5}.amcol-campus-map .amcol-atlantic-equipment-label{fill:#695539;font-size:8px;font-weight:800;letter-spacing:.2px}.amcol-atlantic-engine{fill:#699785;stroke:#477360;stroke-width:2}.amcol-atlantic-cylinder{fill:#c1cfad;stroke:#567966;stroke-width:1.6}.amcol-atlantic-console{fill:#91abad;stroke:#57767a;stroke-width:1.5}.amcol-atlantic-monitor{fill:#2e6173;stroke:#d3e8dc;stroke-width:1.5}
+.amcol-atlantic-lobby .amcol-map-building-face{fill:#e0e8d7;stroke:#9aac90}.amcol-atlantic-exit .amcol-map-building-face{fill:#547c6b;stroke:#345c4d}.amcol-campus-map .amcol-atlantic-lobby-label{fill:#385a4d;font-size:11px;font-weight:800;letter-spacing:.5px}.amcol-campus-map .amcol-atlantic-exit .amcol-atlantic-lobby-label{fill:#fff9df}

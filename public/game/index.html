@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173d43">
+  <meta name="description" content="THE AMCOL WAY: create a cadet, explore AMCOL and the dormitory, and complete eight semesters of Maritime English 3.17 Plus mini-games.">
+  <title>THE AMCOL WAY</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23173d43'/%3E%3Cpath d='M32 13v34m-16-14c0 20 32 20 32 0M21 25h22M26 13a6 6 0 1 0 12 0a6 6 0 1 0-12 0' fill='none' stroke='%23bdec9b' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="campus-map.css">
+  <link rel="stylesheet" href="academy.css">
+  <link rel="stylesheet" href="atlantic-ui.css">
+  <link rel="stylesheet" href="fitness-games.css">
+  <link rel="stylesheet" href="npc-ui.css">
+  <link rel="stylesheet" href="mobile-controls.css">
+  <link rel="stylesheet" href="orientation-ui.css">
+  <link rel="stylesheet" href="character-dashboard.css">
+  <link rel="stylesheet" href="lifeboat.css">
+  <link rel="stylesheet" href="loma.css">
+  <link rel="stylesheet" href="camera-controls.css">
+  <link rel="stylesheet" href="rpg-campus.css">
+</head>
+<body data-mode="creator">
+  <header class="topbar">
+    <a href="#" class="brand" id="brand" aria-label="THE AMCOL WAY home">
+      <span class="brand-mark" data-icon="anchor"></span>
+      <span class="brand-wordmark"><span class="brand-name"><span class="brand-the">THE</span> AMCOL WAY</span><small>A SEAFARER’S JOURNEY</small></span>
+    </a>
+    <div class="chapter-tag"><span class="live-dot"></span><span id="chapter-label">PHASE 01 <i>/</i> AMCOL CAMPUS</span></div>
+    <nav class="top-actions" aria-label="Game menu">
+      <button class="nav-button" id="staff-btn" aria-label="Meet AMCOL staff" title="Meet AMCOL staff"><span data-icon="user"></span><span>Staff</span></button>
+      <button class="nav-button" id="journey-btn" aria-label="Your journey" title="Your journey"><span data-icon="route"></span><span>Your journey</span></button>
+      <button class="icon-button" id="help-btn" aria-label="How to play" title="How to play"><span data-icon="help"></span></button>
+      <button class="icon-button" id="settings-btn" aria-label="Settings" title="Settings"><span data-icon="settings"></span></button>
+    </nav>
+  </header>
+
+  <main id="game-main">
+    <div id="scene"><canvas id="game-canvas" tabindex="0" aria-label="3D cadet and academy. In the academy, use WASD or arrow keys to move, E to interact, and Q or R to rotate the camera."></canvas></div>
+    <div id="loading" role="status"><span class="loader-ring"></span><strong>Getting your sea legs…</strong><span>Preparing your academy</span></div>
+    <div id="engine-fallback" hidden><span data-icon="compass"></span><h2>The 3D view is unavailable</h2><p>You can still customize your cadet and play every learning activity using the Campus menu. For the 3D adventure, try a browser with WebGL enabled.</p><button id="dismiss-fallback" class="button primary">Continue in learning mode</button></div>
+
+    <section id="creator" aria-label="Create your cadet">
+      <div class="creator-intro">
+        <div class="eyebrow"><span></span> A WORLD OF POSSIBILITY</div>
+        <h1>Big dreams.<br>Small<br><em>beginnings.</em></h1>
+        <p>Every seafarer has a first day.<br>Let’s make this one yours.</p>
+        <div class="intro-features">
+          <div><span class="feature-icon" data-icon="user"></span><span>A cadet, made by you<small>Your look. Your story.</small></span></div>
+          <div><span class="feature-icon" data-icon="compass"></span><span>Explore AMCOL<small>Your college. Your next chapter.</small></span></div>
+          <div><span class="feature-icon" data-icon="flag"></span><span>A future at sea<small>Four years. Eight semesters. Your book journey.</small></span></div>
+        </div>
+        <div class="intro-note"><span class="tiny-star">✦</span> THE FIRST CHAPTER OF YOUR SEA STORY</div>
+      </div>
+
+      <div class="avatar-caption" aria-live="polite"><span class="avatar-role">FUTURE CAPTAIN</span><h2 id="preview-name">Alex</h2><span class="avatar-meta">Year 1 · Deck cadet</span></div>
+      <div class="avatar-controls">
+        <button class="circle-button" id="rotate-left" aria-label="Rotate character left"><span data-icon="rotate-left"></span></button>
+        <span>Make it a full 360°</span>
+        <button class="circle-button" id="rotate-right" aria-label="Rotate character right"><span data-icon="rotate-right"></span></button>
+      </div>
+
+      <aside class="creator-panel">
+        <div class="panel-top"><div><span class="eyebrow">YOUR CADET</span><h2>Make yourself at home.</h2></div><button class="icon-button" id="randomize" title="Randomize appearance" aria-label="Randomize appearance"><span data-icon="shuffle"></span></button></div>
+        <div class="creator-tabs" role="tablist" aria-label="Character options">
+          <button class="active" data-tab="identity" role="tab" aria-selected="true" aria-controls="tab-identity"><span>01</span> Identity</button>
+          <button data-tab="appearance" role="tab" aria-selected="false" aria-controls="tab-appearance"><span>02</span> Look</button>
+          <button data-tab="uniform" role="tab" aria-selected="false" aria-controls="tab-uniform"><span>03</span> Outfit</button>
+        </div>
+        <div class="panel-fields">
+          <div class="tab-content active" id="tab-identity" role="tabpanel">
+            <label class="field-label" for="cadet-name">What should we call you?</label>
+            <input id="cadet-name" maxlength="28" autocomplete="off" value="Alex" placeholder="Your cadet’s name">
+            <span class="field-hint">A first name or nickname is perfect.</span>
+            <label class="field-label" id="gender-label">Character gender</label><div class="segmented" id="gender-options" role="group" aria-labelledby="gender-label"></div>
+            <label class="field-label" id="major-label">Your major</label><div class="segmented" id="major-options" role="group" aria-labelledby="major-label"></div>
+            <p class="field-hint" id="major-note">DECK: navigation and bridge work. ENGINE: machinery and engineering.</p>
+            <label class="field-label" for="cadet-origin">Home port</label>
+            <select id="cadet-origin"><option>Thailand</option><option>Philippines</option><option>Indonesia</option><option>Vietnam</option><option>Malaysia</option><option>India</option><option>Sri Lanka</option><option>China</option><option>Japan</option><option>South Korea</option><option>Greece</option><option>Norway</option><option>United Kingdom</option><option>Nigeria</option><option>South Africa</option><option>Brazil</option><option>United States</option><option>Somewhere else</option></select>
+            <label class="field-label">What’s your cadet energy?</label>
+            <div class="trait-options" id="trait-options"></div>
+            <div class="path-callout"><span data-icon="anchor"></span><div><strong id="creator-path-title">Deck officer pathway</strong><p id="creator-path-copy">Your long-term destination: captain.</p></div><span data-icon="arrow-up-right"></span></div>
+          </div>
+          <div class="tab-content" id="tab-appearance" role="tabpanel" hidden>
+            <label class="field-label">Skin tone</label><div class="swatches" id="skin-options"></div>
+            <label class="field-label">Hair style</label><div class="choice-grid four" id="hair-options"></div>
+            <label class="field-label">Hair color</label><div class="swatches" id="hair-color-options"></div>
+            <label class="field-label">Build</label><div class="segmented" id="body-options"></div>
+            <p class="field-hint appearance-note">All cadets have the same learning opportunities. Choose the look that feels like you.</p>
+          </div>
+          <div class="tab-content" id="tab-uniform" role="tabpanel" hidden>
+            <label class="field-label">First-day outfit</label><div class="outfit-options" id="outfit-options"></div>
+            <label class="field-label" id="uniform-bottom-label">Uniform bottoms</label><div class="segmented" id="uniform-bottom-options" role="group" aria-labelledby="uniform-bottom-label"></div>
+            <p class="field-hint" id="uniform-bottom-note">White long sleeves with black pants.</p>
+            <label class="field-label">Your signature color</label><div class="swatches" id="accent-options"></div>
+            <label class="field-label">The finishing touch</label><div class="segmented" id="accessory-options"></div>
+            <div class="outfit-note"><span data-icon="sparkles"></span>Workshop: one-piece suit. Lifeboat: immersion suit. Dorm: automatic white shirt and navy shorts.</div>
+          </div>
+        </div>
+        <div class="creator-footer"><button id="start-journey" class="button primary large"><span>Begin my journey</span><span data-icon="arrow-right"></span></button><p><span class="live-dot"></span> <span id="save-note">Your book journey saves to your signed-in academy account.</span></p></div>
+      </aside>
+      <div class="creator-bottom"><span>CREATE. EXPLORE. BECOME.</span><span>01 — AMCOL MAIN CAMPUS</span></div>
+    </section>
+
+    <section id="world-ui" aria-label="Academy interface" hidden>
+      <div class="cadet-hud glass">
+        <button id="edit-cadet" class="cadet-avatar" aria-label="Open your character dashboard" title="Character dashboard · C">A</button>
+        <div class="cadet-info"><div><strong id="hud-name">Alex</strong><span id="hud-level">LV 1</span></div><p id="hud-year">Year 1 · New cadet</p><div class="xp-track"><span id="xp-fill"></span></div><small id="xp-label">381 book mini-games · 8 semesters</small></div>
+      </div>
+      <div class="day-hud glass"><span class="sun-icon" data-icon="sun"></span><div><strong id="hud-day">Day 01</strong><small id="hud-time">5 day resets per real week</small></div><span class="day-divider"></span><span data-icon="bolt"></span><strong id="hud-energy">100</strong></div>
+      <div class="quest-panel glass"><div class="quest-heading"><span class="eyebrow">YOUR NEXT CHAPTER</span><button id="collapse-quest" class="icon-button small" aria-label="Collapse objectives" aria-expanded="true"><span data-icon="minus"></span></button></div><div id="quest-body"><h2 id="quest-title">Find your sea legs</h2><p id="quest-summary"></p><div id="quest-list"></div><button id="journal-btn" class="text-button">Open academy journal <span data-icon="arrow-right"></span></button></div></div>
+      <div id="location-toast" aria-live="polite" hidden></div>
+      <button id="interaction-prompt" class="interaction-prompt" hidden><kbd>E</kbd><span><small>NEARBY</small><strong id="near-label">Meet your instructor</strong></span><span data-icon="arrow-right"></span></button>
+      <div class="world-controls glass"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span><span><kbd>Shift</kbd> Run</span><span><kbd>E</kbd> Interact</span><span><kbd>Q</kbd><kbd>R</kbd> Camera</span><span class="click-tip">or click the ground to walk</span></div>
+      <div class="camera-desktop glass" role="group" aria-label="Camera rotation controls"><span>ROTATE CAMERA</span><div><button id="camera-left" type="button" aria-label="Rotate camera left; hold to keep turning" title="Rotate left · Q"><span data-icon="rotate-left"></span></button><button id="camera-reset" type="button" aria-label="Reset camera view" title="Reset view"><span data-icon="compass"></span></button><button id="camera-right" type="button" aria-label="Rotate camera right; hold to keep turning" title="Rotate right · R"><span data-icon="rotate-right"></span></button></div><small>Drag with the right mouse button to look around</small></div>
+      <div class="world-bottom-right"><div class="compass-indicator">VIEW<span data-icon="compass"></span></div><button id="campus-btn" class="button cream"><span data-icon="map"></span> Campus <kbd>M</kbd></button></div>
+      <div class="mobile-controls" id="mobile-controls" aria-label="Touch movement controls">
+        <div class="joystick-cluster">
+          <span class="joystick-label" aria-hidden="true">MOVE</span>
+          <button id="movement-joystick" type="button" aria-label="Move your cadet" aria-roledescription="movement joystick" aria-describedby="joystick-instructions">
+            <span class="joystick-ring" aria-hidden="true"></span>
+            <span class="joystick-guide north" aria-hidden="true">▲</span><span class="joystick-guide south" aria-hidden="true">▼</span>
+            <span class="joystick-guide west" aria-hidden="true">◀</span><span class="joystick-guide east" aria-hidden="true">▶</span>
+            <span id="joystick-stick" data-joystick-stick aria-hidden="true"><span data-icon="compass"></span></span>
+          </button>
+          <p id="joystick-instructions" class="sr-only">Drag the stick in the direction you want to move. Drag farther to walk faster. Release to stop. When this control has keyboard focus, hold the arrow keys or W, A, S, and D to move. Use Run to toggle running.</p>
+        </div>
+        <div class="touch-actions">
+          <div class="camera-touch" role="group" aria-label="Camera rotation controls">
+            <button id="mobile-camera-left" type="button" aria-label="Rotate camera left; hold to keep turning"><span data-icon="rotate-left"></span></button>
+            <button id="mobile-camera-reset" type="button" aria-label="Reset camera view"><span data-icon="compass"></span></button>
+            <button id="mobile-camera-right" type="button" aria-label="Rotate camera right; hold to keep turning"><span data-icon="rotate-right"></span></button>
+          </div>
+          <button id="mobile-run" type="button" class="touch-action run-toggle" aria-pressed="false" aria-label="Run, off. Toggle running."><span data-icon="bolt"></span><span data-run-label>Run</span></button>
+          <button id="mobile-interact" type="button" class="touch-action" aria-label="Interact with a nearby person or location"><span data-icon="arrow-up-right"></span><span>Interact</span></button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="game-dialog" aria-labelledby="dialog-title"><div class="dialog-shell"><div class="dialog-top"><div><span id="dialog-eyebrow" class="eyebrow"></span><h2 id="dialog-title"></h2></div><button id="close-dialog" class="icon-button" aria-label="Close"><span data-icon="close"></span></button></div><div id="rpg-reward" role="status" aria-live="polite" aria-atomic="true" hidden></div><div id="dialog-body"></div></div></dialog>
+  <div id="toast-stack" aria-live="polite" aria-atomic="true"></div>
+  <noscript><div class="noscript">THE AMCOL WAY needs JavaScript to run. Please enable it and reload.</div></noscript>
+  <script type="module" src="app.js"></script>
+  <script>window.setTimeout(function(){if(!document.body.dataset.ready){var p=document.getElementById('loading');p.innerHTML='<strong>The game could not finish loading.</strong><span>Please reload this page. If the problem continues, try a current desktop browser.</span><button class="button primary" onclick="location.reload()">Reload game</button>';}},20000);</script>
+</body>
+</html>

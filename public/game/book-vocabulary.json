@@ -1,0 +1,994 @@
+{
+  "1": [
+    {
+      "term": "to report on board",
+      "meaning": "To present yourself formally when you arrive at the ship.",
+      "example": "Report on board to the Chief Officer before 1600.",
+      "sourcePage": 10
+    },
+    {
+      "term": "rank",
+      "meaning": "A person's official position in the ship's organisation.",
+      "example": "My rank is Third Engineer.",
+      "sourcePage": 10
+    },
+    {
+      "term": "certificate of competency",
+      "meaning": "The official document proving you are qualified for a rank.",
+      "example": "My certificate of competency is valid until March 2029.",
+      "sourcePage": 10
+    },
+    {
+      "term": "Master",
+      "meaning": "The officer in command of the whole vessel.",
+      "example": "The Master signed the crew list this morning.",
+      "sourcePage": 10
+    },
+    {
+      "term": "Chief Officer",
+      "meaning": "The head of the deck department and second in command.",
+      "example": "The Chief Officer is responsible for cargo and mooring.",
+      "sourcePage": 10
+    },
+    {
+      "term": "Officer of the Watch",
+      "meaning": "The officer in charge of the bridge during a watch.",
+      "example": "The Officer of the Watch reports directly to the Master.",
+      "sourcePage": 10
+    },
+    {
+      "term": "Chief Engineer",
+      "meaning": "The head of the engine department.",
+      "example": "The Chief Engineer signs the engine logbook daily.",
+      "sourcePage": 10
+    },
+    {
+      "term": "Second Engineer",
+      "meaning": "The engineer who runs the day-to-day work of the engine room.",
+      "example": "The Second Engineer prepared the maintenance plan.",
+      "sourcePage": 10
+    },
+    {
+      "term": "duty engineer",
+      "meaning": "The engineer on call when the engine room is unmanned.",
+      "example": "Call the duty engineer if the alarm sounds.",
+      "sourcePage": 10
+    },
+    {
+      "term": "bosun",
+      "meaning": "The senior rating of the deck department.",
+      "example": "The bosun assigns the deck ratings each morning.",
+      "sourcePage": 10
+    },
+    {
+      "term": "rating",
+      "meaning": "A crew member who is not an officer.",
+      "example": "Two ratings were assigned to the mooring station.",
+      "sourcePage": 10
+    },
+    {
+      "term": "watch",
+      "meaning": "A fixed period of duty, usually four hours.",
+      "example": "I have the 0800 to 1200 watch.",
+      "sourcePage": 10
+    },
+    {
+      "term": "muster station",
+      "meaning": "The place where you assemble in an emergency.",
+      "example": "Question: where is my muster station?",
+      "sourcePage": 10
+    },
+    {
+      "term": "familiarisation",
+      "meaning": "The required introduction to the ship before you start work.",
+      "example": "Required familiarisation comes before assigned duties.",
+      "sourcePage": 10
+    },
+    {
+      "term": "handover",
+      "meaning": "The passing of duties and information to the person relieving you.",
+      "example": "The handover took twenty minutes and was signed by both officers.",
+      "sourcePage": 10
+    },
+    {
+      "term": "crew list",
+      "meaning": "The official document naming everyone on board.",
+      "example": "The agent collected the crew list before departure.",
+      "sourcePage": 10
+    },
+    {
+      "term": "sign on",
+      "meaning": "To join a vessel officially and be entered in her records.",
+      "example": "I signed on in Singapore on 4 March.",
+      "sourcePage": 10
+    },
+    {
+      "term": "relieve",
+      "meaning": "To take over duty from another person.",
+      "example": "I will relieve you at 1200.",
+      "sourcePage": 10
+    }
+  ],
+  "2": [
+    {
+      "term": "forecastle",
+      "meaning": "The forward part of the upper deck, where anchoring gear is worked.",
+      "example": "The anchor party is on the forecastle.",
+      "sourcePage": 30
+    },
+    {
+      "term": "accommodation",
+      "meaning": "The block containing cabins, messrooms and offices.",
+      "example": "The accommodation is aft on this vessel.",
+      "sourcePage": 30
+    },
+    {
+      "term": "bridge",
+      "meaning": "The space from which the vessel is navigated.",
+      "example": "Call the bridge before entering the space.",
+      "sourcePage": 30
+    },
+    {
+      "term": "engine control room",
+      "meaning": "The manned compartment from which machinery is operated and monitored.",
+      "example": "The alarm panel is in the engine control room.",
+      "sourcePage": 30
+    },
+    {
+      "term": "engine room",
+      "meaning": "The compartment containing the main and auxiliary machinery.",
+      "example": "Access to the engine room is by the stairway aft.",
+      "sourcePage": 30
+    },
+    {
+      "term": "cargo hold",
+      "meaning": "An enclosed compartment in which cargo is carried.",
+      "example": "Hold number three is empty and ventilated.",
+      "sourcePage": 30
+    },
+    {
+      "term": "bilge",
+      "meaning": "The lowest internal part of the hull, where water collects.",
+      "example": "Sound the bilges and report the figures.",
+      "sourcePage": 30
+    },
+    {
+      "term": "tank top",
+      "meaning": "The plating forming the floor of a cargo hold above the double bottom.",
+      "example": "Loose rust was removed from the tank top.",
+      "sourcePage": 30
+    },
+    {
+      "term": "alleyway",
+      "meaning": "A passage or corridor inside the accommodation.",
+      "example": "The emergency lighting in the alleyway is not working.",
+      "sourcePage": 30
+    },
+    {
+      "term": "muster station",
+      "meaning": "The place where crew assemble in an emergency.",
+      "example": "Your muster station is on the boat deck, port side.",
+      "sourcePage": 30
+    },
+    {
+      "term": "forward / aft",
+      "meaning": "Toward the bow / toward the stern.",
+      "example": "The workshop is aft of the engine control room.",
+      "sourcePage": 30
+    },
+    {
+      "term": "port / starboard",
+      "meaning": "The left / right side of the vessel, facing forward.",
+      "example": "The pilot ladder is rigged on the port side.",
+      "sourcePage": 30
+    },
+    {
+      "term": "above / below",
+      "meaning": "On a higher / lower deck than the speaker.",
+      "example": "The paint store is one deck below.",
+      "sourcePage": 30
+    },
+    {
+      "term": "watertight door",
+      "meaning": "A door that seals a compartment against the passage of water.",
+      "example": "Close the watertight doors before departure.",
+      "sourcePage": 30
+    },
+    {
+      "term": "fire station",
+      "meaning": "A position where hoses, extinguishers and fire gear are kept.",
+      "example": "There is a fire station at each end of the alleyway.",
+      "sourcePage": 30
+    },
+    {
+      "term": "escape route",
+      "meaning": "The marked way out of a space in an emergency.",
+      "example": "Never obstruct an escape route with stores.",
+      "sourcePage": 30
+    }
+  ],
+  "3": [
+    {
+      "term": "wheel order",
+      "meaning": "A helm command given in a standard form to the helmsman.",
+      "example": "Starboard ten is a standard wheel order.",
+      "sourcePage": 51
+    },
+    {
+      "term": "midships",
+      "meaning": "The order to bring the rudder to the centreline.",
+      "example": "Midships. Wheel is amidships, sir.",
+      "sourcePage": 51
+    },
+    {
+      "term": "steady as she goes",
+      "meaning": "Keep the heading the vessel has at this moment.",
+      "example": "Steady as she goes. Steady on 085 degrees.",
+      "sourcePage": 51
+    },
+    {
+      "term": "engine order",
+      "meaning": "A command for a change of engine speed or direction.",
+      "example": "Half ahead is an engine order.",
+      "sourcePage": 51
+    },
+    {
+      "term": "stand by engine",
+      "meaning": "The order that the engine must be ready for manoeuvring.",
+      "example": "Stand by engine at 0540.",
+      "sourcePage": 51
+    },
+    {
+      "term": "finished with engine",
+      "meaning": "The order releasing the engine room from manoeuvring duty.",
+      "example": "Finished with engine at 0715.",
+      "sourcePage": 51
+    },
+    {
+      "term": "manoeuvring mode",
+      "meaning": "The engine setting used for frequent speed changes in port.",
+      "example": "The engine has been on manoeuvring mode since 0530.",
+      "sourcePage": 51
+    },
+    {
+      "term": "RPM",
+      "meaning": "Revolutions per minute; the turning speed of the engine.",
+      "example": "Main engine now at seventy-two RPM.",
+      "sourcePage": 51
+    },
+    {
+      "term": "to repeat back",
+      "meaning": "To say an order again, word for word, so it can be checked.",
+      "example": "Every wheel order must be repeated back exactly.",
+      "sourcePage": 51
+    },
+    {
+      "term": "heading",
+      "meaning": "The direction the bow is pointing, given in three figures.",
+      "example": "Question: what is your heading?",
+      "sourcePage": 51
+    },
+    {
+      "term": "to take over the watch",
+      "meaning": "To accept responsibility for the watch from another officer.",
+      "example": "I have the watch at 0800.",
+      "sourcePage": 51
+    },
+    {
+      "term": "standing orders",
+      "meaning": "The Master's or Chief Engineer's written instructions, always in force.",
+      "example": "Call the Master if visibility falls below two miles.",
+      "sourcePage": 51
+    },
+    {
+      "term": "sounding",
+      "meaning": "A measured depth of liquid in a tank or bilge.",
+      "example": "The sounding in number three tank is 1.2 metres.",
+      "sourcePage": 51
+    },
+    {
+      "term": "rounds",
+      "meaning": "A scheduled inspection walk through the machinery spaces.",
+      "example": "The duty engineer makes rounds every two hours.",
+      "sourcePage": 51
+    },
+    {
+      "term": "logbook entry",
+      "meaning": "A written record of an event, with its time.",
+      "example": "Make a logbook entry for every change of course.",
+      "sourcePage": 51
+    },
+    {
+      "term": "to monitor",
+      "meaning": "To watch an instrument or situation continuously.",
+      "example": "Monitor the exhaust temperatures during the manoeuvre.",
+      "sourcePage": 51
+    }
+  ],
+  "4": [
+    {
+      "term": "latitude",
+      "meaning": "Distance north or south of the equator, in degrees and minutes.",
+      "example": "Latitude eleven degrees forty minutes north.",
+      "sourcePage": 71
+    },
+    {
+      "term": "longitude",
+      "meaning": "Distance east or west of the prime meridian.",
+      "example": "Longitude one hundred degrees twelve minutes east.",
+      "sourcePage": 71
+    },
+    {
+      "term": "bearing",
+      "meaning": "The direction of one point from another, in three figures.",
+      "example": "The buoy bears 125 degrees from my position.",
+      "sourcePage": 71
+    },
+    {
+      "term": "range",
+      "meaning": "The distance to another vessel or object.",
+      "example": "Range is four miles and decreasing.",
+      "sourcePage": 71
+    },
+    {
+      "term": "fairway buoy",
+      "meaning": "The mark showing the seaward entrance to a channel.",
+      "example": "Report when abeam of the fairway buoy.",
+      "sourcePage": 71
+    },
+    {
+      "term": "ETA",
+      "meaning": "Estimated Time of Arrival.",
+      "example": "My ETA at the pilot station is 0630 hours.",
+      "sourcePage": 71
+    },
+    {
+      "term": "visibility",
+      "meaning": "The greatest distance at which objects can be seen.",
+      "example": "Visibility is two miles in rain and falling.",
+      "sourcePage": 71
+    },
+    {
+      "term": "force",
+      "meaning": "A step on the Beaufort scale describing wind strength, 0 to 12.",
+      "example": "Wind south-west, force seven, increasing.",
+      "sourcePage": 71
+    },
+    {
+      "term": "swell",
+      "meaning": "Long waves travelled from a distant weather system.",
+      "example": "A heavy north-easterly swell is running.",
+      "sourcePage": 71
+    },
+    {
+      "term": "sea state",
+      "meaning": "A description of the height and roughness of the waves.",
+      "example": "Sea state rough, wave height three metres.",
+      "sourcePage": 71
+    },
+    {
+      "term": "forecast",
+      "meaning": "A statement of expected weather for a stated area and period.",
+      "example": "The forecast for the next 24 hours is deteriorating.",
+      "sourcePage": 71
+    },
+    {
+      "term": "to deteriorate",
+      "meaning": "To become worse.",
+      "example": "Visibility is expected to deteriorate after midnight.",
+      "sourcePage": 71
+    },
+    {
+      "term": "to alter course",
+      "meaning": "To change the vessel's heading.",
+      "example": "I will alter course to starboard at 0400.",
+      "sourcePage": 71
+    },
+    {
+      "term": "draft",
+      "meaning": "The vertical distance from the waterline to the lowest point of the keel.",
+      "example": "My draft is nine point six metres.",
+      "sourcePage": 71
+    },
+    {
+      "term": "under keel clearance",
+      "meaning": "The water remaining between the keel and the seabed.",
+      "example": "Under keel clearance will be 1.8 metres at low water.",
+      "sourcePage": 71
+    },
+    {
+      "term": "passage plan",
+      "meaning": "The approved plan for the voyage, berth to berth.",
+      "example": "The passage plan is on the chart table.",
+      "sourcePage": 71
+    }
+  ],
+  "5": [
+    {
+      "term": "call sign",
+      "meaning": "The unique letter-and-figure identifier of a vessel.",
+      "example": "This is motor vessel ANDAMAN TRADER, call sign HSAX4.",
+      "sourcePage": 91
+    },
+    {
+      "term": "working channel",
+      "meaning": "A VHF channel used for conversation after the initial call.",
+      "example": "Switch to VHF Channel one two.",
+      "sourcePage": 91
+    },
+    {
+      "term": "readability",
+      "meaning": "How clearly a transmission is understood, reported one to five.",
+      "example": "I read you readability three.",
+      "sourcePage": 91
+    },
+    {
+      "term": "OVER",
+      "meaning": "My message is finished; I expect a reply.",
+      "example": "My ETA is 0630 hours. Over.",
+      "sourcePage": 91
+    },
+    {
+      "term": "OUT",
+      "meaning": "The exchange is finished; no reply is expected.",
+      "example": "Nothing more. Port Control out.",
+      "sourcePage": 91
+    },
+    {
+      "term": "SAY AGAIN",
+      "meaning": "Repeat your message, or the part named.",
+      "example": "Say again your position. Over.",
+      "sourcePage": 91
+    },
+    {
+      "term": "READ BACK",
+      "meaning": "Repeat my message to me exactly as received.",
+      "example": "Read back the anchorage position.",
+      "sourcePage": 91
+    },
+    {
+      "term": "STAND BY",
+      "meaning": "Wait; I will call you again shortly.",
+      "example": "Stand by on Channel one two.",
+      "sourcePage": 91
+    },
+    {
+      "term": "CORRECTION",
+      "meaning": "An error was made; the correct version follows.",
+      "example": "My draft is nine point four. Correction, nine point six metres.",
+      "sourcePage": 91
+    },
+    {
+      "term": "I SPELL",
+      "meaning": "The next word will be spelled letter by letter.",
+      "example": "My name is TRADER. I spell: Tango Romeo Alfa Delta Echo Romeo.",
+      "sourcePage": 91
+    },
+    {
+      "term": "message marker",
+      "meaning": "A word said before a message to show its function.",
+      "example": "INSTRUCTION. Reduce speed to six knots.",
+      "sourcePage": 91
+    },
+    {
+      "term": "phonetic alphabet",
+      "meaning": "The standard letter names used to spell over radio.",
+      "example": "Alfa, Bravo, Charlie, Delta.",
+      "sourcePage": 91
+    },
+    {
+      "term": "VTS",
+      "meaning": "Vessel Traffic Service; a shore station managing traffic in an area.",
+      "example": "Call VTS one hour before entering the area.",
+      "sourcePage": 91
+    },
+    {
+      "term": "to acknowledge",
+      "meaning": "To confirm that a message has been received.",
+      "example": "Acknowledge receipt of the navigational warning.",
+      "sourcePage": 91
+    },
+    {
+      "term": "loud and clear",
+      "meaning": "Received at good strength and fully understandable.",
+      "example": "I read you loud and clear.",
+      "sourcePage": 91
+    },
+    {
+      "term": "traffic",
+      "meaning": "The messages passing on a radio channel.",
+      "example": "Keep Channel one six clear for distress traffic.",
+      "sourcePage": 91
+    }
+  ],
+  "6": [
+    {
+      "term": "MAYDAY",
+      "meaning": "The distress signal, said three times, for grave and imminent danger.",
+      "example": "MAYDAY, MAYDAY, MAYDAY. This is motor vessel ANDAMAN TRADER.",
+      "sourcePage": 111
+    },
+    {
+      "term": "PAN-PAN",
+      "meaning": "The urgency signal, said three times, below distress level.",
+      "example": "PAN-PAN, PAN-PAN, PAN-PAN. All stations.",
+      "sourcePage": 111
+    },
+    {
+      "term": "SÉCURITÉ",
+      "meaning": "The safety signal, said three times, for navigational warnings.",
+      "example": "SÉCURITÉ. A drifting container is reported in position ...",
+      "sourcePage": 111
+    },
+    {
+      "term": "persons on board",
+      "meaning": "The total number of people aboard, always stated in distress.",
+      "example": "I have twenty-one persons on board.",
+      "sourcePage": 111
+    },
+    {
+      "term": "to abandon ship",
+      "meaning": "To leave the vessel because she is no longer safe.",
+      "example": "Prepare to abandon ship.",
+      "sourcePage": 111
+    },
+    {
+      "term": "general alarm",
+      "meaning": "The alarm calling the whole crew to emergency stations.",
+      "example": "Sound the general alarm and muster all crew.",
+      "sourcePage": 111
+    },
+    {
+      "term": "muster list",
+      "meaning": "The document showing each person's emergency duty and station.",
+      "example": "Read the muster list on your cabin door.",
+      "sourcePage": 111
+    },
+    {
+      "term": "fire party",
+      "meaning": "The team trained and equipped to fight fire on board.",
+      "example": "Fire party, report to the designated control point.",
+      "sourcePage": 111
+    },
+    {
+      "term": "flooding",
+      "meaning": "The uncontrolled entry of water into a compartment.",
+      "example": "Flooding in the engine room, below the floor plates.",
+      "sourcePage": 111
+    },
+    {
+      "term": "to muster",
+      "meaning": "To assemble at an appointed station.",
+      "example": "All crew mustered within three minutes.",
+      "sourcePage": 111
+    },
+    {
+      "term": "casualty",
+      "meaning": "An injured or sick person.",
+      "example": "I have one casualty with a suspected fracture.",
+      "sourcePage": 111
+    },
+    {
+      "term": "to require assistance",
+      "meaning": "To ask formally for help.",
+      "example": "I am on fire and I require immediate assistance.",
+      "sourcePage": 111
+    },
+    {
+      "term": "EPIRB",
+      "meaning": "An emergency beacon that sends a distress alert; position depends on the system.",
+      "example": "The EPIRB has been activated.",
+      "sourcePage": 111
+    },
+    {
+      "term": "survival craft",
+      "meaning": "A lifeboat or liferaft used to abandon ship.",
+      "example": "Prepare survival craft for launching.",
+      "sourcePage": 111
+    },
+    {
+      "term": "under control",
+      "meaning": "Contained, and no longer spreading.",
+      "example": "The fire is not under control.",
+      "sourcePage": 111
+    },
+    {
+      "term": "to relay",
+      "meaning": "To pass a distress message on for a vessel that cannot transmit.",
+      "example": "MAYDAY RELAY. All ships in the area of ...",
+      "sourcePage": 111
+    }
+  ],
+  "7": [
+    {
+      "term": "head line",
+      "meaning": "A mooring line running forward from the bow to the quay.",
+      "example": "Send the head line ashore first.",
+      "sourcePage": 131
+    },
+    {
+      "term": "stern line",
+      "meaning": "A mooring line running aft from the stern.",
+      "example": "Two stern lines and two springs are fast.",
+      "sourcePage": 131
+    },
+    {
+      "term": "spring",
+      "meaning": "A line led at an angle to stop the ship moving fore and aft.",
+      "example": "Slack away the spring and hold the head line.",
+      "sourcePage": 131
+    },
+    {
+      "term": "heaving line",
+      "meaning": "A light line thrown ashore first to pull the mooring rope across.",
+      "example": "Have the heaving lines ready fore and aft.",
+      "sourcePage": 131
+    },
+    {
+      "term": "to heave",
+      "meaning": "To pull in a rope or cable under power.",
+      "example": "Heave in the spring.",
+      "sourcePage": 131
+    },
+    {
+      "term": "to slack away",
+      "meaning": "To let out a rope so that tension is reduced.",
+      "example": "Slack away the head line.",
+      "sourcePage": 131
+    },
+    {
+      "term": "to hold on",
+      "meaning": "To stop paying out and keep the tension.",
+      "example": "Hold on the stern line.",
+      "sourcePage": 131
+    },
+    {
+      "term": "all fast",
+      "meaning": "The report that every mooring line is secured ashore.",
+      "example": "Forward station is all fast.",
+      "sourcePage": 131
+    },
+    {
+      "term": "to single up",
+      "meaning": "To reduce the moorings to the minimum before letting go.",
+      "example": "Single up to one head line and one spring.",
+      "sourcePage": 131
+    },
+    {
+      "term": "windlass",
+      "meaning": "The machine used to raise and lower the anchor.",
+      "example": "Stand by the windlass on the forecastle.",
+      "sourcePage": 131
+    },
+    {
+      "term": "shackle",
+      "meaning": "A length of anchor cable, 27.5 metres.",
+      "example": "Pay out to five shackles in the water.",
+      "sourcePage": 131
+    },
+    {
+      "term": "to lead",
+      "meaning": "Of a cable, to run in a stated direction from the hawse pipe.",
+      "example": "The cable is leading ahead and is slack.",
+      "sourcePage": 131
+    },
+    {
+      "term": "bollard",
+      "meaning": "A shore or deck fitting to which a mooring line is secured.",
+      "example": "Put the eye over the bollard and report.",
+      "sourcePage": 131
+    },
+    {
+      "term": "bight",
+      "meaning": "A loop of rope; do not stand in it during line handling.",
+      "example": "Do not stand in the bight of the rope.",
+      "sourcePage": 131
+    },
+    {
+      "term": "under strain",
+      "meaning": "Carrying a high load.",
+      "example": "Warning: the spring is under heavy strain.",
+      "sourcePage": 131
+    },
+    {
+      "term": "bow thruster",
+      "meaning": "A propeller in the bow used to move the ship sideways.",
+      "example": "The bow thruster is available and tested.",
+      "sourcePage": 131
+    }
+  ],
+  "8": [
+    {
+      "term": "loading rate",
+      "meaning": "How fast cargo is loaded, in tonnes or cubic metres per hour.",
+      "example": "The loading rate is eight hundred tonnes per hour.",
+      "sourcePage": 151
+    },
+    {
+      "term": "loading sequence",
+      "meaning": "The order in which holds or tanks are filled.",
+      "example": "Question: what is the loading sequence?",
+      "sourcePage": 151
+    },
+    {
+      "term": "to top off",
+      "meaning": "To fill a tank slowly to its final level.",
+      "example": "Reduce the rate for topping off.",
+      "sourcePage": 151
+    },
+    {
+      "term": "ullage",
+      "meaning": "Distance from the specified tank reference point down to the liquid surface.",
+      "example": "The ullage in tank four is one point two metres.",
+      "sourcePage": 151
+    },
+    {
+      "term": "draft survey",
+      "meaning": "Weighing cargo by measuring the vessel's displacement.",
+      "example": "The initial draft survey was carried out at 0900.",
+      "sourcePage": 151
+    },
+    {
+      "term": "stowage",
+      "meaning": "The way cargo is placed and secured on board.",
+      "example": "Check the stowage before the hatches are closed.",
+      "sourcePage": 151
+    },
+    {
+      "term": "lashing",
+      "meaning": "A rope, wire or chain securing cargo in place.",
+      "example": "Two containers in bay twelve have loose lashings.",
+      "sourcePage": 151
+    },
+    {
+      "term": "dunnage",
+      "meaning": "Material laid under or between cargo to protect it.",
+      "example": "The bags were stowed on double dunnage.",
+      "sourcePage": 151
+    },
+    {
+      "term": "segregation",
+      "meaning": "Separating incompatible goods as required by the applicable cargo-specific provisions.",
+      "example": "Check the segregation table before stowage.",
+      "sourcePage": 151
+    },
+    {
+      "term": "IMDG Code",
+      "meaning": "The international code governing dangerous goods by sea.",
+      "example": "The IMDG Code sets the class and the segregation.",
+      "sourcePage": 151
+    },
+    {
+      "term": "hazard class",
+      "meaning": "The numbered category of a dangerous cargo.",
+      "example": "Class three is flammable liquids.",
+      "sourcePage": 151
+    },
+    {
+      "term": "placard",
+      "meaning": "A hazard sign displayed on a cargo transport unit; packages use labels.",
+      "example": "Two containers have damaged placards.",
+      "sourcePage": 151
+    },
+    {
+      "term": "to reject",
+      "meaning": "To refuse to load a unit that does not meet requirements.",
+      "example": "Do not load the damaged containers; reject them.",
+      "sourcePage": 151
+    },
+    {
+      "term": "cargo pump",
+      "meaning": "The pump moving liquid cargo to or from the tanks.",
+      "example": "Stop the cargo pump immediately.",
+      "sourcePage": 151
+    },
+    {
+      "term": "manifold",
+      "meaning": "The fixed pipe connection where cargo hoses are attached.",
+      "example": "Samples are drawn at the ship's manifold.",
+      "sourcePage": 151
+    },
+    {
+      "term": "emergency stop",
+      "meaning": "The control that halts transfer at once.",
+      "example": "Stand by the emergency stop during topping off.",
+      "sourcePage": 151
+    }
+  ],
+  "9": [
+    {
+      "term": "main engine",
+      "meaning": "The engine that propels the vessel.",
+      "example": "The main engine is running at seventy-two RPM.",
+      "sourcePage": 172
+    },
+    {
+      "term": "auxiliary",
+      "meaning": "Machinery supporting the main plant, such as a generator.",
+      "example": "Number two auxiliary is on load.",
+      "sourcePage": 172
+    },
+    {
+      "term": "purifier",
+      "meaning": "A machine that cleans fuel or lubricating oil by separation.",
+      "example": "The fuel oil purifier tripped at 0620.",
+      "sourcePage": 172
+    },
+    {
+      "term": "to trip",
+      "meaning": "Of machinery, to shut down automatically on a fault.",
+      "example": "The pump tripped on high temperature.",
+      "sourcePage": 172
+    },
+    {
+      "term": "to reset",
+      "meaning": "To return a tripped device to the ready condition.",
+      "example": "I reset the purifier and it ran normally.",
+      "sourcePage": 172
+    },
+    {
+      "term": "bearing",
+      "meaning": "The component supporting a rotating shaft.",
+      "example": "The bearing temperature is rising slowly.",
+      "sourcePage": 172
+    },
+    {
+      "term": "suction / discharge",
+      "meaning": "The inlet side / outlet side of a pump.",
+      "example": "Suction pressure is low; discharge is normal.",
+      "sourcePage": 172
+    },
+    {
+      "term": "leak",
+      "meaning": "An unwanted escape of liquid or gas.",
+      "example": "There is a small oil leak at the flange.",
+      "sourcePage": 172
+    },
+    {
+      "term": "vibration",
+      "meaning": "Unwanted shaking of a machine.",
+      "example": "Excessive vibration was noticed at full load.",
+      "sourcePage": 172
+    },
+    {
+      "term": "spare part",
+      "meaning": "A replacement component held on board.",
+      "example": "The spare part was ordered under requisition R-2026-041.",
+      "sourcePage": 172
+    },
+    {
+      "term": "planned maintenance",
+      "meaning": "Scheduled work carried out before failure occurs.",
+      "example": "The overhaul is due under the planned maintenance system.",
+      "sourcePage": 172
+    },
+    {
+      "term": "overhaul",
+      "meaning": "A complete strip-down, inspection and reassembly.",
+      "example": "Number three unit is due for overhaul at 12,000 hours.",
+      "sourcePage": 172
+    },
+    {
+      "term": "to isolate",
+      "meaning": "To separate equipment from relevant energy sources under verified controls.",
+      "example": "Isolate the pump before opening the casing.",
+      "sourcePage": 172
+    },
+    {
+      "term": "permit to work",
+      "meaning": "Written authorisation for a hazardous job.",
+      "example": "Do not start hot work before the permit is signed.",
+      "sourcePage": 172
+    },
+    {
+      "term": "symptom",
+      "meaning": "What can be observed when something is wrong.",
+      "example": "The symptom is a falling suction pressure.",
+      "sourcePage": 172
+    },
+    {
+      "term": "cause",
+      "meaning": "The reason the symptom occurs.",
+      "example": "Inspection identified strainer fouling as a possible contributor.",
+      "sourcePage": 172
+    }
+  ],
+  "10": [
+    {
+      "term": "near-miss",
+      "meaning": "An event that could have caused harm but did not.",
+      "example": "A near-miss must be reported even when nothing was damaged.",
+      "sourcePage": 193
+    },
+    {
+      "term": "incident",
+      "meaning": "An unplanned event that caused or could have caused harm.",
+      "example": "The incident occurred at 1437 on the mooring deck.",
+      "sourcePage": 193
+    },
+    {
+      "term": "unsafe act",
+      "meaning": "Something a person does that creates risk.",
+      "example": "Working aloft without securing tools is an unsafe act.",
+      "sourcePage": 193
+    },
+    {
+      "term": "unsafe condition",
+      "meaning": "A state of equipment or environment that creates risk.",
+      "example": "The unbarriered area was an unsafe condition.",
+      "sourcePage": 193
+    },
+    {
+      "term": "credible worst outcome",
+      "meaning": "The most serious harm that could realistically have resulted.",
+      "example": "The credible worst outcome would have been a fatal head injury.",
+      "sourcePage": 193
+    },
+    {
+      "term": "root cause",
+      "meaning": "An underlying reason established through investigation.",
+      "example": "A final root cause needs investigation; a blank checklist alone is not enough.",
+      "sourcePage": 193
+    },
+    {
+      "term": "corrective action",
+      "meaning": "A step taken to stop the cause recurring.",
+      "example": "Corrective action: add the check to the permit by 15 April.",
+      "sourcePage": 193
+    },
+    {
+      "term": "chronology",
+      "meaning": "The sequence of events, each with its time.",
+      "example": "Set out the chronology before you write the narrative.",
+      "sourcePage": 193
+    },
+    {
+      "term": "observation",
+      "meaning": "Something seen, measured or heard.",
+      "example": "Observation: the guard rail was missing on the port side.",
+      "sourcePage": 193
+    },
+    {
+      "term": "opinion",
+      "meaning": "A judgement about what an observation means.",
+      "example": "Keep opinion separate from observation and label it.",
+      "sourcePage": 193
+    },
+    {
+      "term": "witness",
+      "meaning": "A person who saw the event.",
+      "example": "Two witnesses were on the mooring deck at the time.",
+      "sourcePage": 193
+    },
+    {
+      "term": "to log",
+      "meaning": "To record formally in a logbook.",
+      "example": "Log the time the alarm was silenced.",
+      "sourcePage": 193
+    },
+    {
+      "term": "to strike through",
+      "meaning": "To draw a single line through an error so it stays legible.",
+      "example": "Strike through the wrong figure once and initial it.",
+      "sourcePage": 193
+    },
+    {
+      "term": "handover notes",
+      "meaning": "The written record passed from one officer to the next.",
+      "example": "The handover notes were signed by both officers.",
+      "sourcePage": 193
+    },
+    {
+      "term": "outstanding work",
+      "meaning": "Jobs not yet finished, each with an owner and a deadline.",
+      "example": "Outstanding: strainer inspection, due by 1600.",
+      "sourcePage": 193
+    },
+    {
+      "term": "to escalate",
+      "meaning": "To pass a matter to a higher level for a decision.",
+      "example": "Escalate to the Chief Engineer if the fault repeats.",
+      "sourcePage": 193
+    }
+  ]
+}

@@ -1,0 +1,410 @@
+/* Seafarer's record book: navy and gold, with readable mobile controls. */
+#game-dialog.character-dialog{width:min(820px,calc(100vw - 32px));max-width:820px;background:#102239;color:#edf3f8;border:1px solid #35516b;box-shadow:0 30px 130px #03122080;scrollbar-color:#506a83 #102239;color-scheme:dark}
+.character-dialog .dialog-shell{padding:27px 30px 30px}
+.character-dialog .dialog-top{margin-bottom:0;padding-bottom:18px;border-bottom:1px solid #2c4763}
+.character-dialog #dialog-eyebrow{color:#f1c653;font-size:10px;letter-spacing:2px}
+.character-dialog #dialog-title{color:#f4f7fa;font-size:30px;line-height:1.3;margin-top:8px;letter-spacing:-.7px;overflow-wrap:anywhere}
+.character-dialog .dialog-top .icon-button{width:44px;height:44px;border-radius:11px;background:#162d47;border:1px solid #36516c;color:#edf3f8}
+.character-dialog .dialog-top .icon-button:hover{background:#28425e}
+.character-record,.character-wardrobe{--record-gold:#f1c653;--record-text:#ecf3f8;--record-muted:#a8bdd0;--record-line:#2c4864;--record-panel:#162e47;color:var(--record-text);font-size:14px;line-height:1.6}
+.character-record *,.character-wardrobe *{box-sizing:border-box}
+.character-record button,.character-wardrobe button{font-family:inherit}
+.record-subtitle{color:#a6c2d9;font-size:12px;line-height:1.6;margin:13px 0 23px;overflow-wrap:anywhere}
+.record-identity{display:grid;grid-template-columns:104px minmax(0,1fr);gap:24px;align-items:center}
+.record-portrait{position:relative;display:grid;place-items:center;align-self:start;width:104px;height:114px;border:1px solid #3a617f;border-radius:17px;background:linear-gradient(150deg,#376686,#1d3e5c);overflow:hidden}
+.record-avatar-svg{display:block!important;width:100%!important;height:100%!important;max-width:none;fill:initial!important;stroke:none!important}
+.record-portrait>span{position:absolute;bottom:0;right:0;left:0;display:block;padding:2px 0;background:#0a192bdd;color:#efc85e;font-size:10px;font-weight:800;letter-spacing:1.6px;text-align:center}
+.record-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;row-gap:18px;min-width:0}
+.record-stat-grid>div{min-width:0}
+.record-stat-grid small,.record-life-card small,.record-outfit small,.record-orientation small{display:block;color:var(--record-muted);font-size:9px;letter-spacing:1.35px;line-height:1.5;font-weight:600}
+.record-stat-grid strong{display:block;margin-top:6px;color:#edf3f9;font-size:15px;line-height:1.5;font-weight:700;overflow-wrap:anywhere}
+.record-stat-grid strong span{font-size:12px;color:var(--record-muted);font-weight:400}
+.record-level-line{display:flex;align-items:center;gap:15px;margin-top:22px}
+.record-level-line>.record-track{flex:1}
+.record-level-line>span{font-size:11px;color:#c2d1df;white-space:nowrap}
+.record-track{display:block;height:7px;background:#2e4c6a;border-radius:10px;overflow:hidden;min-width:0}
+.record-track>i{display:block;height:100%;background:#f1c653;border-radius:10px;max-width:100%}
+.record-note{font-size:10px;color:#a5b9cb;line-height:1.8;margin:12px 0 0}
+.record-major{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 20px;margin:22px 0;border:1px solid #3d5c76;border-radius:13px;background:#182f46}
+.record-major>div{min-width:0}
+.record-major small,.record-loma small{display:block;font-size:9px;letter-spacing:1.2px;color:#b6c9d8;font-weight:600}
+.record-major h3{font-size:19px;letter-spacing:1.4px;color:#f1d481;line-height:1.4;margin:6px 0}
+.record-major p{margin:0;color:#d2e0e9;font-size:12px;line-height:1.65}
+.record-major span{display:block;margin-top:7px;color:#9cb6cb;font-size:10px;line-height:1.7}
+.record-major .record-button{flex:0 0 auto}
+.record-loma{padding:21px 22px;border:1px solid #887041;border-radius:14px;background:linear-gradient(130deg,#393829,#1a2d43);margin:26px 0}
+.record-loma-heading{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:17px}
+.record-loma-heading>div{min-width:0}
+.record-loma h3{font-size:17px;line-height:1.5;color:#f4eddb;margin:8px 0 0}
+.record-loma-heading>strong{font-size:27px;color:#f2cd72;white-space:nowrap;line-height:1.4}
+.record-loma-heading>strong>span{font-size:16px;font-weight:500;color:#cdd7d9}
+.record-loma p{font-size:12px;line-height:1.8;color:#c4d3db;margin:15px 0}
+.record-loma.complete{border-color:#4a796d;background:#1b3c3e}
+.record-loma.complete .record-track>i{background:#a4d6bc}
+.record-course-counters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:22px 0;gap:10px}
+.record-course-counters>div{padding:15px 16px;background:#162d46;border:1px solid #2b4762;border-radius:12px;min-width:0}
+.record-course-counters strong{display:block;color:#f6d173;font-size:23px;line-height:1.3;font-weight:700}
+.record-course-counters strong>span{font-size:14px;color:#bacddc;font-weight:500}
+.record-course-counters small{display:block;color:#b4c6d6;font-size:10px;line-height:1.65;margin-top:7px}
+.record-orientation{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:20px;padding:21px 22px;border:1px solid #77613b;border-radius:14px;background:linear-gradient(125deg,#2f332f,#1a2b3c);margin:24px 0 30px}
+.record-orientation small{color:#f2cc72;font-size:9px}
+.record-orientation h3{font-size:17px;font-weight:700;line-height:1.5;margin:7px 0;color:#f3f4ed}
+.record-orientation p{font-size:12px;line-height:1.75;color:#bdcbd3;margin:0;max-width:460px}
+.record-orientation-action{display:grid;gap:10px;justify-items:center}
+.record-orientation-action>strong{font-size:24px;color:#f1ce72;font-weight:600}
+.record-orientation.done{border-color:#365d62;background:#193638}
+.record-orientation.done small,.record-orientation.done .record-orientation-action>strong{color:#abdbc5}
+.record-section-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:28px 0 20px}
+.record-section-title h3{font-size:10px;letter-spacing:1.5px;line-height:1.6;font-weight:600;color:#acc0d2;margin:0}
+.record-section-title>span{font-size:10px;color:#8faac2;text-align:right}
+.record-area-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 25px}
+.record-area{min-width:0}
+.record-area>div:first-child{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.record-area strong{font-size:14px;font-weight:600;color:#e2ecf5}
+.record-area>div>span{font-size:12px;color:#e7edf3;white-space:nowrap;font-variant-numeric:tabular-nums}
+.record-area>small{display:block;font-size:9px;line-height:1.7;color:#a0b4c8;margin-top:7px}
+.record-life-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:29px 0}
+.record-life-card{display:flex;gap:13px;padding:19px 17px;border:1px solid #2d4862;background:#142b43;border-radius:14px;min-width:0}
+.record-life-card>div{min-width:0}
+.record-life-icon{display:grid;place-items:center;flex:0 0 33px;height:35px;width:33px;background:#29455c;border-radius:9px;color:#edca71}
+.record-life-icon svg{width:17px;height:17px}
+.record-life-card strong{display:block;margin:8px 0 0;font-size:14px;color:#edf2f8;line-height:1.55}
+.record-life-card p{font-size:11px;line-height:1.75;color:#acc0d2;margin:8px 0 13px}
+.record-soft-tag{display:inline-block;border-radius:7px;padding:7px 9px;background:#223c53;color:#c3d3df;font-size:9px;line-height:1.5}
+.record-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 15px;border:1px solid #44617b;background:#1b3650;color:#e1ecf5;border-radius:10px;cursor:pointer;font:600 12px/1.6 'DM Sans',Arial,sans-serif;text-align:center;transition:background .15s,border-color .15s;max-width:100%;overflow-wrap:anywhere}
+.record-button:hover{background:#2b4a65;border-color:#7293aa}
+.record-button.primary{background:#f1c653;border-color:#f1c653;color:#172a3e}
+.record-button.primary:hover{background:#f8d982;border-color:#f8d982}
+.record-button:disabled{opacity:.48;cursor:default}
+.record-score-list{border-top:1px solid #2b455e}
+.record-score-row{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid #2b455e;padding:15px 0}
+.record-score-row>div{min-width:0}
+.record-score-row strong{display:block;font-size:13px;color:#e5eef6;font-weight:500}
+.record-score-row small{display:block;font-size:10px;color:#9fb6cb;margin-top:5px;line-height:1.65;overflow-wrap:anywhere}
+.record-score-row>span{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;flex:0 0 auto;color:#f0cc6d}
+.record-score-row>span.unplayed{color:#7a96b1;font-weight:400}
+.record-reviewed{display:grid;gap:7px;padding:17px 19px;background:#162d45;border-left:3px solid #799ab5;border-radius:0 10px 10px 0;margin-top:18px}
+.record-reviewed strong{font-size:12px;color:#dce8f1;font-weight:600}
+.record-reviewed>span{font-size:11px;color:#b3c5d5;line-height:1.7}
+.record-reviewed>small{font-size:9px;color:#95aec3;line-height:1.7}
+.record-outfit{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:15px;align-items:center;margin:28px 0 20px;padding:20px;border:1px solid #3c5268;background:#1a3046;border-radius:14px}
+.record-outfit-icon{display:grid;place-items:center;width:42px;height:48px;background:#294359;border:1px solid #476078;border-radius:12px;color:#eaf0f2}
+.record-outfit-icon.immersion{color:#ffa16b;background:#5c392e;border-color:#985a3c}
+.record-outfit-icon svg{width:23px;height:23px}
+.record-outfit>div:nth-child(2){min-width:0}
+.record-outfit h3{color:#ecf4f9;font-size:16px;margin:4px 0;line-height:1.5;font-weight:600}
+.record-outfit p{font-size:11px;color:#b0c3d3;line-height:1.65;margin:0}
+.record-navigation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:24px;padding-top:23px;border-top:1px solid #2e4861}
+.record-clearance{display:flex;align-items:center;gap:14px;margin:20px 0;padding:17px;border:1px solid #3f6c62;background:#183e3b;border-radius:12px}
+.record-clearance>span{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border-radius:50%;background:#285f50;color:#c3e3c9;font-size:19px}
+.record-clearance strong{font-size:13px;color:#ccebd5}
+.record-clearance p{font-size:11px;color:#b1cbbf;margin:5px 0 0;line-height:1.7}
+.character-wardrobe{padding-top:23px}
+.wardrobe-requirement{padding:17px 20px;background:#3c3128;border:1px solid #8d6840;border-radius:13px;margin-bottom:23px}
+.wardrobe-requirement strong{font-size:15px;color:#f4d08c}
+.wardrobe-requirement p{font-size:12px;color:#e1c6a8;margin:7px 0 0;line-height:1.7}
+.wardrobe-layout{display:grid;grid-template-columns:210px minmax(0,1fr);gap:27px;align-items:start}
+.wardrobe-preview{position:sticky;top:15px;display:flex;flex-direction:column;align-items:center;background:linear-gradient(155deg,#2c5070,#162f48);border:1px solid #3f5e79;border-radius:17px;padding:20px 14px;text-align:center;min-width:0}
+#wardrobe-portrait{width:174px;height:255px;max-width:100%}
+.wardrobe-preview-label{display:block;color:#f4d277;font-size:14px;line-height:1.5;font-weight:700;margin:9px 0 5px}
+.wardrobe-preview>small{font-size:9px;color:#b5c9d8;line-height:1.7}
+.wardrobe-controls{display:grid;gap:23px;min-width:0}
+.wardrobe-controls fieldset{border:0;min-width:0;padding:0;margin:0}
+.wardrobe-controls legend{padding:0;color:#d7e5ee;font-size:12px;font-weight:700;line-height:1.7;margin:0 0 11px}
+.wardrobe-segmented{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;min-width:0}
+.wardrobe-segmented button{display:grid;place-items:center;min-height:46px;border-radius:10px;background:#19324a;border:1px solid #3a5770;color:#cadddf;font:600 13px/1.5 'DM Sans',Arial,sans-serif;padding:11px 9px;cursor:pointer;min-width:0}
+.wardrobe-segmented button[aria-pressed=true]{border-color:#f1c653;background:#f1c653;color:#1e3040}
+.wardrobe-segmented button:disabled{opacity:.32;cursor:default}
+.wardrobe-field-note{font-size:10px;line-height:1.75;color:#a7bdd1;margin:10px 0 0}
+.wardrobe-outfits{display:grid;gap:9px}
+.wardrobe-outfits>button{display:grid;grid-template-columns:38px minmax(0,1fr) 18px;gap:12px;align-items:center;min-height:75px;background:#172f47;border:1px solid #39546c;color:#e2edf5;border-radius:12px;text-align:left;padding:12px;cursor:pointer;min-width:0}
+.wardrobe-outfits>button[aria-pressed=true]{border-color:#d4b457;background:#293c40;box-shadow:inset 0 0 0 1px #d4b457}
+.wardrobe-outfits>button:hover:not(:disabled){border-color:#dfbd63}
+.wardrobe-outfits>button:disabled{opacity:.42;cursor:default}
+.wardrobe-outfits strong{display:block;font-size:12px;font-weight:600;line-height:1.5;color:#eaf1f5}
+.wardrobe-outfits small{display:block;font-size:10px;line-height:1.65;color:#b3c5d5;margin-top:4px}
+.wardrobe-outfit-swatch{display:grid;place-items:center;width:38px;height:44px;border-radius:9px;background:#36526a;color:#e5ecf0}
+.wardrobe-outfit-swatch.immersion{background:#71402c;color:#ffc696}
+.wardrobe-outfit-swatch.maritime{background:#172b42;color:#e2c37a;border:1px solid #64717c}
+.wardrobe-outfit-swatch.maritime-white{background:#f3f6f8;color:#243548;border:1px solid #b8c9d6;box-shadow:inset 0 -4px 0 #b89a4a}
+.wardrobe-outfit-swatch.coverall{background:#32576f;color:#b7d3e3}
+.wardrobe-outfit-swatch svg{width:23px;height:23px}
+.wardrobe-selected-mark{color:#f1cf72;font-size:18px;font-weight:600}
+.wardrobe-dorm-rule{padding:14px 16px;border:1px solid #36546e;border-radius:11px;background:#19334b}
+.wardrobe-dorm-rule strong{color:#e1edf4;font-size:12px;font-weight:600}
+.wardrobe-dorm-rule p{font-size:10px;line-height:1.8;color:#adc3d4;margin:7px 0 0}
+.wardrobe-segmented button[aria-pressed=true]:disabled{opacity:.7}
+.wardrobe-save-message{font-size:11px;line-height:1.8;margin:23px 0 0;padding:14px 16px;background:#182f46;border:1px solid #2e4c65;border-radius:10px;color:#bfcedb;min-height:49px}
+.wardrobe-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:20px}
+.wardrobe-actions>.primary{margin-left:auto}
+.character-dialog button:focus-visible{outline:3px solid #f4cf67;outline-offset:3px}
+@media(max-width:700px){
+  #game-dialog.character-dialog{width:calc(100vw - 16px);max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:17px}
+  .character-dialog .dialog-shell{padding:20px}
+  .character-dialog .dialog-top{padding-bottom:15px;gap:13px}
+  .character-dialog #dialog-title{font-size:26px}
+  .character-dialog #dialog-eyebrow{font-size:9px;letter-spacing:1.7px}
+  .record-identity{grid-template-columns:85px minmax(0,1fr);gap:16px}
+  .record-portrait{width:85px;height:104px;border-radius:13px}
+  .record-stat-grid{column-gap:14px;row-gap:14px}
+  .record-stat-grid small{font-size:8px;letter-spacing:1.1px}
+  .record-stat-grid strong{font-size:12px;line-height:1.55}
+  .record-stat-grid strong span{font-size:10px}
+  .record-level-line{gap:10px;margin-top:20px}
+  .record-level-line>span{font-size:10px}
+  .record-course-counters{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .record-course-counters>div{padding:12px 11px;border-radius:10px}
+  .record-course-counters strong{font-size:20px}
+  .record-course-counters strong>span{font-size:12px}
+  .record-course-counters small{font-size:9px;line-height:1.7}
+  .record-orientation{padding:18px;gap:15px}
+  .record-orientation h3{font-size:16px}
+  .record-orientation p{font-size:11px}
+  .record-orientation .record-button{font-size:11px;padding:11px 13px}
+  .record-area-list{gap:20px}
+  .record-life-grid{grid-template-columns:1fr;gap:12px}
+  .record-life-card{padding:17px;gap:14px}
+  .record-life-card p{max-width:450px}
+  .record-life-card .record-button{min-height:44px}
+  .record-outfit{grid-template-columns:37px minmax(0,1fr);padding:17px;gap:13px}
+  .record-outfit-icon{width:37px;height:44px}
+  .record-outfit>.record-button{grid-column:2;justify-self:start}
+  .record-navigation{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .record-navigation .record-button{font-size:11px;padding:11px 9px}
+  .wardrobe-layout{grid-template-columns:150px minmax(0,1fr);gap:18px}
+  .wardrobe-preview{padding:15px 10px}
+  #wardrobe-portrait{width:126px;height:203px}
+  .wardrobe-preview-label{font-size:12px}
+  .wardrobe-outfits>button{grid-template-columns:31px minmax(0,1fr) 14px;gap:9px;padding:11px 9px}
+  .wardrobe-outfit-swatch{width:31px;height:38px}
+  .wardrobe-outfit-swatch svg{width:20px;height:20px}
+  .wardrobe-outfits strong{font-size:11px}
+  .wardrobe-outfits small{font-size:9px}
+  .wardrobe-segmented button{font-size:12px}
+  .wardrobe-actions .record-button{font-size:11px}
+}
+@media(max-width:480px){
+  .character-dialog .dialog-shell{padding:17px 15px 20px}
+  .character-dialog #dialog-title{font-size:24px}
+  .record-subtitle{font-size:11px;margin:12px 0 20px}
+  .record-identity{grid-template-columns:74px minmax(0,1fr);gap:12px;align-items:start}
+  .record-portrait{width:74px;height:99px}
+  .record-stat-grid{grid-template-columns:1fr 1fr;gap:14px 12px}
+  .record-stat-grid strong{font-size:11px}
+  .record-stat-grid small{font-size:7px;letter-spacing:1px}
+  .record-course-counters>div{padding:12px 9px}
+  .record-course-counters strong{font-size:18px}
+  .record-course-counters strong>span{font-size:11px}
+  .record-course-counters small{font-size:8px}
+  .record-note{font-size:9px}
+  .record-major{display:grid;gap:14px;padding:17px;margin:20px 0}
+  .record-major .record-button{justify-self:start}
+  .record-major p{font-size:11px}
+  .record-loma{padding:17px}
+  .record-loma-heading{gap:13px;align-items:flex-start}
+  .record-loma h3{font-size:15px}
+  .record-loma small{font-size:8px;letter-spacing:.8px}
+  .record-loma-heading>strong{font-size:23px}
+  .record-loma-heading>strong>span{font-size:13px}
+  .record-loma p{font-size:11px}
+  .record-orientation{grid-template-columns:1fr;padding:17px;margin-bottom:25px;gap:13px}
+  .record-orientation-action{display:flex;justify-content:space-between;gap:14px;align-items:center}
+  .record-orientation-action>strong{font-size:21px;white-space:nowrap}
+  .record-orientation .record-button{font-size:11px}
+  .record-area-list{grid-template-columns:1fr;gap:18px}
+  .record-section-title{margin-top:25px;gap:14px}
+  .record-section-title h3{font-size:9px;letter-spacing:1.2px}
+  .record-section-title>span{font-size:9px;max-width:72px}
+  .record-score-row{gap:14px;padding:14px 0}
+  .record-score-row strong{font-size:12px}
+  .record-score-row small{font-size:9px}
+  .record-score-row>span{font-size:16px}
+  .record-navigation{grid-template-columns:1fr 1fr}
+  .record-navigation>.record-button:nth-child(3):last-child{grid-column:1/-1}
+  .wardrobe-layout{grid-template-columns:1fr;gap:22px}
+  .wardrobe-preview{position:static;display:grid;grid-template-columns:108px minmax(0,1fr);grid-template-rows:1fr 1fr;column-gap:13px;text-align:left;padding:12px 18px}
+  #wardrobe-portrait{grid-row:1/3;width:105px;height:152px}
+  .wardrobe-preview-label{align-self:end;margin:0 0 8px;font-size:15px;line-height:1.5}
+  .wardrobe-preview>small{align-self:start;font-size:10px;line-height:1.7}
+  .wardrobe-controls{gap:21px}
+  .wardrobe-outfits>button{grid-template-columns:38px minmax(0,1fr) 18px;gap:12px;padding:12px;min-height:77px}
+  .wardrobe-outfit-swatch{width:38px;height:44px}
+  .wardrobe-outfits strong{font-size:12px}
+  .wardrobe-outfits small{font-size:10px}
+  .wardrobe-requirement{padding:15px 16px}
+  .wardrobe-actions{display:grid;grid-template-columns:1fr;gap:10px}
+  .wardrobe-actions>.record-button{width:100%;font-size:12px}
+  .wardrobe-actions>.primary{grid-row:1;margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){.record-button{transition:none}}
+
+/* RPG skills and avatar wellbeing share the existing character record shell. */
+.record-rpg{margin:25px 0 30px;padding:22px;border:1px solid #41616b;border-radius:18px;background:linear-gradient(150deg,#193b42 0,#142c43 34%,#142a40 100%);min-width:0}
+.record-rpg-heading{display:flex;align-items:center;justify-content:space-between;gap:17px;margin-bottom:22px}
+.record-rpg-heading>div{min-width:0}
+.record-rpg-heading small{font-size:9px;letter-spacing:1.8px;color:#a5d7c5;font-weight:700}
+.record-rpg-heading h3{font-size:23px;letter-spacing:-.4px;line-height:1.35;margin:7px 0;color:#f1f6ed}
+.record-rpg-heading p{font-size:12px;color:#b4cfcd;margin:6px 0 0}
+.record-rpg-emblem{display:grid;place-items:center;flex:0 0 53px;width:53px;height:60px;border:1px solid #5c8077;border-radius:18px;color:#f0cf7b;background:#244b49;font-size:30px;box-shadow:inset 0 0 0 5px #20413f}
+.record-rpg-emblem svg{width:29px;height:29px}
+.record-trait-banner{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid #5a6353;background:#2a3b3c;border-radius:12px;padding:16px}
+.record-trait-banner.choose{border-color:#918052;background:linear-gradient(130deg,#3c402e,#24383b)}
+.record-trait-banner>div{min-width:0}
+.record-trait-banner small{display:block;font-size:9px;letter-spacing:1.15px;color:#d8c68c}
+.record-trait-banner h4{font-size:15px;line-height:1.55;color:#f4e5b8;margin:5px 0}
+.record-trait-banner p{font-size:11px;color:#c5d2cc;line-height:1.7;margin:0}
+.record-trait-banner>.record-button{flex:0 0 auto;font-size:11px}
+.record-skill-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.record-skill{min-width:0;background:#152f45;border:1px solid #335268;border-radius:11px;padding:14px}
+.record-skill>div:first-child{display:flex;justify-content:space-between;align-items:start;gap:9px;margin-bottom:13px}
+.record-skill h4{font-size:13px;font-weight:600;line-height:1.6;color:#e2eff4;margin:0;min-width:0;overflow-wrap:anywhere}
+.record-skill>div>span{font-size:9px;white-space:nowrap;letter-spacing:.7px;color:#f2d185;background:#354742;padding:4px 7px;border:1px solid #616a4d;border-radius:6px;font-weight:700}
+.record-skill .record-track{background:#28495b;height:6px}
+.record-skill .record-track>i{background:#a5d7bf}
+.record-skill>p{display:flex;align-items:baseline;justify-content:space-between;gap:9px;margin:10px 0 0;color:#a9c0ce;font-size:9px;line-height:1.7}
+.record-skill>p>strong{color:#c9e1d9;font-size:10px;white-space:nowrap}
+.record-skill>p>span{text-align:right}
+.record-needs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.record-need{display:flex;flex-direction:column;min-width:0;border:1px solid #385766;background:#193443;border-radius:12px;padding:15px 13px}
+.record-need>div:first-child{margin-bottom:12px}
+.record-need h4{color:#c6dfd6;font-size:12px;font-weight:600;margin:0 0 6px;line-height:1.5}
+.record-need strong{color:#e3f1e8;font-size:24px;font-weight:600;line-height:1.4}
+.record-need strong>small{font-size:10px;font-weight:400;color:#a6c2c5}
+.record-need .record-track{background:#325666;height:6px}
+.record-need .record-track>i{background:#92cbb8}
+.record-need>p{font-size:10px;color:#b1c9cb;line-height:1.7;margin:12px 0 10px;flex:1}
+.record-care-status{font-size:9px;color:#a2c9b9;line-height:1.6;margin:0 0 12px}
+.record-need .record-button{font-size:10px;padding:10px 7px;width:100%;background:#214352;border-color:#42616b}
+.record-body-card{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px;background:#142d43;border:1px solid #426073;border-radius:12px;margin:22px 0 0}
+.record-body-card>div{min-width:0}
+.record-body-card small{display:block;font-size:8px;letter-spacing:1.3px;color:#a8c0d1;font-weight:600}
+.record-body-card h4{font-size:13px;color:#c3d4df;margin:6px 0 0;line-height:1.5;font-weight:500}
+.record-body-card h4>strong{font-size:26px;font-weight:600;color:#e0ebf2;padding-left:8px;font-variant-numeric:tabular-nums}
+.record-body-card p{font-size:11px;color:#a8c2d2;margin:3px 0}
+.record-body-card>div>span{display:block;font-size:9px;line-height:1.7;color:#a5bbc9;margin-top:8px}
+.record-body-card a,.record-bmi-reference a{color:#b8e3d3;text-underline-offset:3px}
+.record-body-card a{display:inline-block;min-height:44px;align-content:center;padding:6px 0}
+.record-body-card>.record-button{font-size:11px;flex:0 0 auto}
+.record-earned-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.record-earned-trait{border:1px solid #3b5265;background:#1a3044;border-radius:11px;padding:14px;min-width:0}
+.record-earned-trait.unlocked{border-color:#708265;background:linear-gradient(130deg,#334638,#203c3e)}
+.record-earned-trait>div:first-child{display:flex;align-items:center;gap:9px}
+.record-trait-medal{font-size:20px;color:#8caaa9;line-height:1.3}
+.record-earned-trait.unlocked .record-trait-medal{color:#f3d487}
+.record-earned-trait h4{font-size:12px;color:#c8d8e1;line-height:1.5;font-weight:600;margin:0;flex:1;min-width:0;overflow-wrap:anywhere}
+.record-earned-trait.unlocked h4{color:#e4eaca}
+.record-earned-trait small{font-size:8px;color:#acc2ca;white-space:nowrap;font-weight:600}
+.record-earned-trait.unlocked small{color:#d8daa9}
+.record-earned-trait p{font-size:10px;color:#a7bdcb;line-height:1.7;margin:10px 0 0}
+.record-earned-trait.unlocked p{color:#bdccbf}
+.record-earned-goal{display:block;font-size:9px;line-height:1.75;color:#c1d3cc;margin-top:7px}
+.record-earned-trait .record-track{height:4px;margin-top:12px;background:#304a5f}
+.record-earned-trait .record-track>i{background:#7ca994}
+.record-rpg-editor{padding-top:22px}
+.record-editor-intro{font-size:13px;line-height:1.85;color:#b7cddd;margin:0 0 23px}
+.record-editor-intro strong{color:#e0eee9;font-weight:600}
+.record-trait-choice-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:15px}
+.record-trait-choice-heading>strong{font-size:14px;color:#f0d287}
+.record-trait-choice-heading>span{font-size:10px;color:#a8bfcd;text-align:right}
+.record-trait-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.record-trait-options>button{display:block;text-align:left;min-width:0;min-height:140px;padding:18px;border:1px solid #42617b;border-radius:13px;background:#18354b;color:#edf3f8;cursor:pointer;font:inherit}
+.record-trait-options>button>span{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.record-trait-options strong{font-size:15px;line-height:1.5;font-weight:600;overflow-wrap:anywhere}
+.record-trait-choice-mark{display:grid;place-items:center;width:26px;height:26px;flex:0 0 26px;border:1px solid #537283;border-radius:8px;color:#b7d1d7;font-size:18px;line-height:1.2}
+.record-trait-options p{font-size:11px;color:#b0c5d1;line-height:1.75;margin:10px 0}
+.record-trait-options small{display:block;font-size:10px;color:#9cbbcb;line-height:1.75}
+.record-trait-options small>b{display:block;color:#afd7c3;font-size:10px;font-weight:600;margin-top:4px}
+.record-trait-options>button[aria-pressed=true]{border-color:#d9bd6c;background:linear-gradient(130deg,#394936,#1f4147);box-shadow:inset 0 0 0 1px #d9bd6c}
+.record-trait-options>button[aria-pressed=true] strong{color:#f4e0a1}
+.record-trait-options>button[aria-pressed=true] .record-trait-choice-mark{border-color:#c9b05f;color:#203a36;background:#ebcd7b}
+.record-trait-options>button:hover:not(:disabled){border-color:#d9bd6c}
+.record-trait-options>button:disabled{cursor:default;opacity:.65}
+.record-trait-options>button[aria-pressed=true]:disabled{opacity:1}
+.record-body-editor{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:20px;align-items:stretch}
+.record-measurement-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;min-width:0;align-content:center}
+.record-measurement-fields label{display:block;font-size:12px;font-weight:600;color:#d0e0ea;min-width:0}
+.record-measurement-fields label>span{color:#9ebaca;font-size:10px;font-weight:400;margin-left:4px}
+.record-measurement-fields input{display:block;box-sizing:border-box;width:100%;min-width:0;min-height:48px;margin-top:10px;border:1px solid #4d6d83;border-radius:10px;padding:12px 13px;background:#18344c;color:#ecf4f7;font:500 17px/1.5 'DM Sans',Arial,sans-serif;font-variant-numeric:tabular-nums}
+.record-measurement-fields input:disabled{opacity:.55}
+.record-measurement-fields input:focus-visible{outline:3px solid #f4cf67;outline-offset:3px}
+.record-measurement-fields input::placeholder{color:#7898b0}
+.record-bmi-preview{display:grid;justify-items:center;align-content:center;gap:9px;padding:20px 13px;background:#224348;border:1px solid #486d6b;border-radius:14px;text-align:center;min-width:0}
+.record-bmi-preview>small{color:#b7d5cd;font-size:9px;letter-spacing:1.5px;font-weight:600}
+.record-bmi-preview>output{color:#eef2db;font-size:40px;line-height:1.2;font-weight:600;font-variant-numeric:tabular-nums}
+.record-bmi-preview>span{font-size:9px;color:#abc7c4;line-height:1.7}
+.record-bmi-reference{padding:17px 19px;border-left:3px solid #8fb8b0;background:#173342;border-radius:0 11px 11px 0;margin:23px 0 18px}
+.record-bmi-reference>strong{font-size:13px;font-weight:600;color:#d0e5dc}
+.record-bmi-reference p{font-size:11px;line-height:1.8;color:#b2c9cf;margin:7px 0 0}
+.record-bmi-reference a{display:inline-flex;align-items:center;min-height:44px;font-size:11px;line-height:1.7;padding:7px 0}
+.record-history-list{border-top:1px solid #385369}
+.record-history-list>div{display:grid;grid-template-columns:65px minmax(0,1fr) 75px;gap:12px;padding:13px 0;border-bottom:1px solid #385369;align-items:baseline;font-size:11px}
+.record-history-list strong{color:#cfdfd9;font-size:11px;font-weight:600}
+.record-history-list span{color:#aac1d1;line-height:1.7}
+.record-history-list small{color:#c9d3d3;text-align:right;font-size:10px;font-variant-numeric:tabular-nums}
+@media(max-width:700px){
+  .record-rpg{padding:18px;border-radius:15px}
+  .record-rpg-heading h3{font-size:21px}
+  .record-trait-banner{display:grid;gap:13px;padding:15px}
+  .record-trait-banner>.record-button{justify-self:start}
+  .record-needs-grid{grid-template-columns:1fr}
+  .record-need{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 17px;padding:16px}
+  .record-need>div:first-child{margin:0;grid-column:1}
+  .record-need h4{display:inline;margin:0 10px 0 0;font-size:13px}
+  .record-need strong{font-size:22px}
+  .record-need .record-track{grid-column:1;align-self:center}
+  .record-need>p{grid-column:1;margin:0}
+  .record-need .record-care-status{grid-column:1;margin:0}
+  .record-need>.record-button{grid-column:2;grid-row:1/5;align-self:center;font-size:10px;width:auto;max-width:135px;padding:10px 11px}
+  .record-body-card{display:grid;gap:13px;padding:16px}
+  .record-body-card>.record-button{justify-self:start}
+  .record-body-editor{grid-template-columns:minmax(0,1fr) 150px;gap:15px}
+  .record-bmi-preview{padding:17px 10px}
+}
+@media(max-width:480px){
+  .record-rpg{padding:15px 13px;margin-top:23px}
+  .record-rpg-heading{gap:12px;margin-bottom:17px}
+  .record-rpg-heading small{font-size:8px;letter-spacing:1.2px}
+  .record-rpg-heading h3{font-size:18px;line-height:1.4}
+  .record-rpg-heading p{font-size:10px}
+  .record-rpg-emblem{width:40px;height:46px;flex-basis:40px;font-size:23px;border-radius:13px;box-shadow:inset 0 0 0 3px #20413f}
+  .record-rpg-emblem svg{width:23px;height:23px}
+  .record-trait-banner{padding:13px}
+  .record-trait-banner h4{font-size:14px}
+  .record-trait-banner small{font-size:8px;letter-spacing:1px}
+  .record-trait-banner p{font-size:10px}
+  .record-skill-grid{gap:9px}
+  .record-skill{padding:12px 10px}
+  .record-skill h4{font-size:11px}
+  .record-skill>div>span{font-size:8px;padding:3px 5px}
+  .record-skill>p{display:grid;gap:1px}
+  .record-skill>p>span{text-align:left;font-size:8px}
+  .record-need{display:flex;gap:0;padding:14px}
+  .record-need>div:first-child{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .record-need>p{margin:11px 0 5px;font-size:10px}
+  .record-need .record-care-status{margin:0 0 12px}
+  .record-need>.record-button{width:100%;max-width:none;align-self:stretch;font-size:11px}
+  .record-earned-grid{grid-template-columns:1fr;gap:9px}
+  .record-earned-trait{padding:13px}
+  .record-trait-options{grid-template-columns:1fr;gap:11px}
+  .record-trait-options>button{padding:16px;min-height:130px}
+  .record-trait-choice-heading{align-items:start}
+  .record-trait-choice-heading>strong{font-size:12px;white-space:nowrap}
+  .record-trait-choice-heading>span{font-size:9px;max-width:125px}
+  .record-editor-intro{font-size:12px}
+  .record-body-editor{grid-template-columns:1fr;gap:17px}
+  .record-measurement-fields{gap:11px}
+  .record-measurement-fields label{font-size:11px}
+  .record-measurement-fields input{font-size:16px;padding:11px}
+  .record-bmi-preview{padding:19px 14px}
+  .record-bmi-preview>output{font-size:38px}
+  .record-bmi-reference{padding:15px}
+  .record-history-list>div{grid-template-columns:48px minmax(0,1fr) 57px;gap:8px;font-size:10px}
+  .record-history-list strong{font-size:10px}
+  .record-history-list small{font-size:9px}
+}
+@media(max-width:360px){
+  .record-skill-grid{grid-template-columns:1fr}
+  .record-skill h4{font-size:12px}
+  .record-skill>p{display:flex;justify-content:space-between;gap:7px}
+  .record-skill>p>span{font-size:9px;text-align:right}
+}

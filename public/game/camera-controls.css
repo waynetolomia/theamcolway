@@ -1,0 +1,13 @@
+.camera-desktop{position:absolute;right:24px;bottom:88px;padding:11px 13px;border-radius:15px;display:flex;flex-direction:column;align-items:center;gap:7px;width:194px;z-index:12;pointer-events:auto}
+.camera-desktop>span{font-size:8px;font-weight:800;letter-spacing:1.6px;color:var(--teal)}
+.camera-desktop>div{display:flex;gap:8px}
+.camera-desktop button{width:44px;height:44px;min-width:44px;border:1px solid #d7e1d0;background:#fffdf8;border-radius:12px;display:grid;place-items:center;touch-action:none}
+.camera-desktop button svg{width:23px;height:23px}.camera-desktop small{font-size:8px;line-height:1.6;text-align:center;color:var(--muted)}
+.camera-desktop button:focus-visible,.camera-touch button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.camera-desktop button[data-turning=true],.camera-touch button[data-turning=true]{background:#dceecb;border-color:#6b9a77}
+.camera-desktop button:disabled,.camera-touch button:disabled{opacity:.4}
+.camera-touch{gap:4px;width:max-content;justify-self:end}.camera-touch button{touch-action:none}.camera-touch button:nth-child(2){background:#eaf2e2;color:var(--teal)}
+body[data-mode=creator] .camera-desktop,body[data-world-available=false] .camera-desktop{display:none}
+#major-options button{min-height:44px;font-weight:800;letter-spacing:1px}#major-options button:disabled{opacity:.4;cursor:default}
+#outfit-options{display:grid;grid-template-columns:1fr 1fr}#outfit-options .outfit-card{min-height:84px}
+@media(any-pointer:coarse),(max-width:700px),(max-width:950px) and (max-height:600px){.camera-desktop{display:none}}

@@ -1,0 +1,5 @@
+# Local development only: copy this file to .dev.vars.
+# The Worker accepts this fixed identity only on a loopback URL.
+ENVIRONMENT=development
+DEV_MODE=true
+DEV_USER_ID=local-cadet

@@ -1,0 +1,1659 @@
+{
+  "title": "THE AMCOL WAY — portable GitHub deployment export",
+  "sourceCommit": "3d7019d22655fb3b681f29e2eb0a977d040330c1",
+  "sourceSiteVersion": 11,
+  "createdAt": "2026-10-20T02:01:01.375217+00:00",
+  "deploymentTarget": "Cloudflare Workers + D1; deployed through GitHub Actions",
+  "contentCounts": {
+    "baseActivities": 416,
+    "lomaReviewPoolEntries": 273,
+    "catalogGameEntries": 689,
+    "questionOccurrences": 2579,
+    "fitnessGames": 3,
+    "npcIntroductionSteps": 14,
+    "careActions": 3
+  },
+  "accountDataIncluded": false,
+  "files": [
+    {
+      "path": ".dev.vars.example",
+      "bytes": 182,
+      "sha256": "513bc1433b89ffa47909c14ddfb96c2a91838e21ce4d6a170a26f8df82e35aa3"
+    },
+    {
+      "path": ".github/workflows/check.yml",
+      "bytes": 481,
+      "sha256": "eeb85a9ab44d6c2839a5abcef21deedb052cdc11bd5087c0f6203a65ba1e8966"
+    },
+    {
+      "path": ".github/workflows/deploy.yml",
+      "bytes": 1589,
+      "sha256": "345cb34d3e3664f2f904babf79e82cff8778d284e0fa369cc3f64f6971fb5df5"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 153,
+      "sha256": "adafcd37978bed8d8807a0646cb06f64decc83a4d401ccbab3e22185a395c103"
+    },
+    {
+      "path": "ATTRIBUTIONS.md",
+      "bytes": 2216,
+      "sha256": "8335cc508d9b1463b425afde7c1955d1fd0c64df39d56c9745306aacec6bc79d"
+    },
+    {
+      "path": "DEPLOYMENT.md",
+      "bytes": 9642,
+      "sha256": "7304a0d9c65c47f1c072a8288edfa963e60e4b3b09871536d8c018630d66fc74"
+    },
+    {
+      "path": "PROVENANCE.md",
+      "bytes": 2623,
+      "sha256": "f3810289c4934edd1867893f47caa7b6d5cdf3eb8a17ea9cf867d0b646f5ab07"
+    },
+    {
+      "path": "README.md",
+      "bytes": 12398,
+      "sha256": "6e1220fe2854c9aaf366e6abe1d66774f1bc2619f22081609b8096cfed49d091"
+    },
+    {
+      "path": "VALIDATION.md",
+      "bytes": 3257,
+      "sha256": "52a6b68ced6dcf56643b022aff868dda286a1c965a2a20b8a7ed1d46ab3d4bc9"
+    },
+    {
+      "path": "academy-checks.mjs",
+      "bytes": 68036,
+      "sha256": "fe9f35efa958216bf7588d88539256f24adb15d5d1b62e8499c04ca04f2d11fa"
+    },
+    {
+      "path": "book-checks.mjs",
+      "bytes": 3594,
+      "sha256": "03c06d95edf516f979dab803d4ab62ee1f49f47c108583b48737fadea65d6ef9"
+    },
+    {
+      "path": "instructor/CONTENTS.md",
+      "bytes": 5902,
+      "sha256": "ea1f2e7b9b935a4a1f9459653097e6d9494cf0a53d988a68ed493a814f11dae8"
+    },
+    {
+      "path": "instructor/THE_AMCOL_WAY_Answer_Key.html",
+      "bytes": 6876526,
+      "sha256": "f605ebe390424122697b8123bc7ebde66a972a7cc81e5549936d4bf7f83ea534"
+    },
+    {
+      "path": "instructor/THE_AMCOL_WAY_Answer_Key.json",
+      "bytes": 24827711,
+      "sha256": "8a4e974365991500c528255105b61994f2b625af1ec92168aad158439e0c9f57"
+    },
+    {
+      "path": "instructor/THE_AMCOL_WAY_Minigames_and_Answers.xlsx",
+      "bytes": 1867042,
+      "sha256": "42846771e4bae62521c0bbf02abf4cb88c39d91f25361cf2866cf8be7d1d37bf"
+    },
+    {
+      "path": "lib/academy-store.mjs",
+      "bytes": 4735,
+      "sha256": "571971cc224308b5374f6d81812812deb8f5526af2d52c4ea938c45589eca044"
+    },
+    {
+      "path": "migrations/0000_chubby_captain_flint.sql",
+      "bytes": 170,
+      "sha256": "532bc2b6cb0fe5fb98afe68d47876ecd22c6733b2f05661ea9119e2f6d6c35f0"
+    },
+    {
+      "path": "migrations/0001_huge_exiles.sql",
+      "bytes": 234,
+      "sha256": "59b4ec274b4b4289e3d3fba1dabf15a344174dd7f53c70bc5427dd1ba97e761a"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 55997,
+      "sha256": "363deb1bad2887a381685be795cb400b769a98f794d45b6d11e9d1b881fa4a46"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1137,
+      "sha256": "e6e2862ddeaada3ea00f4d7ccd5fb564a1b057fb16ef5f7744d034368af85cc4"
+    },
+    {
+      "path": "public/favicon.svg",
+      "bytes": 278,
+      "sha256": "775c5d6498dcfcdbc31d04e26f103a2fd828e4092fd34f0d23855af9b531b3df"
+    },
+    {
+      "path": "public/file.svg",
+      "bytes": 392,
+      "sha256": "1e0ae4d1a1ddfa36752988647b731e4abf150c414d069ec83c96fb0aaeff0307"
+    },
+    {
+      "path": "public/game/academy-api.js",
+      "bytes": 5763,
+      "sha256": "772d4b2ec9c0013f2e2024e9d6d35b63cc29139267b35f445f4312f8d72a291b"
+    },
+    {
+      "path": "public/game/academy-ui.js",
+      "bytes": 56741,
+      "sha256": "cb377d43c0827b928d6f4753e71a75684df7e3d5a9223b48213f3968d31c990e"
+    },
+    {
+      "path": "public/game/academy.css",
+      "bytes": 18388,
+      "sha256": "d88e1c685720c534b82571fd8a89f61f3f176e5be0b99f765bdb9a493e0dbc59"
+    },
+    {
+      "path": "public/game/app.js",
+      "bytes": 40540,
+      "sha256": "c35f4705aa494e6ce199c4ebf0955d45e1bc39cf513808fb9771d09c95dc5384"
+    },
+    {
+      "path": "public/game/assets/maritime-english-317-plus.pdf",
+      "bytes": 17748540,
+      "sha256": "da61b2fbb3bd712a5e2c0020155870f5b60b46e126a4709a98bbbacb7d1b1f5d"
+    },
+    {
+      "path": "public/game/atlantic-ui.css",
+      "bytes": 5289,
+      "sha256": "86a95c7d33e4c2cd2f259f26fae01152a4bae362f490cd36f480ff148d712b96"
+    },
+    {
+      "path": "public/game/atlantic-ui.js",
+      "bytes": 8795,
+      "sha256": "4b803a58fb0bbbc60722bd0a0da1c1437749c6c56beb14d33bdad4eb5102aaa0"
+    },
+    {
+      "path": "public/game/book-course.js",
+      "bytes": 2293017,
+      "sha256": "82c5db5a49f8da1ac415081ccd119be41e06fe8694f4e64ffbb7e7411641110e"
+    },
+    {
+      "path": "public/game/book-coverage.json",
+      "bytes": 563426,
+      "sha256": "7d9b9c03b32ca6a1c60a5b40e2d6790da509094e3a0ed0b235498c52aa9c012b"
+    },
+    {
+      "path": "public/game/book-pages/page-001.webp",
+      "bytes": 94816,
+      "sha256": "2c9c2942901d0e375ccff6f251d33550e6ce1be6732bfb7f41ab00813b4ea2a6"
+    },
+    {
+      "path": "public/game/book-pages/page-002.webp",
+      "bytes": 193188,
+      "sha256": "f1d47f3405f9c3ba3bc00dc6403e8a45b0a529ac238989f3800642c3f8048cac"
+    },
+    {
+      "path": "public/game/book-pages/page-003.webp",
+      "bytes": 141022,
+      "sha256": "8cf55bd62949f76e23caa92a187c27031f1b937717db194b156698aa4da4316a"
+    },
+    {
+      "path": "public/game/book-pages/page-004.webp",
+      "bytes": 114392,
+      "sha256": "9a10f98d69e41c52f22c5ab644d9bbd8f24211a5592c6227387284cab9f48b06"
+    },
+    {
+      "path": "public/game/book-pages/page-005.webp",
+      "bytes": 99884,
+      "sha256": "9bb0f8ec604fdcaf079398afc4f1fc37826df02b6c83d3d96884332a5d9e7cad"
+    },
+    {
+      "path": "public/game/book-pages/page-006.webp",
+      "bytes": 110698,
+      "sha256": "fb271b7173467113ce166e63b3b11328594d039d313624edc8f81696d2b1f6ed"
+    },
+    {
+      "path": "public/game/book-pages/page-007.webp",
+      "bytes": 85956,
+      "sha256": "492adc1f1fa9d04e31c61e87e123a890927cd309b6c3a7680891abc5d3c4c1c8"
+    },
+    {
+      "path": "public/game/book-pages/page-008.webp",
+      "bytes": 83416,
+      "sha256": "511ff10aa14649b1e2899796a662661c9f09f88edd7164d373ceb2508e8bf7d8"
+    },
+    {
+      "path": "public/game/book-pages/page-009.webp",
+      "bytes": 103574,
+      "sha256": "eac3dd566cb2f8bd4711bf8fa78c7609d60ac82b737758eef209ccfae8c44f95"
+    },
+    {
+      "path": "public/game/book-pages/page-010.webp",
+      "bytes": 93222,
+      "sha256": "19d669a96ce84b31c0e92d18714f6038fcdac7d3536a38b420f93ca24c25b247"
+    },
+    {
+      "path": "public/game/book-pages/page-011.webp",
+      "bytes": 101604,
+      "sha256": "468b6fea89cc62c73b000e5c848623fd051831ad1e11cb145ab4b5d2ac5be1fe"
+    },
+    {
+      "path": "public/game/book-pages/page-012.webp",
+      "bytes": 70582,
+      "sha256": "96a9441267861d9df00a90b844499da076744cd8806bb8dccd39c29af9a0fce7"
+    },
+    {
+      "path": "public/game/book-pages/page-013.webp",
+      "bytes": 55656,
+      "sha256": "61f0de26ab646a34627f0323008d22653f035a89e70f2f68774c10f8829410de"
+    },
+    {
+      "path": "public/game/book-pages/page-014.webp",
+      "bytes": 99486,
+      "sha256": "c515c98bfb0b5a71ead4bb55b43a39c5d8393eeccc2ab9a6c43f74cd44f07dd8"
+    },
+    {
+      "path": "public/game/book-pages/page-015.webp",
+      "bytes": 61784,
+      "sha256": "3730b8b74edeefb6d8a1bcc40b1af270b676fad152908fc1129ffa7baab2b028"
+    },
+    {
+      "path": "public/game/book-pages/page-016.webp",
+      "bytes": 83066,
+      "sha256": "1b1d3bd8d47704e1f37f924afeea1faba6fcc5611a59870d3d5c4a9e11f300ab"
+    },
+    {
+      "path": "public/game/book-pages/page-017.webp",
+      "bytes": 57782,
+      "sha256": "c533d236de89520918c585abe0a993f566d0c2a4b60faa8ea61daad8b01872ef"
+    },
+    {
+      "path": "public/game/book-pages/page-018.webp",
+      "bytes": 56926,
+      "sha256": "1105056c70596ceb9f3bcb814cfc5bc07cc32b0b5bbc1df392e2106b55891380"
+    },
+    {
+      "path": "public/game/book-pages/page-019.webp",
+      "bytes": 49730,
+      "sha256": "7850d110d220afc4d8c7d9042438f6e343e0238e6d5d9ba1aebcfd53e3e1d8f8"
+    },
+    {
+      "path": "public/game/book-pages/page-020.webp",
+      "bytes": 83520,
+      "sha256": "b05a46d5e2e015fd563c58a7ca36ec2d12b31dbfb4af65f6f1ce81081f3647e8"
+    },
+    {
+      "path": "public/game/book-pages/page-021.webp",
+      "bytes": 92688,
+      "sha256": "c138396aeb1eabf0fd68aad37d7530ea3c1224ed7a72897b2e261542eafcd048"
+    },
+    {
+      "path": "public/game/book-pages/page-022.webp",
+      "bytes": 55066,
+      "sha256": "9c579530504c225d4d42918e0edc53ad1d9202695cd65faa24acb4e888e2ae86"
+    },
+    {
+      "path": "public/game/book-pages/page-023.webp",
+      "bytes": 58556,
+      "sha256": "cea912dd4fda9b5050c3a3c79434fa63c37b64764762b56c728ee3686a560ce0"
+    },
+    {
+      "path": "public/game/book-pages/page-024.webp",
+      "bytes": 41212,
+      "sha256": "ccd6fa5e391d5397fef5b0ab49e8b407af2ad3687580d467c22551fb9f2981c7"
+    },
+    {
+      "path": "public/game/book-pages/page-025.webp",
+      "bytes": 40430,
+      "sha256": "c5c793788a5ddb17a4629f582da8c6391b7d1a83a7478940b4f9aad2ea3c68cd"
+    },
+    {
+      "path": "public/game/book-pages/page-026.webp",
+      "bytes": 78506,
+      "sha256": "850547a9eaca54c5b42da31f5348f3e8fb3214d7894ce252714100e68c725eda"
+    },
+    {
+      "path": "public/game/book-pages/page-027.webp",
+      "bytes": 46358,
+      "sha256": "9a46d26d926d66c80541bf9f6235c003b15dedd20e76e4002ce8ebbcdb8f13fa"
+    },
+    {
+      "path": "public/game/book-pages/page-028.webp",
+      "bytes": 34738,
+      "sha256": "c2c455c1cd2af3d3cf82b811ba639b5321088c0a8b42d2ad9efd14e67eef0e40"
+    },
+    {
+      "path": "public/game/book-pages/page-029.webp",
+      "bytes": 107952,
+      "sha256": "fbdead848b01a8030d113daea4129d1038f61fd9728873f0fc3f183201e4d7b5"
+    },
+    {
+      "path": "public/game/book-pages/page-030.webp",
+      "bytes": 83618,
+      "sha256": "062771f2b23602de1cb62b5c100cda3dd096ce242bd8d40fc80ca32dbbd14274"
+    },
+    {
+      "path": "public/game/book-pages/page-031.webp",
+      "bytes": 77510,
+      "sha256": "2d2feefa4ec2ea454846792ec8c7ef44fc7a55026141244f80c7b7feef19d815"
+    },
+    {
+      "path": "public/game/book-pages/page-032.webp",
+      "bytes": 69358,
+      "sha256": "403931ea8021ca7bf9eff167ce8dcd6bd9dd38ad12e23749ad2c24d49e5817a4"
+    },
+    {
+      "path": "public/game/book-pages/page-033.webp",
+      "bytes": 70626,
+      "sha256": "fd8585b77fb1dc41fe148e6a2682a8a0eee561e7b03b1699bd0049eb5991b269"
+    },
+    {
+      "path": "public/game/book-pages/page-034.webp",
+      "bytes": 91708,
+      "sha256": "cfed1e3f43f0eec7221f846a766ba72ca845960fc20124297797eef8edad5344"
+    },
+    {
+      "path": "public/game/book-pages/page-035.webp",
+      "bytes": 60340,
+      "sha256": "676b95f6560a153fd3b80afdfaf477f5998e6f10a950b22e63ac1a5fd7e455e6"
+    },
+    {
+      "path": "public/game/book-pages/page-036.webp",
+      "bytes": 81400,
+      "sha256": "ec8061acef33285fb2ba27a68404162943f19792dbd09d9106af9a1afca62be4"
+    },
+    {
+      "path": "public/game/book-pages/page-037.webp",
+      "bytes": 57822,
+      "sha256": "8f6574a3853640c43ff698be133e5f4b8ae30d6b6f51e8e2d88623e9d99bc8d6"
+    },
+    {
+      "path": "public/game/book-pages/page-038.webp",
+      "bytes": 54406,
+      "sha256": "5bfd3330b7726d98c9f7356321320a20fe701d4bd7ecda61207897c93d7d7925"
+    },
+    {
+      "path": "public/game/book-pages/page-039.webp",
+      "bytes": 50082,
+      "sha256": "ccddb3ed0b2720c85bbd8e2a25bcfd6a2aec81207d75a64096471aa9871f6737"
+    },
+    {
+      "path": "public/game/book-pages/page-040.webp",
+      "bytes": 74572,
+      "sha256": "ec2db2e15e8c8dd58ec0fa344e051d7f49890f7c681f637cf05030bb0483f8b8"
+    },
+    {
+      "path": "public/game/book-pages/page-041.webp",
+      "bytes": 87560,
+      "sha256": "18623aae0ccde4b2db4d3c2f3d4acd02316f515e216f2799f39aac4ff3aed598"
+    },
+    {
+      "path": "public/game/book-pages/page-042.webp",
+      "bytes": 70346,
+      "sha256": "8f337865d171909e3bf865fc79c5d0bd198db82c7bcdc8eb8cc9baa70643eab0"
+    },
+    {
+      "path": "public/game/book-pages/page-043.webp",
+      "bytes": 49036,
+      "sha256": "bf80eb601a5a823ae92ae19360362ea518a76cf18d9faceccfe91c69107b851c"
+    },
+    {
+      "path": "public/game/book-pages/page-044.webp",
+      "bytes": 47192,
+      "sha256": "7b3a899a0f4ba7802df9e41ea8c3ce94f44ab2ccecad4a0a0e9d86709f469ed9"
+    },
+    {
+      "path": "public/game/book-pages/page-045.webp",
+      "bytes": 42268,
+      "sha256": "0e1256a21c1ab53fe33a103e92fcc5ae4e702f3d9334df9a71b31b4393ea96b6"
+    },
+    {
+      "path": "public/game/book-pages/page-046.webp",
+      "bytes": 38948,
+      "sha256": "71c48064ba4d9c683c7f7cdc22d6809197cf44a869ee4c6a3cba7cca73b53948"
+    },
+    {
+      "path": "public/game/book-pages/page-047.webp",
+      "bytes": 75662,
+      "sha256": "b621fbac6a6f41a5a9e4e20388336d80e5b3fcc5c712c4d5b3d923908ff88f79"
+    },
+    {
+      "path": "public/game/book-pages/page-048.webp",
+      "bytes": 44836,
+      "sha256": "fe8296944af2d9d5c90c63bcfc8bfabed8a753fb080d4c7b03d472786cf042c8"
+    },
+    {
+      "path": "public/game/book-pages/page-049.webp",
+      "bytes": 34628,
+      "sha256": "f8f1c887dc0bca9211741bee0092a92ca43ad675d4a11f02ad9c85f9ef403c54"
+    },
+    {
+      "path": "public/game/book-pages/page-050.webp",
+      "bytes": 119632,
+      "sha256": "b0370df5fecc753b17cbe7b2ac2368b6489d539c72f077cb0cff260392ff4b3d"
+    },
+    {
+      "path": "public/game/book-pages/page-051.webp",
+      "bytes": 86034,
+      "sha256": "bd2c89cd1f51c657d858927b65a9d61a47c385e64b58946e9279f6e93cb6038d"
+    },
+    {
+      "path": "public/game/book-pages/page-052.webp",
+      "bytes": 75600,
+      "sha256": "2fd73fa2f35ecb138234298fc0e68304225f0090e8ad2e7d8a5281c67f65126c"
+    },
+    {
+      "path": "public/game/book-pages/page-053.webp",
+      "bytes": 68318,
+      "sha256": "6dcdf90d0967e6abc3304015c642c9cd468b6d8a87e9f38a3f18e5326d94e993"
+    },
+    {
+      "path": "public/game/book-pages/page-054.webp",
+      "bytes": 61448,
+      "sha256": "514c7c7e9be3efe0319f9789c36da263f4d65f45ea478008d1cd45f9aaf720ef"
+    },
+    {
+      "path": "public/game/book-pages/page-055.webp",
+      "bytes": 97692,
+      "sha256": "288e32525e9cee53e9afdf35b77bc08318b6b5303db4ef187f3fabbc4f378c34"
+    },
+    {
+      "path": "public/game/book-pages/page-056.webp",
+      "bytes": 58036,
+      "sha256": "448b57cbbdbad26720ce50e71102cc31b7238e8c731c99bcce576a9ca8026ef7"
+    },
+    {
+      "path": "public/game/book-pages/page-057.webp",
+      "bytes": 84094,
+      "sha256": "245bcfedf725465b0a9aab6d39c8a49829b70e06ea26e359a6bbab8ee9ee5225"
+    },
+    {
+      "path": "public/game/book-pages/page-058.webp",
+      "bytes": 61212,
+      "sha256": "731221a2709d0fcd376b61a66309dd40c194fcae0ce484c403db64b5b47fee85"
+    },
+    {
+      "path": "public/game/book-pages/page-059.webp",
+      "bytes": 56392,
+      "sha256": "3473c9d877dfe596340ff95a62431825e7c96d324b983bd156b556389cca05b8"
+    },
+    {
+      "path": "public/game/book-pages/page-060.webp",
+      "bytes": 48682,
+      "sha256": "d1d430bd02375ed2fd8ecd6fe8c1dc67b57f7f5f631e2aca373d17e4ec38a326"
+    },
+    {
+      "path": "public/game/book-pages/page-061.webp",
+      "bytes": 73824,
+      "sha256": "d085e649c3a13aa3efdd9ca95a0225daba8d8bc0d4fabee8d9a916640af7f580"
+    },
+    {
+      "path": "public/game/book-pages/page-062.webp",
+      "bytes": 91206,
+      "sha256": "21fe5ad65c26ae7745b12185eca8d978829eae36490d0e9547ad97405cb44d5c"
+    },
+    {
+      "path": "public/game/book-pages/page-063.webp",
+      "bytes": 55846,
+      "sha256": "89ad2a0652f33d9b3d64a7d932b0b5e6e5dbcb42b99f48690ff6f385594e294c"
+    },
+    {
+      "path": "public/game/book-pages/page-064.webp",
+      "bytes": 60116,
+      "sha256": "1c0df285e23cf53582b605edfdfae052ff26dabc430d8979ad87b7595280b99b"
+    },
+    {
+      "path": "public/game/book-pages/page-065.webp",
+      "bytes": 43916,
+      "sha256": "9e3753b7b13018e510bf621501d487d94c6d25873d1232e2226bb4946a217a7e"
+    },
+    {
+      "path": "public/game/book-pages/page-066.webp",
+      "bytes": 43524,
+      "sha256": "23367dcc9b4979090cd80a7150c4d6d4a12d118920e29c24998cba2a8ce45751"
+    },
+    {
+      "path": "public/game/book-pages/page-067.webp",
+      "bytes": 80778,
+      "sha256": "10f6d9d4e2a946f9828163f651a67797205765949da3b29eaa28b6d310319b70"
+    },
+    {
+      "path": "public/game/book-pages/page-068.webp",
+      "bytes": 48514,
+      "sha256": "2ffd7afce4b0312c802e759d707ed08a3b7c5dbe123df45a3450b2aef9c70f62"
+    },
+    {
+      "path": "public/game/book-pages/page-069.webp",
+      "bytes": 32432,
+      "sha256": "70dbcd3964c547aa2787dbcee26a69312f5272de959d1b1701ed2d5da9ae64c6"
+    },
+    {
+      "path": "public/game/book-pages/page-070.webp",
+      "bytes": 108734,
+      "sha256": "fd9fe4e5cbf473e91426dc19170f4d15cb355f621efeb830a0c2e5c6e8f6f5b9"
+    },
+    {
+      "path": "public/game/book-pages/page-071.webp",
+      "bytes": 81530,
+      "sha256": "6a29f0b194ff506927b34a1802cd0fd3e23efe7720e2191dca7901342482933e"
+    },
+    {
+      "path": "public/game/book-pages/page-072.webp",
+      "bytes": 101674,
+      "sha256": "3ae74c3b1a52455d39562e7b47cba78112609cfc8c00ce1959740b98991baf7b"
+    },
+    {
+      "path": "public/game/book-pages/page-073.webp",
+      "bytes": 70314,
+      "sha256": "ad1fcfb245a3cf9dd8c60bf5edd938f12f2a4b30b3b58774090ca0051a23fa7b"
+    },
+    {
+      "path": "public/game/book-pages/page-074.webp",
+      "bytes": 75166,
+      "sha256": "b8345eaffb3cb344a6233dc981d998c61a79bd4a5abaaafa12f667d14697123f"
+    },
+    {
+      "path": "public/game/book-pages/page-075.webp",
+      "bytes": 103932,
+      "sha256": "ffa91ccd8ef07737113acc039b0380a45a4a1ccb2591a2a71bc874e9cc547906"
+    },
+    {
+      "path": "public/game/book-pages/page-076.webp",
+      "bytes": 60350,
+      "sha256": "2c7b7fe12ddad92d56ccc88d0f7f1101b3db5c3a33cb7940d958fea8df4717fd"
+    },
+    {
+      "path": "public/game/book-pages/page-077.webp",
+      "bytes": 87808,
+      "sha256": "fdbf8d518dcd7e100b15a99034a971f81394c90c4557d60a19e9f6f12cf572c7"
+    },
+    {
+      "path": "public/game/book-pages/page-078.webp",
+      "bytes": 64382,
+      "sha256": "29085c097061cc7e7f4fa250b48ec5ba409cfc672c767549ff5bbbb64a3dbf42"
+    },
+    {
+      "path": "public/game/book-pages/page-079.webp",
+      "bytes": 57342,
+      "sha256": "48eef4de209e8cefdd39f5cfc4fc446a33d711b7ad2aefbb5cf7a702ff1e08a2"
+    },
+    {
+      "path": "public/game/book-pages/page-080.webp",
+      "bytes": 50204,
+      "sha256": "4992c8dae8dacf19f22ca2a35faad51e421c438c3262ed467c9bbc645d51d3c7"
+    },
+    {
+      "path": "public/game/book-pages/page-081.webp",
+      "bytes": 73360,
+      "sha256": "4f2964cd7b718aa1dfb46810925afd9e02f83d0d7508fc914a0686a0393d7c78"
+    },
+    {
+      "path": "public/game/book-pages/page-082.webp",
+      "bytes": 92992,
+      "sha256": "098d3ddf5aa0f65b156c04d43153fd9426fd2a7a90644c0a2155bf35e64ede34"
+    },
+    {
+      "path": "public/game/book-pages/page-083.webp",
+      "bytes": 35060,
+      "sha256": "085a593f0bcf7bc79d184c5296c583f7c033d6cb5e12f2c910e2a59663b3a101"
+    },
+    {
+      "path": "public/game/book-pages/page-084.webp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public/game/book-pages/page-085.webp",
+      "bytes": 42382,
+      "sha256": "c8fdeb230d06cce6ac7d4dd8a82bb816c88a1c19eab68e0f93bdefec7c52ccf7"
+    },
+    {
+      "path": "public/game/book-pages/page-086.webp",
+      "bytes": 41570,
+      "sha256": "929ce06b2bef18ec0dca666b97cbba9c847167bac411a2ec45b715858228c5f7"
+    },
+    {
+      "path": "public/game/book-pages/page-087.webp",
+      "bytes": 77000,
+      "sha256": "09af30014677fef4dc2ce3e5e1323dc80a9b5938c8f8f8bedb99602cb25d38fe"
+    },
+    {
+      "path": "public/game/book-pages/page-088.webp",
+      "bytes": 52882,
+      "sha256": "383b793ab43107c2126ac9709628a43ca72ec96df4e782a8bad2769a7e20be7a"
+    },
+    {
+      "path": "public/game/book-pages/page-089.webp",
+      "bytes": 35016,
+      "sha256": "47b65535896851471fdcfc567bf50c80f2ab03703bd24f6d06f207f5b2961a32"
+    },
+    {
+      "path": "public/game/book-pages/page-090.webp",
+      "bytes": 101152,
+      "sha256": "8cd1e88a2f1ef4e1a084dedcad9dc7222cc623163427db7295ac2371c3bb4fd3"
+    },
+    {
+      "path": "public/game/book-pages/page-091.webp",
+      "bytes": 83022,
+      "sha256": "4a5df70b3df791c264a3bfb2ebe065000a373ad2e0b1c1a5bda6dbc61f99175b"
+    },
+    {
+      "path": "public/game/book-pages/page-092.webp",
+      "bytes": 103266,
+      "sha256": "80c1f22ba37a4b3beddb9b7243212d091552c871767a2038c629a94c7e615e06"
+    },
+    {
+      "path": "public/game/book-pages/page-093.webp",
+      "bytes": 67626,
+      "sha256": "0bc46b5a413834cbe30ff83428eaf739a8dc817a8168b5be1fb88231586979b8"
+    },
+    {
+      "path": "public/game/book-pages/page-094.webp",
+      "bytes": 60590,
+      "sha256": "b946750d8cd8d307a93067647e4233bb76cfaa6f3be605f04d3da24758dd80c0"
+    },
+    {
+      "path": "public/game/book-pages/page-095.webp",
+      "bytes": 104742,
+      "sha256": "b9a2405c63693e97b481305d41de11bff2244fac12b81475d22cab97474f2395"
+    },
+    {
+      "path": "public/game/book-pages/page-096.webp",
+      "bytes": 57406,
+      "sha256": "0c156912d6cfb6db61158d5203be589dc98f43759bcf60e55bcc16de30bc0dfe"
+    },
+    {
+      "path": "public/game/book-pages/page-097.webp",
+      "bytes": 86072,
+      "sha256": "35fe119515ab5296fff5d05d25d4b96af25d674366801de24f6665d9a9dad935"
+    },
+    {
+      "path": "public/game/book-pages/page-098.webp",
+      "bytes": 59398,
+      "sha256": "9be6006590a7fa9c87c8628cf163c20dfac6c766174c51995697334b3ed710d2"
+    },
+    {
+      "path": "public/game/book-pages/page-099.webp",
+      "bytes": 52512,
+      "sha256": "4519f097a5b1f6aebfc18159dd13f76ac866045df3c7d4f0f80ae5195d6bf41a"
+    },
+    {
+      "path": "public/game/book-pages/page-100.webp",
+      "bytes": 49602,
+      "sha256": "f53a94904f0beed65211a4d489efdad9fcb66d56a985f0d7e3274ee4faa4af16"
+    },
+    {
+      "path": "public/game/book-pages/page-101.webp",
+      "bytes": 80000,
+      "sha256": "6b52b69c6ba76de8f8fed64be07c593c1d0e84b70283946c07df41c902af5e65"
+    },
+    {
+      "path": "public/game/book-pages/page-102.webp",
+      "bytes": 90106,
+      "sha256": "bfba264832997d9a369c3f63b48106c09f11ca784e372c73759dad5d31ad8815"
+    },
+    {
+      "path": "public/game/book-pages/page-103.webp",
+      "bytes": 58644,
+      "sha256": "9672e536b2ac6a3f69251b52f63a405e28729b33b7a64152192ef11ef45b4286"
+    },
+    {
+      "path": "public/game/book-pages/page-104.webp",
+      "bytes": 73436,
+      "sha256": "94c02ff9c909710ea642504e6e2c3adfce5001b7af708600b3173e48e0d45f14"
+    },
+    {
+      "path": "public/game/book-pages/page-105.webp",
+      "bytes": 41582,
+      "sha256": "042e9791dc5694cc4297f74d9cb59d414c31863010e406f5a477e3d47899a910"
+    },
+    {
+      "path": "public/game/book-pages/page-106.webp",
+      "bytes": 40292,
+      "sha256": "66a58d69b40fe25b582533541f0f013091ee1221a3228100fc4c0a590563e7d8"
+    },
+    {
+      "path": "public/game/book-pages/page-107.webp",
+      "bytes": 76284,
+      "sha256": "d4c89e9438972edb25b8e8a7c8f7eb2119bb0cd512bf84996df508f20cbe57e4"
+    },
+    {
+      "path": "public/game/book-pages/page-108.webp",
+      "bytes": 51828,
+      "sha256": "c488fd4f6a1386b46e15eb03c79c7911b376695e39703905b16510bb0b3f3997"
+    },
+    {
+      "path": "public/game/book-pages/page-109.webp",
+      "bytes": 33880,
+      "sha256": "3be8ac90fc20ad1e1e7b86fbe516f3bd9556e59a8853ca8fcd88699b8121d3e1"
+    },
+    {
+      "path": "public/game/book-pages/page-110.webp",
+      "bytes": 113476,
+      "sha256": "17c2f4cc8c9f8deacd1e4f82daa3794beb0d7e042fa1efe299e8d2b8d2cf588f"
+    },
+    {
+      "path": "public/game/book-pages/page-111.webp",
+      "bytes": 84910,
+      "sha256": "fb4458989602487cb2ee4d637b906a91f940acd9836cba8e6f4e5a0df4893fa7"
+    },
+    {
+      "path": "public/game/book-pages/page-112.webp",
+      "bytes": 111910,
+      "sha256": "ce86f7b298129ba3a5a09b9dcda8f7c10c1c54c07e362ded7ffae78b8b5b2761"
+    },
+    {
+      "path": "public/game/book-pages/page-113.webp",
+      "bytes": 66226,
+      "sha256": "db163eb68a5af66bd7422eeae3c72f8d7e0a3b621a10cb372c988cb70a34ce76"
+    },
+    {
+      "path": "public/game/book-pages/page-114.webp",
+      "bytes": 82446,
+      "sha256": "e39036cbe5eac6ef86ae14dd6ed62ef4469119ad458a63fac58f93810e75a4f0"
+    },
+    {
+      "path": "public/game/book-pages/page-115.webp",
+      "bytes": 116318,
+      "sha256": "c64acc9386adb5c338c1dbd7e03035d467c16413046d3b3cb558858f2ae32895"
+    },
+    {
+      "path": "public/game/book-pages/page-116.webp",
+      "bytes": 56050,
+      "sha256": "95ef14ec15d82484fe400921830c2ef95762e7900bea5316db28e27d991dbac9"
+    },
+    {
+      "path": "public/game/book-pages/page-117.webp",
+      "bytes": 90062,
+      "sha256": "bc9d3d411b65bfeebe31ed7310c78d79607fc962bd72b099701fa0ee068267a7"
+    },
+    {
+      "path": "public/game/book-pages/page-118.webp",
+      "bytes": 62632,
+      "sha256": "c8803e51b0c42dc50e002f4a93b74668243dca168f23f1e8376dc721d5b2e1d4"
+    },
+    {
+      "path": "public/game/book-pages/page-119.webp",
+      "bytes": 56628,
+      "sha256": "cc4680f1fe45972c2bb9b129891b823121738fc11156ff1f3aae60ed30f74efb"
+    },
+    {
+      "path": "public/game/book-pages/page-120.webp",
+      "bytes": 47214,
+      "sha256": "740bfd73c1077f1f0c5a4cbe907d02cf58e22de13164d053d7b2d646d812fabf"
+    },
+    {
+      "path": "public/game/book-pages/page-121.webp",
+      "bytes": 93518,
+      "sha256": "fde47cfa0de79efa5ad353c386714dc6b1905506285037e6c84671f49aff74f9"
+    },
+    {
+      "path": "public/game/book-pages/page-122.webp",
+      "bytes": 84910,
+      "sha256": "bf5eb151dcf1cdf39d60693106426339a2f784dacb991936571922cb6d1cfbfe"
+    },
+    {
+      "path": "public/game/book-pages/page-123.webp",
+      "bytes": 71542,
+      "sha256": "25fb377e5a0dc318124e9b1ed073ec1acb0ab169fb69702ffb395bd7b831569a"
+    },
+    {
+      "path": "public/game/book-pages/page-124.webp",
+      "bytes": 47670,
+      "sha256": "569e9e78a03f03c5c83be2b90abeae2ef1225e8d171a749e4540fa0f54f299c7"
+    },
+    {
+      "path": "public/game/book-pages/page-125.webp",
+      "bytes": 42624,
+      "sha256": "ed4b494f247fece588ebeff05a7add144fe1de2c4c67fcd0e5297a6119e0ed0c"
+    },
+    {
+      "path": "public/game/book-pages/page-126.webp",
+      "bytes": 42646,
+      "sha256": "87277ea0f4eb2ea597b1b10b112047fdc0c12a527cf5adb9ceb915c335c05868"
+    },
+    {
+      "path": "public/game/book-pages/page-127.webp",
+      "bytes": 76796,
+      "sha256": "ab597e0c6f59bf119ba506c673596ea8542117246ba81467219d77398657e7af"
+    },
+    {
+      "path": "public/game/book-pages/page-128.webp",
+      "bytes": 91638,
+      "sha256": "7f996548258813f42ec23cc9934eecd9c5b6c596bec5735b1f879d5edb479e1b"
+    },
+    {
+      "path": "public/game/book-pages/page-129.webp",
+      "bytes": 33294,
+      "sha256": "8b2062d96400098b95dc6fabd0c495a5641b1f1a09680485d5e169ff2fc39b5e"
+    },
+    {
+      "path": "public/game/book-pages/page-130.webp",
+      "bytes": 118906,
+      "sha256": "442bee2e0a25679d2b75f2963bb0202b3e862e75e66fad6f20f791f37b8f2eef"
+    },
+    {
+      "path": "public/game/book-pages/page-131.webp",
+      "bytes": 78188,
+      "sha256": "15b8370fc7a4d0153425d8bf5bc6439cd5ed58a0bb4294b39a26c3a37cd5218b"
+    },
+    {
+      "path": "public/game/book-pages/page-132.webp",
+      "bytes": 73966,
+      "sha256": "dcb71cbd3ea74372978b08b10006fdf3922795fd99cc89b5ec4f7daf93aa5b29"
+    },
+    {
+      "path": "public/game/book-pages/page-133.webp",
+      "bytes": 68122,
+      "sha256": "8f470535129dc06d3087e43eb85fb4841473413335b19da3a4fec9c8ad3acb25"
+    },
+    {
+      "path": "public/game/book-pages/page-134.webp",
+      "bytes": 77768,
+      "sha256": "262ae7e082b6f9cabbac89d144b7ec5b8c7ca37ff7ca7ae082dced2335d3791a"
+    },
+    {
+      "path": "public/game/book-pages/page-135.webp",
+      "bytes": 107612,
+      "sha256": "221e07cd1faf1492b174d9d6e21581ea90d866e7c5698a41d3e5f8edf08af4bf"
+    },
+    {
+      "path": "public/game/book-pages/page-136.webp",
+      "bytes": 59326,
+      "sha256": "7028fcfea4bcba15a9851bc446da1bbac8b3d7d264e62a6b942631f4f8380e27"
+    },
+    {
+      "path": "public/game/book-pages/page-137.webp",
+      "bytes": 93280,
+      "sha256": "82e3cc7f0e78611308467e6b4c6abe47f57cb9eadb204a6b027377571f45e4e3"
+    },
+    {
+      "path": "public/game/book-pages/page-138.webp",
+      "bytes": 57300,
+      "sha256": "3b23b5ccdccd244c49c335dee5c285581ff4273ada1e4f9a5c7614c1d57dca4f"
+    },
+    {
+      "path": "public/game/book-pages/page-139.webp",
+      "bytes": 58922,
+      "sha256": "b41cd1cdcdca283390277cc5e44e2d3d5171e48c6461e2fa65daf672e9cc21a4"
+    },
+    {
+      "path": "public/game/book-pages/page-140.webp",
+      "bytes": 45900,
+      "sha256": "3adb30b0e8e0617be9d2d93218b103bcce39c8746f536ca475e5ad33d91235b9"
+    },
+    {
+      "path": "public/game/book-pages/page-141.webp",
+      "bytes": 88778,
+      "sha256": "5a259314611182a87962ddb6899b11fc790228fc3bf6d198dbb43f825d619399"
+    },
+    {
+      "path": "public/game/book-pages/page-142.webp",
+      "bytes": 76922,
+      "sha256": "f6835dee769f19e60d70d0678607c05f09f6f83220b80ececf4cd9e4f1870912"
+    },
+    {
+      "path": "public/game/book-pages/page-143.webp",
+      "bytes": 57734,
+      "sha256": "58c9e637e2f809dd24a5b05020d5df64de5f7acb23f1f9dab8eabb42b8353ee9"
+    },
+    {
+      "path": "public/game/book-pages/page-144.webp",
+      "bytes": 56358,
+      "sha256": "656605a7315dd5b28cfeaa727fe7afe76405d1feef8d3c750ae57114e5013f5d"
+    },
+    {
+      "path": "public/game/book-pages/page-145.webp",
+      "bytes": 42372,
+      "sha256": "5954ce46255790848d3a5273583be908c29cda27a5eba0ae39fdbebe6d30b0e0"
+    },
+    {
+      "path": "public/game/book-pages/page-146.webp",
+      "bytes": 40932,
+      "sha256": "887e4abcac2a7ead7e054bfb0805667fcd05ce703cfc04fd4fc7d74c3fbbc571"
+    },
+    {
+      "path": "public/game/book-pages/page-147.webp",
+      "bytes": 75456,
+      "sha256": "f817220930c80ca4583a269cd60400b8cd4cb272220a8ef6847d2919b7e27a30"
+    },
+    {
+      "path": "public/game/book-pages/page-148.webp",
+      "bytes": 48214,
+      "sha256": "e706ea0b07ea0836eea2eb19aebdc80f45cc23a7fd2e28833251876795bc6c3a"
+    },
+    {
+      "path": "public/game/book-pages/page-149.webp",
+      "bytes": 35092,
+      "sha256": "f7c380614766915a31a3ed60fc339606084af82d8b7ce22390734a6a6adf654f"
+    },
+    {
+      "path": "public/game/book-pages/page-150.webp",
+      "bytes": 70940,
+      "sha256": "63d363c7477302c6e6ed6943ec8234522a037a683c52a126657ed339b7f7f6a6"
+    },
+    {
+      "path": "public/game/book-pages/page-151.webp",
+      "bytes": 85146,
+      "sha256": "90511d9e54562636797d7e3590db0f0b4d53b6ce71c4b60e8be6a56480028c82"
+    },
+    {
+      "path": "public/game/book-pages/page-152.webp",
+      "bytes": 114860,
+      "sha256": "faad92ec36fc607d138d0b2886b7b65d31730656b03b2531f96d1d9e7b382be2"
+    },
+    {
+      "path": "public/game/book-pages/page-153.webp",
+      "bytes": 70546,
+      "sha256": "8b34ce798bdca406002b4f9a3fcd8171ecef1ad972194cc87c85c5f6b0e6519e"
+    },
+    {
+      "path": "public/game/book-pages/page-154.webp",
+      "bytes": 79988,
+      "sha256": "4b5e32e424decaebdc608f31957302c24d957dc95321b54b049c9338fe614325"
+    },
+    {
+      "path": "public/game/book-pages/page-155.webp",
+      "bytes": 125912,
+      "sha256": "863f54a857f5e1a022e778e4324c29420399d6598bdb3e5c088f5cb14938542f"
+    },
+    {
+      "path": "public/game/book-pages/page-156.webp",
+      "bytes": 56084,
+      "sha256": "470b2e6b4f5d70b95867cf38d4df09f72803d2c226ec079e9f326878545ea6aa"
+    },
+    {
+      "path": "public/game/book-pages/page-157.webp",
+      "bytes": 88952,
+      "sha256": "ce2cdc69b9aa95e53ccf8fc894fea338b360ff1b65179c459e3f2aaf7ee780e8"
+    },
+    {
+      "path": "public/game/book-pages/page-158.webp",
+      "bytes": 57396,
+      "sha256": "ca089b8312aa7734b89f15c7acd35cfacbfdbf68c3e249575611d9dad0aec4dc"
+    },
+    {
+      "path": "public/game/book-pages/page-159.webp",
+      "bytes": 55362,
+      "sha256": "6c05a87af55a4124c6d8850ecb08d1276cbae32d18a7206002e020e8c5bb9bc2"
+    },
+    {
+      "path": "public/game/book-pages/page-160.webp",
+      "bytes": 47842,
+      "sha256": "a977926630c01273f9543119adf3acf4726e898c05b74f47cbc6098b85003ffb"
+    },
+    {
+      "path": "public/game/book-pages/page-161.webp",
+      "bytes": 68476,
+      "sha256": "b5becdfb3287cb2612fef1108bcb09f9cae8c32d6becb899310fb63baaa5e29e"
+    },
+    {
+      "path": "public/game/book-pages/page-162.webp",
+      "bytes": 86644,
+      "sha256": "b5ef692c9983831ccf8b5fdc7342cd14c494757a201dadb4762bcc6fc13ad852"
+    },
+    {
+      "path": "public/game/book-pages/page-163.webp",
+      "bytes": 80948,
+      "sha256": "58c834b4ee35db2b65c343333ae15243c62c6587109b4e0607c8ccdc95608fc5"
+    },
+    {
+      "path": "public/game/book-pages/page-164.webp",
+      "bytes": 54376,
+      "sha256": "cca5a67cbae35e69dc474e0e5d9a7cf45b628cbb180ff8dcd19897569ad1a8ec"
+    },
+    {
+      "path": "public/game/book-pages/page-165.webp",
+      "bytes": 46178,
+      "sha256": "c2fea2be1f1b10aa6cfe276973ffc16887a909ab6f6d56618af7d7973ad7acd2"
+    },
+    {
+      "path": "public/game/book-pages/page-166.webp",
+      "bytes": 42926,
+      "sha256": "7a0f0aceb5b1add558d3ac7659f4e9145ad9ee0501a030ffaa432793482c7653"
+    },
+    {
+      "path": "public/game/book-pages/page-167.webp",
+      "bytes": 43580,
+      "sha256": "95e6542612c1d9b61f644b50e52260c1c5da2b08b432f34e9c96d6e3a947c6e8"
+    },
+    {
+      "path": "public/game/book-pages/page-168.webp",
+      "bytes": 79936,
+      "sha256": "ddc6c64e4ca6d6fed8b1c1984709b78bd8237e9e3b716cb0295b2627bfeead6a"
+    },
+    {
+      "path": "public/game/book-pages/page-169.webp",
+      "bytes": 51446,
+      "sha256": "6a46f7e71b8fdff4302a6083d5cc9450200339fa8067b6865512c9ca96a6c5fc"
+    },
+    {
+      "path": "public/game/book-pages/page-170.webp",
+      "bytes": 34562,
+      "sha256": "7b9b7920f7136a5ce3ed3391aeba39a78ffbdb8d9bb7028cc10d3ac102303dcc"
+    },
+    {
+      "path": "public/game/book-pages/page-171.webp",
+      "bytes": 111436,
+      "sha256": "f17e09b44432f621c063d6d5d3cb935ca59699039cc9146777ba8c9f1274b7ed"
+    },
+    {
+      "path": "public/game/book-pages/page-172.webp",
+      "bytes": 83034,
+      "sha256": "4022c8e510f8f0f2dbf24da417f16bc921fa3972cb4082bb8b833659303c15c4"
+    },
+    {
+      "path": "public/game/book-pages/page-173.webp",
+      "bytes": 112760,
+      "sha256": "9ad0e5efceb17d0dff3e825e952899cf5ec73d1256de35763ac95defaf1a7212"
+    },
+    {
+      "path": "public/game/book-pages/page-174.webp",
+      "bytes": 65394,
+      "sha256": "f90cb5a9835fbbc5db565be5be7ba1b38c2fadf471e26639ac2952ca88d34cbf"
+    },
+    {
+      "path": "public/game/book-pages/page-175.webp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public/game/book-pages/page-176.webp",
+      "bytes": 122912,
+      "sha256": "389bd777d60b89f2ac07edca58fe7c9d0bfeb23540f2cefc76a7c3fbc7a01164"
+    },
+    {
+      "path": "public/game/book-pages/page-177.webp",
+      "bytes": 56296,
+      "sha256": "b50eea95f774245f3288d4d3d85547aa4f3c135206080d0b249d828ed356890e"
+    },
+    {
+      "path": "public/game/book-pages/page-178.webp",
+      "bytes": 93124,
+      "sha256": "9cc19803e2866e006a9df74cdbe09fead2784f385037e088880687c1655451cc"
+    },
+    {
+      "path": "public/game/book-pages/page-179.webp",
+      "bytes": 60836,
+      "sha256": "2009c9c40424967c089a224cab499f2610cc615cebeaec9b5d5b545a2bc2c849"
+    },
+    {
+      "path": "public/game/book-pages/page-180.webp",
+      "bytes": 58506,
+      "sha256": "b0cd30ceda517f3ff76cc5bd512d339e241d8531f6298d01189b908d586720e1"
+    },
+    {
+      "path": "public/game/book-pages/page-181.webp",
+      "bytes": 50064,
+      "sha256": "be4ae71cae3566cce0c1ad78c1c0c442857442a9cb4f742ad06fca79622f805b"
+    },
+    {
+      "path": "public/game/book-pages/page-182.webp",
+      "bytes": 65706,
+      "sha256": "ce2509fef15e026af18afbf86900dd32ba94f7c23d53b2813409da543a7274ba"
+    },
+    {
+      "path": "public/game/book-pages/page-183.webp",
+      "bytes": 78918,
+      "sha256": "190bc96f7bc9779b0ef18bf7a0422c22f1fca9c799f4395355a81f55da77df95"
+    },
+    {
+      "path": "public/game/book-pages/page-184.webp",
+      "bytes": 67634,
+      "sha256": "db71db531529f6c366882acdf94d24e8b7f2736a56d9e855946a25a3938c4124"
+    },
+    {
+      "path": "public/game/book-pages/page-185.webp",
+      "bytes": 91034,
+      "sha256": "3b9fc650a36953f846a4d55289d2efa9ff150e8982bf628b0b667c1bee6ab4ba"
+    },
+    {
+      "path": "public/game/book-pages/page-186.webp",
+      "bytes": 42252,
+      "sha256": "bdd5d255a2e66083c25ab422b9b8794226dac06735251470e99e292a64823511"
+    },
+    {
+      "path": "public/game/book-pages/page-187.webp",
+      "bytes": 42352,
+      "sha256": "6cd97a58062e732d155fdca63d2b3049c626a08eec8bec2bf05ea2882bf59097"
+    },
+    {
+      "path": "public/game/book-pages/page-188.webp",
+      "bytes": 43710,
+      "sha256": "0f5081345d1fe18447d97528e488c97f51ffbc02c54604c14d1f83f56827dd9f"
+    },
+    {
+      "path": "public/game/book-pages/page-189.webp",
+      "bytes": 75998,
+      "sha256": "54ec5f3f616dd65081473b584b1d9f29b93aa36c4128f32333ccf32808a46f48"
+    },
+    {
+      "path": "public/game/book-pages/page-190.webp",
+      "bytes": 86562,
+      "sha256": "144d561922d9bbe57e9168b11bf7ee84d090dcb11b1afb4307c8ae9b6780492a"
+    },
+    {
+      "path": "public/game/book-pages/page-191.webp",
+      "bytes": 33908,
+      "sha256": "39c718f0dd85eed02eb1ce3548784e42eec79485e915dbf7fd820d7ecaae6f1f"
+    },
+    {
+      "path": "public/game/book-pages/page-192.webp",
+      "bytes": 104232,
+      "sha256": "b8932ddb98c7884755837c08755660329fc4c17d36a274fbfee82aab2f36e852"
+    },
+    {
+      "path": "public/game/book-pages/page-193.webp",
+      "bytes": 88108,
+      "sha256": "3843ae0db87b93431bf385fc46376d6993e2211226221c3352fcb52685a27d35"
+    },
+    {
+      "path": "public/game/book-pages/page-194.webp",
+      "bytes": 96918,
+      "sha256": "4f9437166aaee3317e75cc8640da34925db63740bb09aff2f96db1513856ebeb"
+    },
+    {
+      "path": "public/game/book-pages/page-195.webp",
+      "bytes": 69736,
+      "sha256": "0046d879caacddf1246b8d64bce0b94917631862540e6edffa9f7d261278ae9a"
+    },
+    {
+      "path": "public/game/book-pages/page-196.webp",
+      "bytes": 80192,
+      "sha256": "e1290fed32d9040c2499d2799de36b2c88cdea88533677d2154a3bc8254acb97"
+    },
+    {
+      "path": "public/game/book-pages/page-197.webp",
+      "bytes": 118800,
+      "sha256": "b04503f880567042c25a730b894b566de4a41431262c2b15e68a18088a37f344"
+    },
+    {
+      "path": "public/game/book-pages/page-198.webp",
+      "bytes": 57666,
+      "sha256": "b59088f79c37c4425911de3b5dffeb1934162fb5b8fe551a0008bfd835f7995c"
+    },
+    {
+      "path": "public/game/book-pages/page-199.webp",
+      "bytes": 97976,
+      "sha256": "bdb603749c4c5fdbb139a442c85a1dcd6ab6e34dde1c2680766bb02c4e2e3ce5"
+    },
+    {
+      "path": "public/game/book-pages/page-200.webp",
+      "bytes": 64494,
+      "sha256": "620ac438495413f3c3ef60d041da16f0627fccbc1d71db752cea286893b149f7"
+    },
+    {
+      "path": "public/game/book-pages/page-201.webp",
+      "bytes": 62594,
+      "sha256": "a52785589780d0b76a4510d9e9fceb4dc383edd695ae7cb516970a43fc02361e"
+    },
+    {
+      "path": "public/game/book-pages/page-202.webp",
+      "bytes": 55692,
+      "sha256": "bd6689299b22287fd6943aecf56ccc3d3d66bf63a75fb3faf2a9a421b189d968"
+    },
+    {
+      "path": "public/game/book-pages/page-203.webp",
+      "bytes": 63486,
+      "sha256": "889173314b4f7003b80be5ba1f21bbd9035e0a1045e48c23b23477f208782b53"
+    },
+    {
+      "path": "public/game/book-pages/page-204.webp",
+      "bytes": 87782,
+      "sha256": "d47d7141feaf52901c034821354717c2ea3ac61a205e6d257c55deba80610529"
+    },
+    {
+      "path": "public/game/book-pages/page-205.webp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public/game/book-pages/page-206.webp",
+      "bytes": 52454,
+      "sha256": "0fa0e16e168a40b058b92b67fc9bde1c2f20deff1a91e0806768539a69787d35"
+    },
+    {
+      "path": "public/game/book-pages/page-207.webp",
+      "bytes": 47384,
+      "sha256": "914b16acfe3b1fea4cd9fe6f4c2a997357f841bbe15233c3bb0018d4093d1dcc"
+    },
+    {
+      "path": "public/game/book-pages/page-208.webp",
+      "bytes": 41492,
+      "sha256": "99259e56723310b77d93cd6d37a6cac0b78422dc010bc23cc39f9be6a5eea5d2"
+    },
+    {
+      "path": "public/game/book-pages/page-209.webp",
+      "bytes": 82232,
+      "sha256": "5c3f448b601f11412a0db8c4297e4aeb4a1610f941188399dd1aa319ae3fa107"
+    },
+    {
+      "path": "public/game/book-pages/page-210.webp",
+      "bytes": 82124,
+      "sha256": "e6522714f34393818c5e18064813f4b0da752a26e33b5d18a784d901fd2e28eb"
+    },
+    {
+      "path": "public/game/book-pages/page-211.webp",
+      "bytes": 34426,
+      "sha256": "5cf6811392879b4b45e178635176d4331afd886e8c3058f7560e8d5c24c2ae21"
+    },
+    {
+      "path": "public/game/book-pages/page-212.webp",
+      "bytes": 61148,
+      "sha256": "a4b3894d01ed420f535534e71247131d9ab200fbf0fd1bc6a3f7b8aaa279192b"
+    },
+    {
+      "path": "public/game/book-pages/page-213.webp",
+      "bytes": 107748,
+      "sha256": "2a8c7dead2d2c5155b36ebf4b7cc91ffc9505dbb039e2bc0a0c48c4baad0ba2a"
+    },
+    {
+      "path": "public/game/book-pages/page-214.webp",
+      "bytes": 37958,
+      "sha256": "86afe47a329201b40cea676b6b955b9cc412ee72ab1fd11bd9a1237104462687"
+    },
+    {
+      "path": "public/game/book-pages/page-215.webp",
+      "bytes": 38736,
+      "sha256": "e32fe6561254b5561c62d903dd211d4e52b057e95d830747a8e8cd65ed7348bd"
+    },
+    {
+      "path": "public/game/book-pages/page-216.webp",
+      "bytes": 38274,
+      "sha256": "2d43bff3035ec9c93ddee3214ed280853f60247ff346104fedab636b20580364"
+    },
+    {
+      "path": "public/game/book-pages/page-217.webp",
+      "bytes": 37156,
+      "sha256": "2a527acd2ca631c5f7ed4b43c25448afe64805b65b218d534332dd604a14f3af"
+    },
+    {
+      "path": "public/game/book-pages/page-218.webp",
+      "bytes": 37646,
+      "sha256": "153ba6c964275580882ebb1f84613aeb9b09723697610c6185b6430e1e9d1f46"
+    },
+    {
+      "path": "public/game/book-pages/page-219.webp",
+      "bytes": 57418,
+      "sha256": "c48ce5ca832d183d8c4b6f169314dd31f6dd29ccbba7c447f4aa73f1663dc8df"
+    },
+    {
+      "path": "public/game/book-pages/page-220.webp",
+      "bytes": 55884,
+      "sha256": "b377875ee596c98363b565cbf4f884c89ceac0839a61bb243965b86115226a64"
+    },
+    {
+      "path": "public/game/book-pages/page-221.webp",
+      "bytes": 59790,
+      "sha256": "5ac3e3062dff7aa1af4955ec5734b977bd0b384a8e3134fb381552c445783935"
+    },
+    {
+      "path": "public/game/book-pages/page-222.webp",
+      "bytes": 66302,
+      "sha256": "ddb388e4f29e6cdfb1efe3feda55a8dde5df1dc3f63c8ae8f8ac6e70a8abd773"
+    },
+    {
+      "path": "public/game/book-pages/page-223.webp",
+      "bytes": 105212,
+      "sha256": "40cfdf87fa961c7c411eabf9e0f5beb5034601f6e2dc89a7272fce295062289d"
+    },
+    {
+      "path": "public/game/book-pages/page-224.webp",
+      "bytes": 51660,
+      "sha256": "bd57d07e5f288106b4b37fdce051c1e111523e08af69bc7e59a9d7773525c196"
+    },
+    {
+      "path": "public/game/book-pages/page-225.webp",
+      "bytes": 112258,
+      "sha256": "1b15ecc2429c07e00c4ed6826a28e03e411b9a0775d95f681a161432680c939a"
+    },
+    {
+      "path": "public/game/book-pages/page-226.webp",
+      "bytes": 55454,
+      "sha256": "fbd5e034c265c017d1e8c2510953e7e1e69513fd1694210b9e16eddb0bd7cd72"
+    },
+    {
+      "path": "public/game/book-pages/page-227.webp",
+      "bytes": 58790,
+      "sha256": "e991352f29139933f14304b0c56de04005a1a3eae7b039ac45a28af34b8e3951"
+    },
+    {
+      "path": "public/game/book-pages/page-228.webp",
+      "bytes": 47696,
+      "sha256": "a706cb6fc6e984b7e43ec33fbf83dadace1b10524c7ab4e83fff4a80649a5e3a"
+    },
+    {
+      "path": "public/game/book-pages/page-229.webp",
+      "bytes": 66206,
+      "sha256": "b5ffb6c7aa84985ccba450653028bae1cbb371ebdc989cf4c11b0f01c4e34c48"
+    },
+    {
+      "path": "public/game/book-pages/page-230.webp",
+      "bytes": 49918,
+      "sha256": "ef3aca4f319153ea0a86e6367fb98d3c63a2668fdd8a31b6c41bafaceb4f24cb"
+    },
+    {
+      "path": "public/game/book-pages/page-231.webp",
+      "bytes": 57492,
+      "sha256": "371be97a5b23fa481718d0988f7d3ac65107ce55b0558bbefbc886cab0a18731"
+    },
+    {
+      "path": "public/game/book-pages/page-232.webp",
+      "bytes": 56652,
+      "sha256": "189524c6941852e4f54ae09cf1f5518d6b305350a288e629640b75dc8e5f3b2a"
+    },
+    {
+      "path": "public/game/book-pages/page-233.webp",
+      "bytes": 55188,
+      "sha256": "342990c8db0777ef56840af48f87f0c75ad7ae7a72090e12da6675dbd53e1397"
+    },
+    {
+      "path": "public/game/book-pages/page-234.webp",
+      "bytes": 58510,
+      "sha256": "c6245b76059a0a849bf3b376baa1e50d2bcbf0abd6b1d4d65986416e7821f1b5"
+    },
+    {
+      "path": "public/game/book-pages/page-235.webp",
+      "bytes": 44274,
+      "sha256": "36926656ae5e2e7db2eedce101337589bd0c4471b942f803b4b2fb6979c14029"
+    },
+    {
+      "path": "public/game/book-pages/page-236.webp",
+      "bytes": 43530,
+      "sha256": "1b710de7338995c41b3be35a37fc51cb26ae5cd4b08fd23c644cf126476ab577"
+    },
+    {
+      "path": "public/game/book-pages/page-237.webp",
+      "bytes": 62184,
+      "sha256": "261dd7d75a0d85792b201d12e563c44c70fc78be6b6fb05272efc36cea0ccec6"
+    },
+    {
+      "path": "public/game/book-pages/page-238.webp",
+      "bytes": 16524,
+      "sha256": "89bc1469074df32a467422396094877ddb69476e2abc3b4466e69e3a2e4386c7"
+    },
+    {
+      "path": "public/game/book-pages/page-239.webp",
+      "bytes": 63540,
+      "sha256": "876945f4073c3cc1582e27167a68e1be9804ab1aba55291ccb2235b14a31684b"
+    },
+    {
+      "path": "public/game/book-pages/page-240.webp",
+      "bytes": 17082,
+      "sha256": "78b0f3e862e087b6cf4aaef13b86bb10e257c6d428fe1bcfbe7b0a571e8f8dfc"
+    },
+    {
+      "path": "public/game/book-pages/page-241.webp",
+      "bytes": 89948,
+      "sha256": "41fa87ab2abeffc682e0491889910036be8c49ed6d9aa912383eeb905acd84a1"
+    },
+    {
+      "path": "public/game/book-pages/page-242.webp",
+      "bytes": 71850,
+      "sha256": "4715d58c2f71dc95eea0951168a2030c5611af6e54e4d4adf3871bf81a7ce90e"
+    },
+    {
+      "path": "public/game/book-pages/page-243.webp",
+      "bytes": 75602,
+      "sha256": "b7344e7d8b56c425cc4aec4213d0ec17c14fa3a5e0e654caba897e867b971a51"
+    },
+    {
+      "path": "public/game/book-pages/page-244.webp",
+      "bytes": 82040,
+      "sha256": "b90b3e38b3ce6b471c702136d1ca2d289aa62bf8a7193fabcf300317e067ee79"
+    },
+    {
+      "path": "public/game/book-pages/page-245.webp",
+      "bytes": 88992,
+      "sha256": "c2aedb17739804d9e96ec712678aea2ce4a18307f447bd52f5749687b50a4923"
+    },
+    {
+      "path": "public/game/book-pages/page-246.webp",
+      "bytes": 2274,
+      "sha256": "355467c08c00d11f5a56760b4a73c33eaeb51ae102b17d26a432c1dbd9603938"
+    },
+    {
+      "path": "public/game/book-pages/page-247.webp",
+      "bytes": 2274,
+      "sha256": "355467c08c00d11f5a56760b4a73c33eaeb51ae102b17d26a432c1dbd9603938"
+    },
+    {
+      "path": "public/game/book-pages/page-248.webp",
+      "bytes": 2274,
+      "sha256": "355467c08c00d11f5a56760b4a73c33eaeb51ae102b17d26a432c1dbd9603938"
+    },
+    {
+      "path": "public/game/book-pages.json",
+      "bytes": 427348,
+      "sha256": "af95a4db225d2e34880776a0138f45a5afb8bb1f6abcc1ccad5332e0dc6d3f46"
+    },
+    {
+      "path": "public/game/book-vocabulary.json",
+      "bytes": 32680,
+      "sha256": "5a99c3f28d8ca1cdf8e7521de7a966ce4cd677322803d7e02467b74396aba4e4"
+    },
+    {
+      "path": "public/game/camera-controls.css",
+      "bytes": 1591,
+      "sha256": "a023628e4f9d0a07fd9ae1bd51831c6767876b50ce891a603eff14ecef114841"
+    },
+    {
+      "path": "public/game/camera-controls.js",
+      "bytes": 2936,
+      "sha256": "88e472fec388eaf3a16f8498a4de00c22e21ac437a5c81d33f138e280ab8af4e"
+    },
+    {
+      "path": "public/game/campus-map.css",
+      "bytes": 13880,
+      "sha256": "fc4060b38cf7c3d5cd44634a39008a756d0ef62deb56755436bf0db77195a19b"
+    },
+    {
+      "path": "public/game/campus.js",
+      "bytes": 14513,
+      "sha256": "d7e118b38ce5baf36c7be1099f897325c89ab916d9ff284569a18d09791099ae"
+    },
+    {
+      "path": "public/game/character-dashboard.css",
+      "bytes": 33013,
+      "sha256": "95906b30c1c8bac8171070128b6c17ec904ffa9b1b1d5dde10f69d9d3f1cde9b"
+    },
+    {
+      "path": "public/game/character-dashboard.js",
+      "bytes": 55711,
+      "sha256": "50e58904e45dcc96fbf16830d130c1e40d678cb48103d3bb054121729666a1d8"
+    },
+    {
+      "path": "public/game/content.js",
+      "bytes": 17224,
+      "sha256": "bd2dc9c324a1dca7b720b11199461a5586366b9c8b4154d5ee50b0dea0ec8a69"
+    },
+    {
+      "path": "public/game/course-progress.js",
+      "bytes": 40465,
+      "sha256": "7014071e22c77811627f04e4b1cb3c9c8253de98eaab0245c7a6993b12e2367b"
+    },
+    {
+      "path": "public/game/fitness-games.css",
+      "bytes": 8571,
+      "sha256": "28f6dff31489d9935d295f8cbb73e4eb80c169b68e8263beb84fc9d15d38fda6"
+    },
+    {
+      "path": "public/game/fitness-games.js",
+      "bytes": 21523,
+      "sha256": "8c760451f5cd40a2ca2aad484a05a1c3c4383f7051cd4e56ff90e6b20222da53"
+    },
+    {
+      "path": "public/game/index.html",
+      "bytes": 15503,
+      "sha256": "49b22b1a0f47860bc8f1229b9b24054119f3b18bbdd026e375a0ed486b1d40b6"
+    },
+    {
+      "path": "public/game/joystick.js",
+      "bytes": 7073,
+      "sha256": "57e7abd41243ac077d95c057c6ddf88ddfdae6f9b5f8d62fe04e372ddafcc07e"
+    },
+    {
+      "path": "public/game/lifeboat-content.js",
+      "bytes": 16284,
+      "sha256": "409ab3d41f7e1db576f106cc1dc764d2c25d00283752207b49b95285a644f652"
+    },
+    {
+      "path": "public/game/lifeboat-ui.js",
+      "bytes": 20983,
+      "sha256": "ff148f74974cd0634daaa1d7964aabccff51cb18895e3c01b58f2bf7ec48b699"
+    },
+    {
+      "path": "public/game/lifeboat.css",
+      "bytes": 9737,
+      "sha256": "9455202d7077619ece109729c67dd3ea705de3ee4b1a6055354ad3ba2bf58023"
+    },
+    {
+      "path": "public/game/loma-content.js",
+      "bytes": 7357,
+      "sha256": "601c484b00e927595e96386559a431e60efd3c6908fef6641d831e32310e8187"
+    },
+    {
+      "path": "public/game/loma-ui.js",
+      "bytes": 26024,
+      "sha256": "dfa830e71b4760a66db9ff1012c2c69fb5c922526481166d6356c5d62c775501"
+    },
+    {
+      "path": "public/game/loma.css",
+      "bytes": 11186,
+      "sha256": "87366e8641dd57e45dcf00254ccd84729d675a5b96661c39e99f1ed10b1f0389"
+    },
+    {
+      "path": "public/game/map-view.js",
+      "bytes": 31970,
+      "sha256": "fbc1b5e338f9f5d1313ac6afbdb00ef0ded7a2f59e25a048c7a38b1db61217d2"
+    },
+    {
+      "path": "public/game/mobile-controls.css",
+      "bytes": 14586,
+      "sha256": "5150fc9d1f1ddc31b69524d74c1a2ff7112046b216e67fcd70ec072da2b7c4e9"
+    },
+    {
+      "path": "public/game/npc-content.js",
+      "bytes": 49933,
+      "sha256": "361b4bdf7a77f7b3173ff2734bbc22a01972ae04e47e6acc2fd16e20270de32c"
+    },
+    {
+      "path": "public/game/npc-ui.css",
+      "bytes": 12722,
+      "sha256": "8618e4ffba1385b4a95794eefeadb048fe7fed53712d38c16e71498e9e8bd90b"
+    },
+    {
+      "path": "public/game/npc-ui.js",
+      "bytes": 29716,
+      "sha256": "f46dc66bc379dca968b7253a3bcb33b1804a86f3259f434d988af62682a6fe28"
+    },
+    {
+      "path": "public/game/orientation-ui.css",
+      "bytes": 4412,
+      "sha256": "09c30321dd8e96b713409e18b3efe587acb1ea4ba7e01abb3c320496826d3fc7"
+    },
+    {
+      "path": "public/game/orientation-ui.js",
+      "bytes": 5374,
+      "sha256": "fdff276707756338a7bed73860b2a1777edd477a994f42f3abcb5ff0c0df5522"
+    },
+    {
+      "path": "public/game/progress.js",
+      "bytes": 9863,
+      "sha256": "7248357b41a38f2ceeed518bd36f9427eede6f45b94213dfc5c34647f67aed97"
+    },
+    {
+      "path": "public/game/rpg-campus.css",
+      "bytes": 5102,
+      "sha256": "22751952d8f8f19e5c25a9472b9a94f2771ee702949a5c4558cb5e6d267be24e"
+    },
+    {
+      "path": "public/game/rpg-campus.js",
+      "bytes": 4756,
+      "sha256": "d2d68714361fa5de407982099028fc941dff9fad7aa811028226014466d00f27"
+    },
+    {
+      "path": "public/game/rpg-progress.js",
+      "bytes": 22281,
+      "sha256": "2407a93207b7ffe4627de9a8f82319acdb83c3d48ee58ab6ee84e9b1226a366c"
+    },
+    {
+      "path": "public/game/styles.css",
+      "bytes": 41798,
+      "sha256": "8ac31679da9f1fd54f7c682d48875668b4d6708645ac9e539e54487af0452342"
+    },
+    {
+      "path": "public/game/vendor/THREE-LICENSE.txt",
+      "bytes": 1081,
+      "sha256": "4c40a1ef62450b857c3b2aaf294936304cd552d965fbcd9d32d4c5bcf4ba4454"
+    },
+    {
+      "path": "public/game/vendor/three.module.min.js",
+      "bytes": 691648,
+      "sha256": "08fd7545d13d2c7fb65ab691530a802dafefd638596501854f267d0fb13c39e7"
+    },
+    {
+      "path": "public/game/world.js",
+      "bytes": 142205,
+      "sha256": "d3b7206159778dc11e5e0505583e669a529454b82417935b6cd08db50772afc6"
+    },
+    {
+      "path": "public/globe.svg",
+      "bytes": 1036,
+      "sha256": "d051a8c47936990a9085693d307bb7cea1bc1b6d7ed956bcbaacf674f4ec96b9"
+    },
+    {
+      "path": "public/window.svg",
+      "bytes": 386,
+      "sha256": "decf1cf7bb22b5c99c4857cfcd5718ce5465c4454166317589c83fc73df74b66"
+    },
+    {
+      "path": "qa/academy-ui-checks.mjs",
+      "bytes": 85521,
+      "sha256": "aa0d14004896871a35985c5de813aebd93e9b33637430cd5df8fbac27495d512"
+    },
+    {
+      "path": "qa/character-dashboard-checks.mjs",
+      "bytes": 28842,
+      "sha256": "4099ca3620f7aeade735dc9ab067ebf459f80b6465dfa6730435e9e0bdfd084c"
+    },
+    {
+      "path": "qa/rpg-rules-checks.mjs",
+      "bytes": 28412,
+      "sha256": "e44323abc3e82f5392b3b1ab6d3a3f18da32d1898bf03ea425bdaac3911ee7bf"
+    },
+    {
+      "path": "qa/rpg-ui-checks.mjs",
+      "bytes": 18802,
+      "sha256": "5dfe287e9e9b55227e1c1c6bedadd8e6c0525379d4c6f1362565390040065430"
+    },
+    {
+      "path": "scripts/configure.mjs",
+      "bytes": 1411,
+      "sha256": "ae23fa5337233a90ba690a843e00b18dff52185051d6e5a6ef25d095fe94e0eb"
+    },
+    {
+      "path": "source-assets.json",
+      "bytes": 50677,
+      "sha256": "f114fc580cf2d167818813c1134342b3367e7ce4118d57aafbfb2daa0d9592b2"
+    },
+    {
+      "path": "src/auth.mjs",
+      "bytes": 3034,
+      "sha256": "067eccfb0b88b66512ab04415db7444ee21c83a0b5c362dbb4b7ea540e47c603"
+    },
+    {
+      "path": "src/worker.mjs",
+      "bytes": 7361,
+      "sha256": "5b146c27acbb05c85b7df40ab7149e1c9c7928c20a8c03e98a65baa9ff57c101"
+    },
+    {
+      "path": "tests/export-checks.mjs",
+      "bytes": 2526,
+      "sha256": "d1f977f1eb1f567d63b388d78c057efb4647a18cecd6dc5699e082d430eb240f"
+    },
+    {
+      "path": "tests/sqlite-d1.mjs",
+      "bytes": 1745,
+      "sha256": "2f90567b90722e0fe77eab1b6f369f334442e0dc315190da69dbca1656c05539"
+    },
+    {
+      "path": "tests/worker.test.mjs",
+      "bytes": 12151,
+      "sha256": "f61515d9a3a52e3b6358a1be0d45f9d4f9f6b03ac4ac71ffca6af43c06d3c94d"
+    },
+    {
+      "path": "wrangler.jsonc",
+      "bytes": 715,
+      "sha256": "9e4eb55a5a006c4e21db5d275ae91736cbcd8299ce4ff32771c17b534411a329"
+    }
+  ]
+}
