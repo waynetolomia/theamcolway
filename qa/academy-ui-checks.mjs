@@ -1071,6 +1071,29 @@ await test('sentence scrambles build the answer from tiles, and placed tiles can
   assert.equal(state().results[id].completed, true);
 });
 
+await test('the Dorm shortcut and the campus shuttle stop take the cadet to the dormitory and back', async () => {
+  await close();
+  const before = JSON.stringify(state());
+  assert.equal(app.zone, 'campus');
+  assert.equal(el('#dorm-btn [data-dorm-label]').textContent, 'Dorm');
+  await click('#dorm-btn');
+  assert.equal(app.zone, 'dorm');
+  assert.ok(document.querySelector('#dorm-sleep-now'), 'The dormitory menu opens on arrival');
+  assert.equal(el('#dorm-btn [data-dorm-label]').textContent, 'AMCOL');
+  await close(); await click('#dorm-btn');
+  assert.equal(app.zone, 'campus');
+  if (!fallback) {
+    currentWorld.callbacks.onNear({ id: 'dorm-shuttle' });
+    assert.match(el('#near-label').textContent, /shuttle to the Dormitory/);
+    await click('#interaction-prompt');
+    assert.equal(app.zone, 'dorm');
+    await close(); await click('#dorm-btn'); currentWorld.callbacks.onNear(null);
+  }
+  assert.equal(app.zone, 'campus');
+  assert.equal(JSON.stringify(state()), before, 'Travelling does not change saved progress');
+  await close();
+});
+
 await test('walking students chat with maritime trivia without changing saved progress', async () => {
   if (fallback) return; // the learning fallback has no 3D students to walk up to
   await close();

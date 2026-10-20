@@ -616,6 +616,10 @@ export class SeaWorld {
     for (const [x,z] of [[-30.5,19],[-19,19],[6.5,19],[16.8,13.8],[10.2,-13.7],[-22,-7.0]]) this._lamp(x,z);
     for (const [x,z] of [[-36,-7.4],[-26.5,-8.2],[9.9,-18.5],[31.7,-16.6],[10.6,-2.0],[17.7,-1.2],[21,16.5],[29.5,16.3]]) this._planter(x,z);
     this._buildWayfinding(CAMPUS_STATIONS);
+    // Dorm shuttle stop beside the front walk, matching the dormitory's CAMPUS SHUTTLE sign.
+    for (const x of [-28.3, -24.7]) this._box(this.world, .12, 2.7, .12, x, 1.35, 22.0, '#5D827D', .015);
+    this._sign(this.world, 'DORM SHUTTLE', -26.5, 2.56, 22.05, 4.4, C.navy, C.cream, .60);
+    this._box(this.world, 4.6, .10, 1.2, -26.5, 2.98, 21.7, '#5D827D', .02);
     this._buildStaff('campus');
     const routes = [
       [[-19,17.8],[-9,19.5],[-9,17.8],[-19,12]],

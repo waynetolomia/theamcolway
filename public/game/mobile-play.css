@@ -97,6 +97,13 @@ body:not([data-mode=world]) .rotate-hint{display:none}
   body[data-mode=creator] #game-main{height:calc(100dvh - 44px - env(safe-area-inset-top,0px))}
 }
 
+/* Dorm shortcut sits beside the Campus button. */
+.world-bottom-right{gap:8px}
+#dorm-btn svg{width:17px;height:17px}
+@media(any-pointer:coarse),(max-width:700px),(max-width:950px) and (max-height:600px){
+  .world-bottom-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+}
+
 /* Full screen on any device: give the world the whole viewport. */
 body[data-fullscreen=true][data-mode=world] #game-main{height:100dvh}
 body[data-fullscreen=true][data-mode=world] .topbar{position:fixed;top:0;right:0;left:auto;width:auto;background:transparent;border:0;box-shadow:none;z-index:30;pointer-events:none;padding:8px 10px 0 0;height:auto}

@@ -19,6 +19,7 @@ const BETA_EDITS = {
   'public/game/book-course.js': ['"format":"choice"', '"generator":"scripts/build-minigames.mjs"'],
   'public/game/rpg-progress.js': ['Subject games train their own subject first.'],
   'public/game/fitness-games.js': ['export function createPtRhythm', 'data-pt-hold'],
+  'public/game/campus.js': ['export const SHUTTLE_STATIONS', '...SHUTTLE_STATIONS'],
   'public/game/academy-ui.js': ["import { isLocalMode } from './local-academy.js';", 'href="/auth/login"'],
 };
 let totalBytes = 0;

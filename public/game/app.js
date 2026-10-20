@@ -4,7 +4,7 @@ import { RPG_SKILLS, RPG_TRAITS } from './rpg-progress.js';
 import { pickTrivia, pickGreeting } from './student-trivia.js';
 import { setupMobilePlay } from './mobile-play.js';
 import { detectStorageMode, isLocalMode, isPersistent, downloadLocalBackup, restoreLocalBackup } from './local-academy.js';
-import { CAMPUS, DORM, ATLANTIC, STATIONS, DORM_STATIONS, ATLANTIC_STATIONS, NPC_STATIONS, WORKSHOP_STATIONS, SAFETY_STATIONS, REST_STATIONS, LOMA_ENTRANCES, ACTIVITY_LOCATIONS } from './campus.js';
+import { CAMPUS, DORM, ATLANTIC, STATIONS, DORM_STATIONS, ATLANTIC_STATIONS, NPC_STATIONS, WORKSHOP_STATIONS, SAFETY_STATIONS, REST_STATIONS, LOMA_ENTRANCES, SHUTTLE_STATIONS, ACTIVITY_LOCATIONS } from './campus.js';
 import { renderCampusMap, renderDormMap, renderAtlanticMap } from './map-view.js';
 import { STORAGE_KEY, createState, normalizeState } from './progress.js';
 import { BOOK, SEMESTERS, ACTIVITIES, getActivity } from './book-course.js';
@@ -94,7 +94,7 @@ music.setEnabled(prefs.music);
 setupMobilePlay({icon,toast});
 // Keep listening labs and voice playback clear: the music softens while any dialog is open.
 if(typeof MutationObserver==='function')new MutationObserver(()=>music.setQuiet(dialog.open)).observe(dialog,{attributes:true,attributeFilter:['open']});
-const stationDetails=Object.fromEntries([...STATIONS,...DORM_STATIONS,...ATLANTIC_STATIONS,...NPC_STATIONS,...WORKSHOP_STATIONS,...SAFETY_STATIONS,...REST_STATIONS,...LOMA_ENTRANCES].map(s=>[s.id,{...s,label:s.npcId?`Talk to ${s.name}`:['dorm-return','atlantic-return'].includes(s.id)?'Return to the AMCOL campus':s.id==='atlantic'?'Enter Atlantic · Offices & Simulators':s.id==='lifeboat'?'Play lifeboat safety games':s.id.startsWith('loma-lounge')?'Enter Loma Lounge · Final 50':`Explore ${s.name}`} ]));
+const stationDetails=Object.fromEntries([...STATIONS,...DORM_STATIONS,...ATLANTIC_STATIONS,...NPC_STATIONS,...WORKSHOP_STATIONS,...SAFETY_STATIONS,...REST_STATIONS,...LOMA_ENTRANCES,...SHUTTLE_STATIONS].map(s=>[s.id,{...s,label:s.kind==='shuttle'?'Ride the shuttle to the Dormitory':s.npcId?`Talk to ${s.name}`:['dorm-return','atlantic-return'].includes(s.id)?'Return to the AMCOL campus':s.id==='atlantic'?'Enter Atlantic · Offices & Simulators':s.id==='lifeboat'?'Play lifeboat safety games':s.id.startsWith('loma-lounge')?'Enter Loma Lounge · Final 50':`Explore ${s.name}`} ]));
 const canonicalLocation=id=>id==='loma-lounge-east'?'loma-lounge':id==='cafe-west'?'cafe':id;
 const skinColors=[['#f2d0b0','Light'],['#dca479','Warm light'],['#b97850','Medium'],['#98603e','Warm brown'],['#72482f','Brown'],['#4c3026','Deep']];
 const hairColors=[['#292327','Dark'],['#523426','Chestnut'],['#956347','Brown'],['#c2a071','Sandy'],['#b54f39','Auburn'],['#77767c','Silver']];
@@ -220,7 +220,11 @@ function closeDialog(){academy?.dispose();if(dialog.open)dialog.close();}
 dialog.addEventListener('close',()=>{if(dialog.open)return;academy?.dispose();dialogKey='';$('#rpg-reward').hidden=true;clearTimeout(rewardTimer);world?.setPaused(document.hidden);stopTouch();updateTouchState();window.speechSynthesis?.cancel();if(mode==='world')$('#game-canvas').focus({preventScroll:true});});
 $('#close-dialog').onclick=closeDialog;
 dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDialog();}});
+// One-tap shortcut between the campus and the dormitory (also the H key in the 3D world).
+function updateDormShortcut(){const button=$('#dorm-btn');if(!button)return;const atDorm=currentZone==='dorm';button.querySelector('[data-dorm-label]').textContent=atDorm?'AMCOL':'Dorm';const mark=button.querySelector('svg')?.parentElement||button.firstElementChild;if(mark&&mark.dataset.zone!==String(atDorm)){mark.dataset.zone=String(atDorm);mark.innerHTML=icon(atDorm?'flag':'home');}button.setAttribute('aria-label',atDorm?'Return to the AMCOL campus':'Go to the Cadet Dormitory');}
+function dormShortcut(){if(mode!=='world')return;playTone();if(currentZone==='dorm')walkTo('dorm-return');else{toast('Taking the shuttle to the Cadet Dormitory.');walkTo('dorm');}}
 function updateHUD(){
+  updateDormShortcut();
   $('#edit-cadet').textContent=Array.from(character.name)[0]?.toUpperCase()||'A';$('#edit-cadet').style.background=character.accent;
   $('#hud-energy').textContent=state.energy;$('#hud-energy').title=`Energy: ${state.energy} / 100`;
   if(academy?.renderHUD())return;
@@ -289,6 +293,7 @@ function interact(id){
   if(mode!=='world')return;
   if(String(id).startsWith('student-')){playTone();openStudentChat(nearStudent?.id===id?nearStudent:{id,name:'A fellow cadet'});return;}
   if(id==='dorm-return'||id==='atlantic-return'){walkTo(id);return;}
+  if(id==='dorm-shuttle'){playTone();toast('All aboard! Riding the shuttle to the Cadet Dormitory.');walkTo('dorm');return;}
   playTone();
   if(engineAvailable&&world?.canEnterStation&&!world.canEnterStation(id,{notify:true}))return;
   const intent=destinationIntent?.station===id?destinationIntent:null;destinationIntent=null;
@@ -309,7 +314,7 @@ function openDorm(){academy.openDorm();}
 function openCampus(){
   if(mode!=='world'){openJourney();return;}
   const atDorm=currentZone==='dorm',atAtlantic=currentZone==='atlantic';
-  const stations=atDorm?DORM_STATIONS:atAtlantic?ATLANTIC_STATIONS:[...STATIONS,...SAFETY_STATIONS,...REST_STATIONS];
+  const stations=atDorm?DORM_STATIONS:atAtlantic?ATLANTIC_STATIONS:[...STATIONS,...SAFETY_STATIONS,...REST_STATIONS,...SHUTTLE_STATIONS];
   const title=atDorm?'Cadet Dormitory':atAtlantic?'Inside Atlantic Building':'AMCOL Main Campus';
   const map=atDorm?renderDormMap(positions.dorm):atAtlantic?renderAtlanticMap(positions.atlantic):renderCampusMap(positions.campus);
   openDialog(title,'YOUR COLLEGE · YOUR JOURNEY',`<p class="dialog-copy">${engineAvailable?'Choose a destination and your cadet will walk there. Press <strong>E</strong> or tap <strong>Interact</strong> to enter or meet a teacher.':'Choose a destination to open its activities.'}</p><div class="amcol-map-scroll">${map}</div>${!atDorm&&!atAtlantic?`<div class="campus-focus-strip"><span>${icon('book')} <strong>Pacific · Right-side entrance</strong> Maths · Science · English</span><span>${icon('radio')} <strong>Enter Atlantic</strong> CEO office · Bridge · Engine · ECDIS · GMDSS</span></div>`:''}<div class="campus-grid">${stations.map(d=>`<button class="campus-location" data-campus="${d.id}"><span class="location-icon" style="--location-color:${d.color}">${icon(d.icon)}</span><span><strong>${escapeHTML(d.name)}</strong><small>${escapeHTML(d.subtitle||'')}</small></span><span>${icon('arrow-up-right')}</span></button>`).join('')}</div><div class="offsite-note"><span>${icon(atDorm||atAtlantic?'flag':'home')}</span><div><strong>${atDorm||atAtlantic?'AMCOL Main Campus':'Cadet Dormitory · Separate map'}</strong><p>${atAtlantic?'Leave through the Atlantic entrance and return to the college grounds.':atDorm?'Return for your book missions and campus life.':'PT, running, football, and your room for a new day.'}</p></div><button id="campus-transfer" class="text-button">${atAtlantic?'Exit Atlantic':'Travel'} ${icon('arrow-right')}</button></div><p class="campus-footnote">${atDorm?'This residence layout is a game arrangement, ready to be adjusted when the dormitory plan is supplied.':atAtlantic?'Visit Capt. Chalermvut in the CEO office, Capt. Jakk at the Bridge Simulator, and C/E Asawin with Engineer Gerald at the Engine Simulator, Tr. Duke in ECDIS, and Tr. Bank in GMDSS.':'Pacific’s entrance is on its right side. Meet Dr. Wayne, Tr. Aphisit, and Tr. Anne in front of the Dome stage. Tr. Amara welcomes you outside the Workshop. Both Loma buildings have entrances on each side.'}</p><div class="dialog-actions">${htmlButton('campus-center',atDorm?'Return to the dorm entrance':atAtlantic?'Return to Atlantic lobby':'Return to AMCOL entrance','secondary','compass')}${htmlButton('campus-missions','Missions & progress','primary','book')}</div>`,'campus');
@@ -348,7 +353,7 @@ function connectUI(){
   $$('.creator-tabs [data-tab]').forEach((b,i)=>{b.onclick=()=>selectTab(b.dataset.tab);b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const buttons=$$('.creator-tabs [data-tab]');const next=buttons[(i+(e.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length];selectTab(next.dataset.tab);next.focus();};});
   $('#randomize').onclick=()=>{creatorDirty=true;for(const [key,arr] of Object.entries({skin:skinColors.map(c=>c[0]),hairColor:hairColors.map(c=>c[0]),hairStyle:['crop','swept','bob','bun'],outfit:['cadet','maritime-white','maritime','coverall','immersion'],accent:accents.map(c=>c[0]),body:['slim','regular','broad'],accessory:['none','glasses','cap']}))character[key]=arr[Math.floor(Math.random()*arr.length)];buildCreatorControls();world?.setCharacter(character);playTone();};
   $('#rotate-left').onclick=()=>world?.rotateCharacter(-1);$('#rotate-right').onclick=()=>world?.rotateCharacter(1);$('#start-journey').onclick=beginJourney;
-  $('#staff-btn').onclick=()=>academy.openStaff();$('#edit-cadet').onclick=()=>academy.openDashboard();$('#journey-btn').onclick=openJourney;$('#help-btn').onclick=openHelp;$('#music-btn').onclick=toggleMusic;updateMusicControls();$('#settings-btn').onclick=openSettings;$('#campus-btn').onclick=openCampus;$('#journal-btn').onclick=()=>openJournal();$('#interaction-prompt').onclick=()=>nearStation&&interact(nearStation);$('#mobile-interact').onclick=()=>nearStation?interact(nearStation):toast('Walk near a teacher or learning station, or choose a destination from Campus.');
+  $('#staff-btn').onclick=()=>academy.openStaff();$('#edit-cadet').onclick=()=>academy.openDashboard();$('#journey-btn').onclick=openJourney;$('#help-btn').onclick=openHelp;$('#music-btn').onclick=toggleMusic;updateMusicControls();$('#settings-btn').onclick=openSettings;$('#campus-btn').onclick=openCampus;$('#dorm-btn').onclick=dormShortcut;$('#journal-btn').onclick=()=>openJournal();$('#interaction-prompt').onclick=()=>nearStation&&interact(nearStation);$('#mobile-interact').onclick=()=>nearStation?interact(nearStation):toast('Walk near a teacher or learning station, or choose a destination from Campus.');
   $('#brand').onclick=e=>{e.preventDefault();openJourney();};
   $('#collapse-quest').onclick=()=>{const b=$('#quest-body');b.hidden=!b.hidden;$('#collapse-quest').setAttribute('aria-expanded',!b.hidden);$('#collapse-quest').setAttribute('aria-label',b.hidden?'Expand objectives':'Collapse objectives');$('#collapse-quest').innerHTML=icon(b.hidden?'plus':'minus');};
   if(matchMedia('(max-width:700px)').matches){$('#quest-body').hidden=true;$('#collapse-quest').setAttribute('aria-expanded','false');$('#collapse-quest').setAttribute('aria-label','Expand objectives');$('#collapse-quest').innerHTML=icon('plus');}
@@ -356,7 +361,7 @@ function connectUI(){
   $('#mobile-run').onclick=()=>{if(mode==='world'&&!dialog.open&&engineAvailable)setMobileRun(!mobileRun);};
   cameraControls=mountCameraControls([{left:$('#camera-left'),reset:$('#camera-reset'),right:$('#camera-right')},{left:$('#mobile-camera-left'),reset:$('#mobile-camera-reset'),right:$('#mobile-camera-right')}],{enabled:false,rotate:direction=>world?.rotateCamera(direction),setInput:direction=>world?.setCameraInput?.(direction),resetView:()=>world?.resetCamera?.()});
   window.addEventListener('blur',stopTouch);updateTouchState();
-  window.addEventListener('keydown',e=>{if(mode!=='world'||dialog.open||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;const key=e.key.toLowerCase();if(key==='m'){e.preventDefault();openCampus();}if(key==='j'){e.preventDefault();openJournal();}if(key==='c'){e.preventDefault();academy.openDashboard();}});
+  window.addEventListener('keydown',e=>{if(mode!=='world'||dialog.open||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;const key=e.key.toLowerCase();if(key==='m'){e.preventDefault();openCampus();}if(key==='j'){e.preventDefault();openJournal();}if(key==='c'){e.preventDefault();academy.openDashboard();}if(key==='h'&&!e.repeat){e.preventDefault();dormShortcut();}});
   window.addEventListener('beforeunload',()=>{save();saveWorld();academy.dispose();joystick?.destroy();cameraControls?.destroy();});document.addEventListener('visibilitychange',()=>{if(document.hidden){save();saveWorld();world?.setPaused(true);stopTouch();}else{world?.setPaused(dialog.open);if(academy.ready)academy.refresh();}updateTouchState();});
   $('#dismiss-fallback').onclick=()=>{$('#engine-fallback').hidden=true;toast('Learning mode is ready. Use Campus after creating your cadet.');};
 }

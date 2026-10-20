@@ -90,6 +90,11 @@ export const SAFETY_STATIONS = Object.freeze([
     zone:'campus', location:'lifeboat', kind:'safety', color:'#f18a41', short:'LIFEBOAT', icon:'ship',
     subtitle:'Immersion suit required · Safety vocabulary, equipment, and muster mini-games' },
 ]);
+// A shuttle stop near the main gate: walk up and ride straight to the cadet dormitory.
+export const SHUTTLE_STATIONS = Object.freeze([
+  { id:'dorm-shuttle', name:'Dorm Shuttle Stop', x:-26.5, z:20.6, zone:'campus', kind:'shuttle', color:'#9fb7ce', short:'DORM SHUTTLE', icon:'home',
+    subtitle:'Ride to the cadet dormitory · PT, sports and sleep' },
+]);
 export const REST_STATIONS = Object.freeze([
   { id:'loma-lounge', name:'Loma Lounge · West Entrance', x:12.7, z:20,
     zone:'campus', location:'loma-lounge', kind:'exam', color:'#91b78b', short:'FINAL EXAMS', icon:'trophy',
@@ -163,7 +168,7 @@ export const NPC_STATIONS = Object.freeze(NPCS.map((npc, index) => Object.freeze
 })));
 
 export const CAMPUS_STATIONS = Object.freeze([
-  ...STATIONS, ...NPC_STATIONS.filter(station => station.zone === 'campus'), ...WORKSHOP_STATIONS, ...SAFETY_STATIONS, ...REST_STATIONS, ...LOMA_ENTRANCES,
+  ...STATIONS, ...NPC_STATIONS.filter(station => station.zone === 'campus'), ...WORKSHOP_STATIONS, ...SAFETY_STATIONS, ...REST_STATIONS, ...LOMA_ENTRANCES, ...SHUTTLE_STATIONS,
 ]);
 export const DORM_DESTINATIONS = Object.freeze([
   ...DORM_STATIONS, ...NPC_STATIONS.filter(station => station.zone === 'dorm'),
