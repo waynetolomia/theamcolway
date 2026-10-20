@@ -1,6 +1,7 @@
 import './asset-paths.js';
 import { createMusic, MUSIC_TRACKS } from './music.js';
 import { RPG_SKILLS, RPG_TRAITS } from './rpg-progress.js';
+import { pickTrivia, pickGreeting } from './student-trivia.js';
 import { detectStorageMode, isLocalMode, isPersistent, downloadLocalBackup, restoreLocalBackup } from './local-academy.js';
 import { CAMPUS, DORM, ATLANTIC, STATIONS, DORM_STATIONS, ATLANTIC_STATIONS, NPC_STATIONS, WORKSHOP_STATIONS, SAFETY_STATIONS, REST_STATIONS, LOMA_ENTRANCES, ACTIVITY_LOCATIONS } from './campus.js';
 import { renderCampusMap, renderDormMap, renderAtlanticMap } from './map-view.js';
@@ -222,7 +223,7 @@ function updateHUD(){
   $('#quest-list').innerHTML='<div class="quest-row"><span></span><button id="connect-missions">Open the Academic Office</button></div>';
   $('#connect-missions').onclick=openJournal;
 }
-function setNear(station){nearStation=station?.id||null;const d=stationDetails[nearStation];$('#mobile-interact').dataset.nearby=String(!!d);$('#interaction-prompt').hidden=!d||mode!=='world';if(d)$('#near-label').textContent=destinationIntent?.station===nearStation&&destinationIntent.courseId?getActivity(destinationIntent.courseId)?.title||d.label:d.label;}
+function setNear(station){nearStation=station?.id||null;nearStudent=station?.student?{...station}:null;const d=stationDetails[nearStation]||(nearStudent?{label:`Talk to ${nearStudent.name}`}:null);$('#mobile-interact').dataset.nearby=String(!!d);$('#interaction-prompt').hidden=!d||mode!=='world';if(d)$('#near-label').textContent=destinationIntent?.station===nearStation&&destinationIntent.courseId?getActivity(destinationIntent.courseId)?.title||d.label:d.label;}
 function transferTo(zone,position=null){
   closeDialog();destinationIntent=null;currentZone=Object.hasOwn(districts,zone)?zone:'campus';
   positions[currentZone]=position||positions[currentZone]||{...districts[currentZone].spawn};
@@ -263,8 +264,22 @@ function walkTo(id,courseId=null){
   destinationIntent=courseId?{station:physical,courseId}:null;
   navigateToStation(physical);
 }
+// Walking students share casual maritime trivia: no XP, no grades, nothing saved.
+let nearStudent=null;const recentTrivia=[];
+function openStudentChat(student,{greeting=pickGreeting()}={}){
+  const q=pickTrivia(recentTrivia);recentTrivia.push(q.index);if(recentTrivia.length>8)recentTrivia.shift();
+  openDialog(student.name,'MARITIME TRIVIA · FRIENDLY CHAT',`<p class="dialog-copy">“${escapeHTML(greeting)}”</p><div class="question-card"><h3>${escapeHTML(q.question)}</h3><div class="choice-list" role="group" aria-label="Answer choices">${q.options.map((o,i)=>`<button type="button" class="choice-option" data-trivia="${i}"><span class="choice-letter">${String.fromCharCode(65+i)}</span><span>${escapeHTML(o)}</span></button>`).join('')}</div><div id="trivia-feedback" role="status" aria-live="polite"></div></div><div class="dialog-actions">${htmlButton('trivia-again','Another question','secondary','')}${htmlButton('trivia-bye','Thanks, see you!','primary','')}</div><p class="campus-footnote">Just for fun — practice chats are not graded or saved.</p>`,'student-chat');
+  $$('[data-trivia]').forEach(b=>b.onclick=()=>{
+    const chosen=q.options[Number(b.dataset.trivia)],right=chosen===q.correct;
+    $$('[data-trivia]').forEach(x=>{const o=q.options[Number(x.dataset.trivia)];x.disabled=true;x.classList.toggle('selected',x===b);x.classList.toggle('correct',o===q.correct);x.classList.toggle('wrong',x===b&&!right);});
+    $('#trivia-feedback').innerHTML=`<div class="answer-feedback ${right?'correct':'review'}"><strong>${right?'Correct!':'Not quite.'}</strong> ${right?'':`The answer is <b>${escapeHTML(q.correct)}</b>. `}${escapeHTML(q.fact)}</div>`;
+    playTone(right?'success':'wrong');
+  });
+  $('#trivia-again').onclick=()=>openStudentChat(student,{greeting:'Nice! Here’s another one:'});$('#trivia-bye').onclick=closeDialog;
+}
 function interact(id){
   if(mode!=='world')return;
+  if(String(id).startsWith('student-')){playTone();openStudentChat(nearStudent?.id===id?nearStudent:{id,name:'A fellow cadet'});return;}
   if(id==='dorm-return'||id==='atlantic-return'){walkTo(id);return;}
   playTone();
   if(engineAvailable&&world?.canEnterStation&&!world.canEnterStation(id,{notify:true}))return;

@@ -1071,6 +1071,28 @@ await test('sentence scrambles build the answer from tiles, and placed tiles can
   assert.equal(state().results[id].completed, true);
 });
 
+await test('walking students chat with maritime trivia without changing saved progress', async () => {
+  if (fallback) return; // the learning fallback has no 3D students to walk up to
+  await close();
+  const before = JSON.stringify(state());
+  currentWorld.callbacks.onNear({ id: 'student-campus-0', name: 'Cadet Ploy', student: true, x: 0, z: 0 });
+  assert.equal(el('#interaction-prompt').hidden, false);
+  assert.match(el('#near-label').textContent, /Talk to Cadet Ploy/);
+  await click('#interaction-prompt');
+  assert.equal(app.dialogKey, 'student-chat');
+  assert.equal(el('#dialog-title').textContent, 'Cadet Ploy');
+  const options = [...document.querySelectorAll('[data-trivia]')];
+  assert.ok(options.length >= 3);
+  await click(options[0]);
+  assert.ok(options.every(option => option.disabled), 'Answering locks the choices');
+  assert.equal(document.querySelectorAll('[data-trivia].correct').length, 1, 'The right answer is revealed');
+  assert.ok(el('#trivia-feedback').textContent.trim());
+  await click('#trivia-again'); assert.equal(app.dialogKey, 'student-chat');
+  await click('#trivia-bye');
+  assert.equal(JSON.stringify(state()), before, 'Trivia chats are not graded or saved');
+  currentWorld.callbacks.onNear(null);
+});
+
 await test('typed fill-in-the-blank games accept the book answer', async () => {
   const id = state().assignments.find(id => getActivity(id).questions.some(q => q.format === 'blank'));
   if (!id) return;
@@ -1260,7 +1282,8 @@ await test('Loma opens only after the last semester starts, saves one final draw
   finalIds = [...state().loma.gameIds];
   assert.equal(finalIds.length, 50); assert.equal(new Set(finalIds).size, 50);
   assert.ok(finalIds.every(id => ['shared', 'engine'].includes(getLomaGame(id).major)));
-  firstFinalId = finalIds.find(id => getLomaGame(id).source.pages?.length && getLomaGame(id).questions[0].type === 'text');
+  // Book games are now mostly multiple choice, so the draft check accepts a typed or a chosen first answer.
+  firstFinalId = finalIds.find(id => getLomaGame(id).source.pages?.length && ['text', 'choice'].includes(getLomaGame(id).questions[0].type));
   assert.ok(firstFinalId, 'The drawn final includes book material with an accessible source page.');
   await app.academy.refresh(); await settle();
   assert.deepEqual([...state().loma.gameIds], finalIds, 'Refresh must preserve the saved random selection.');
@@ -1279,12 +1302,14 @@ await test('Loma opens only after the last semester starts, saves one final draw
 await test('a final source page preserves the draft, wrong answers spend no slot, and delayed retries save without replacing Help', async () => {
   const game = getLomaGame(firstFinalId), booksBefore = JSON.stringify(state().results), beforeXP = getCharacterSummary(state()).totalXP;
   await openFinalGame(firstFinalId);
-  await value('#loma-text-answer', 'My retained final draft');
+  const typed = game.questions[0].type === 'text';
+  if (typed) await value('#loma-text-answer', 'My retained final draft'); else await click('[data-loma-choice="1"]');
   await click('#loma-source-open');
   assert.equal(Number(el('#book-page-number').value), game.source.pages[0]);
   await click('#book-resume');
   assert.equal(app.dialogKey, 'loma-game');
-  assert.equal(el('#loma-text-answer').value, 'My retained final draft');
+  if (typed) assert.equal(el('#loma-text-answer').value, 'My retained final draft');
+  else assert.equal(el('[data-loma-choice="1"]').getAttribute('aria-pressed'), 'true', 'The chosen answer survives the source page');
   await answerLoma(game, { wrong: true });
   assert.equal(state().loma.results[firstFinalId].completed, false);
   assert.equal(state().loma.results[firstFinalId].attempts, 1);

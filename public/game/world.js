@@ -13,6 +13,25 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const mixAngle = (a, b, t) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
 const editable = target => target?.closest?.('input, textarea, select, [contenteditable="true"], [role="dialog"]');
 const mix = (a, b, t) => a + (b - a) * t;
+const KNEE_Y = 0.68;   // knee height below the hip joint, in avatar rig units
+const HIP_Y = 1.39;    // hip joint height in avatar rig units
+const SMALL_SCALE = 0.95;
+const STUDENT_TALK_RANGE = 3.2;
+
+// Background cadets: maritime students in campus or maritime uniform. Walking students can be
+// approached for a quick maritime trivia chat; seated students use the same full-size model.
+const STUDENT_LOOKS = [
+  { name: 'Cadet Ploy', gender: 'female', skin: '#E0AE89', hairColor: '#2B2421', hairStyle: 'bun', outfit: 'maritime-white', accent: '#C9A24A', body: 'slim', accessory: 'cap' },
+  { name: 'Cadet Arun', gender: 'male', skin: '#8A5C40', hairColor: '#262625', hairStyle: 'crop', outfit: 'cadet', accent: '#284B79', body: 'regular' },
+  { name: 'Cadet Nok', gender: 'female', skin: '#C99570', hairColor: '#50392C', hairStyle: 'bob', outfit: 'maritime', accent: '#C9A24A', body: 'regular', accessory: 'glasses' },
+  { name: 'Cadet Krit', gender: 'male', skin: '#BA8061', hairColor: '#332921', hairStyle: 'swept', outfit: 'maritime-white', accent: '#C9A24A', body: 'broad', accessory: 'cap' },
+  { name: 'Cadet Fah', gender: 'female', skin: '#DCA479', hairColor: '#523426', hairStyle: 'bun', outfit: 'cadet', accent: '#198879', body: 'regular' },
+  { name: 'Cadet Somchai', gender: 'male', skin: '#98603E', hairColor: '#292327', hairStyle: 'crop', outfit: 'maritime', accent: '#C9A24A', body: 'slim', accessory: 'cap' },
+];
+const studentLook = (index, overrides = {}) => {
+  const look = STUDENT_LOOKS[index % STUDENT_LOOKS.length];
+  return { ...look, uniformBottom: look.gender === 'female' ? 'skirt' : 'pants', ...overrides };
+};
 
 // arms[0]/legs[0] are the cadet's right side (screen left when facing the camera).
 // Each pose blends from the idle stance by w (0 → 1 → 0 over the gesture).
@@ -215,7 +234,7 @@ export class SeaWorld {
     outer.rotation.x = Math.PI / 2;
   }
 
-  _buildAvatar(config, small = false) {
+  _buildAvatar(config, small = false, { seated = false } = {}) {
     const group = new THREE.Group(), rig = new THREE.Group(); group.add(rig);
     const personal = new Set();
     const mat = (color, extra = {}) => {
@@ -336,8 +355,10 @@ export class SeaWorld {
       garment.scale.z = .66;
       garment.name = 'avatar-uniform-skirt';
       garment.userData.cut='straight-fitted';
+      // Seated: the skirt sits at the hips and the thighs (drawn in black below) carry it forward.
+      if (seated) { garment.scale.y = .44; garment.position.y = 1.40; }
       // A straight fitted knee-length skirt, with no outward flare at the hem.
-      for (const side of [-1, 1]) this._box(rig, .018, .66, .012, side * .26 * width, 1.09, .323, '#23272C', .003);
+      else for (const side of [-1, 1]) this._box(rig, .018, .66, .012, side * .26 * width, 1.09, .323, '#23272C', .003);
     }
     const arms = [], legs = [];
     for (const side of [-1, 1]) {
@@ -359,7 +380,7 @@ export class SeaWorld {
       if(coverall)this._cyl(arm,.123,.123,.075,0,-.868,0,workshopSeam,16).name='coverall-cuff';
       if (outfit === 'polo') this._cyl(arm, 0.148, 0.148, 0.055, 0, -0.295, 0, cream);
       const leg = new THREE.Group(); leg.position.set(side * 0.205 * width, 1.39, 0); rig.add(leg); legs.push(leg);
-      this._capsule(leg, (immersion ? .176 : .156) * width, 0.46, 0, -0.34, 0, skirt||casual ? skin : pants).name = `avatar-${sideName}-upper-leg`;
+      this._capsule(leg, (immersion ? .176 : .156) * width, 0.46, 0, -0.34, 0, seated && skirt ? black : skirt||casual ? skin : pants).name = `avatar-${sideName}-upper-leg`;
       this._capsule(leg, (immersion ? .159 : .133) * width, 0.42, 0, -0.94, 0, skirt||casual ? skin : pants).name = `avatar-${sideName}-lower-leg`;
       this._box(leg, (immersion ? .36 : .30) * width, immersion ? .37 : .20, immersion ? .57 : .51, 0, immersion ? -1.17 : -1.255, .1, immersion?suitTrim:cadet||maritimeUniform||coverall?black:casual||outfit==='polo'?cream:dark, .078).name = immersion ? `immersion-${sideName}-boot` : `avatar-${sideName}-shoe`;
       this._box(leg, (immersion ? .37 : .31) * width, .045, immersion ? .57 : .51, 0, -1.339, .105, outfit === 'polo' ? '#C7CCBE' : '#161F24', .02);
@@ -368,6 +389,12 @@ export class SeaWorld {
         this._box(leg,.347*width,.050,.38,0,-.51,0,formalNavy,.018);
       }
       if (immersion) this._box(leg, .18, .12, .025, 0, -.76, .164, reflector, .008).name = `immersion-${sideName}-leg-reflector`;
+      if (seated) {
+        // A knee joint lets a seated cadet bend: everything below the knee moves into its own group.
+        const knee = new THREE.Group(); knee.position.set(0, -KNEE_Y, 0); knee.name = `avatar-${sideName}-knee`; leg.add(knee);
+        for (const part of leg.children.filter(child => child !== knee && child.position.y < -0.6)) { knee.add(part); part.position.y += KNEE_Y; }
+        leg.userData.knee = knee;
+      }
     }
     // A complete face remains visible at both portrait and walking scale.
     this._sphere(rig, 1, 0, 2.98, 0, skin, [0.385, 0.445, 0.35], 20);
@@ -590,16 +617,12 @@ export class SeaWorld {
     for (const [x,z] of [[-36,-7.4],[-26.5,-8.2],[9.9,-18.5],[31.7,-16.6],[10.6,-2.0],[17.7,-1.2],[21,16.5],[29.5,16.3]]) this._planter(x,z);
     this._buildWayfinding(CAMPUS_STATIONS);
     this._buildStaff('campus');
-    const specs = [
-      {skin:'#8A5C40',hairColor:'#262625',hairStyle:'crop',outfit:'polo',accent:'#C9876E',body:'regular',route:[[-19,17.8],[-9,19.5],[-9,17.8],[-19,12]]},
-      {gender:'female',uniformBottom:'skirt',skin:'#E0AE89',hairColor:'#50392C',hairStyle:'bun',outfit:'cadet',accent:'#417D80',body:'slim',route:[[-18,-6],[-15,-6],[-15,4],[-18,4]]},
-      {skin:'#C99570',hairColor:'#332921',hairStyle:'bob',outfit:'polo',accent:'#759995',body:'regular',accessory:'glasses',route:[[10,9],[10,18.8],[14,18.8],[14,9]]},
+    const routes = [
+      [[-19,17.8],[-9,19.5],[-9,17.8],[-19,12]],
+      [[-18,-6],[-15,-6],[-15,4],[-18,4]],
+      [[10,9],[10,18.8],[14,18.8],[14,9]],
     ];
-    specs.forEach((spec,i) => {
-      const avatar=this._buildAvatar(spec,true); this.world.add(avatar);
-      avatar.position.set(spec.route[0][0],0,spec.route[0][1]);
-      this._npcs.push({avatar,route:spec.route,index:1,phase:i*3,speed:1.2+i*.13});
-    });
+    routes.forEach((route,i) => this._addStudent('campus',i,route,{phase:i*3,speed:1.2+i*.13}));
   }
 
   _buildWorkshopLocker() {
@@ -976,20 +999,19 @@ export class SeaWorld {
     }
   }
 
-  _audiencePerson(parent,x,z,skin,shirt,rotation=0) {
-    // Small seated figures keep the presentation audience inexpensive on phones.
-    const person=new THREE.Group();person.position.set(x,0,z);person.rotation.y=rotation;parent.add(person);
-    this._box(person,.63,.67,.36,0,1.25,0,shirt,.10);
-    this._sphere(person,.28,0,1.94,.01,skin,[.93,1.1,.94],12);
-    this._sphere(person,.29,0,2.04,-.04,'#3C3029',[1,.72,.97],10);
-    for(const side of[-1,1]){
-      this._box(person,.23,.19,.65,side*.16,.77,.25,C.navy,.055);
-      this._box(person,.20,.57,.20,side*.16,.43,.49,C.navy,.045);
-      this._box(person,.23,.14,.34,side*.16,.17,.54,'#263C42',.03);
-      const arm=this._capsule(person,.085,.48,side*.37,1.06,.10,this._m(shirt));arm.rotation.x=-.40;
-      this._sphere(person,.082,side*.37,.76,.24,skin,[1,1.3,1],8);
-    }
-    return person;
+  /** A seated maritime student: the same full-size cadet model as the walking students, posed on a seat. */
+  _audiencePerson(parent,x,z,skin,shirt,rotation=0,seatTop=.735) {
+    this._seatedCount=(this._seatedCount||0)+1;
+    const avatar=this._buildAvatar(studentLook(this._seatedCount,{skin}),true,{seated:true});
+    const { rig, arms, legs } = avatar.userData;
+    // Hips just above the seat, thighs forward over it, shins down to the floor, hands on the lap.
+    rig.position.y=(seatTop+.04)/SMALL_SCALE-HIP_Y;
+    for(const leg of legs){leg.rotation.x=-Math.PI/2;leg.userData.knee.rotation.x=Math.PI/2;}
+    arms.forEach((arm,i)=>{arm.rotation.x=-.62;arm.rotation.z=(i?1:-1)*.04;});
+    // Sit back on the seat: the hip moves behind the seat centre, opposite the facing direction.
+    const back=.24;avatar.position.set(x-Math.sin(rotation)*back,0,z-Math.cos(rotation)*back);avatar.rotation.y=rotation;
+    avatar.userData.seated=true;parent.add(avatar);
+    return avatar;
   }
 
   /** Update the big screen without recreating world geometry or the texture. */
@@ -1044,8 +1066,8 @@ export class SeaWorld {
     this._box(g,.12,2.55,.12,4.40,1.28,b.d/2-.24,b.trim,.015);
     this._sign(g,'PALM GARDEN',3.48,2.18,b.d/2-.16,2.6,C.cream,C.navy,.42);
     this._sign(g,'EAT · RELAX',3.48,1.73,b.d/2-.16,2.6,C.cream,b.trim,.34);
-    this._audiencePerson(g,-3.15,4.2,'#BA8061','#E0A58B',Math.PI/2);
-    this._audiencePerson(g,-.26,-1.4,'#D5AA86',C.cream,-Math.PI/2);
+    this._audiencePerson(g,-3.15,4.2,'#BA8061','#E0A58B',Math.PI/2,.69);
+    this._audiencePerson(g,-.26,-1.4,'#D5AA86',C.cream,-Math.PI/2,.69);
     for(const [x,z] of[[b.x+b.w/2-1.0,b.z-3.6],[b.x+b.w/2-1.0,b.z+4.2]])this._tree(x,z,.80,true);
   }
 
@@ -1585,9 +1607,15 @@ export class SeaWorld {
     for(const x of[-18.8,-15.2])this._box(this.world,.12,2.7,.12,x,1.35,20.65,'#5D827D',.015);
     this._buildWayfinding(DORM_DESTINATIONS);
     this._buildStaff('dorm');
-    const spec={skin:'#C99570',hairColor:'#302A26',hairStyle:'crop',outfit:'polo',accent:'#6D9A89',body:'regular'};
-    const avatar=this._buildAvatar(spec,true);this.world.add(avatar);avatar.position.set(-8,0,17.4);
-    this._npcs.push({avatar,route:[[-8,17.4],[7,17.4],[7,19.4],[-8,19.4]],index:1,phase:2,speed:1.5});
+    this._addStudent('dorm',3,[[-8,17.4],[7,17.4],[7,19.4],[-8,19.4]],{phase:2,speed:1.5});
+  }
+
+  /** A walking maritime student who stops to chat when the player comes close. */
+  _addStudent(zone,lookIndex,route,{phase=0,speed=1.3}={}) {
+    const look=studentLook(lookIndex);
+    const avatar=this._buildAvatar(look,true);this.world.add(avatar);
+    avatar.position.set(route[0][0],0,route[0][1]);
+    this._npcs.push({avatar,route,index:1,phase,speed,zone,student:{id:`student-${zone}-${lookIndex}`,name:look.name}});
   }
 
   _buildDormHall() {
@@ -2195,6 +2223,12 @@ export class SeaWorld {
       const d = Math.hypot(this._position.x - station.x, this._position.z - station.z);
       if (d < distance) { distance = d; closest = station; }
     }
+    // Walking students in this district can be approached for a trivia chat.
+    for (const npc of this._npcs) {
+      if (!npc.student || npc.zone !== this._zone) continue;
+      const p = npc.avatar.position, d = Math.hypot(this._position.x - p.x, this._position.z - p.z);
+      if (d < Math.min(distance, STUDENT_TALK_RANGE)) { distance = d; closest = { id: npc.student.id, name: npc.student.name, x: p.x, z: p.z, student: true }; }
+    }
     const id = closest?.id || null;
     if (id !== this._nearId) { this._nearId = id; this.callbacks.onNear?.(closest ? { ...closest } : null); }
     this.nearArrow.visible = Boolean(closest);
@@ -2275,6 +2309,17 @@ export class SeaWorld {
         }
         continue;
       }
+      if (npc.student && npc.zone === this._zone) {
+        // A student pauses and turns to face the cadet when they come close to chat.
+        const px = this._position.x - npc.avatar.position.x, pz = this._position.z - npc.avatar.position.z;
+        if (Math.hypot(px, pz) < STUDENT_TALK_RANGE) {
+          npc.avatar.rotation.y = mixAngle(npc.avatar.rotation.y, Math.atan2(px, pz), Math.min(1, dt * 6));
+          this._animateAvatar(npc.avatar, this._time + npc.phase, 0);
+          npc.avatar.userData.arms[1].rotation.z = .68 + Math.sin(this._time * 2.3 + npc.phase) * .08;
+          continue;
+        }
+        npc.avatar.userData.arms[1].rotation.z = .09;
+      }
       const target = npc.route[npc.index], pos = npc.avatar.position;
       const dx = target[0] - pos.x, dz = target[1] - pos.z, dist = Math.hypot(dx, dz);
       if (dist < 0.15) npc.index = (npc.index + 1) % npc.route.length;
@@ -2296,7 +2341,7 @@ export class SeaWorld {
       this._animateAvatar(this.player, this._time, 0);
       this._applyGesture();
     } else {
-      if (!this.paused) { this._movePlayer(dt); this._updateNPCs(dt); }
+      if (!this.paused) { this._movePlayer(dt); this._updateNPCs(dt); this._checkNear(); }
       else this._animateAvatar(this.player, this._time, 0);
       this._updateCamera(dt);
       this._updateStaffLabels();
