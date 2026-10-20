@@ -26,7 +26,33 @@
 .tile.placed{background:#0f2a4a;border-color:#0f2a4a;color:#fff;box-shadow:0 2px 0 #c9a24a}
 .tile:focus-visible{outline:2px solid #c9a24a;outline-offset:2px}
 
+/* PT rhythm track: hold-bars slide right-to-left across a gold hit line. */
+.pt-rhythm{position:relative;margin:4px 0 6px}
+.pt-lane{position:relative;height:56px;border-radius:14px;background:linear-gradient(180deg,#14325a,#0f2a4a);overflow:hidden;box-shadow:inset 0 2px 8px #0006}
+.pt-lane::before{content:'';position:absolute;left:0;right:0;top:50%;height:2px;background:#ffffff1f}
+.pt-hit-line{position:absolute;left:16%;top:0;bottom:0;width:4px;margin-left:-2px;background:#e9c46a;box-shadow:0 0 12px #e9c46a99;z-index:2}
+.pt-hit-line span{position:absolute;top:3px;left:8px;white-space:nowrap;font:800 9px/1 system-ui,sans-serif;letter-spacing:1.2px;color:#f3d98b}
+.pt-notes{position:absolute;inset:0}
+.pt-note{position:absolute;top:13px;height:30px;border-radius:15px;background:#eaf0f8;border:2px solid #fff;box-shadow:0 3px 0 #0006;transition:background .12s,opacity .3s,transform .12s}
+.pt-note i{position:absolute;left:6px;top:50%;width:16px;height:16px;margin-top:-8px;border-radius:50%;background:#1a3d66}
+.pt-note.is-due{background:#f6edd5;border-color:#e9c46a;transform:scaleY(1.12)}
+.pt-note[data-state=held]{background:linear-gradient(90deg,#e9c46a,#f6edd5);border-color:#fff;box-shadow:0 0 14px #e9c46aaa}
+.pt-note.is-ending{transform:scaleY(1.12);box-shadow:0 0 18px #fff}
+.pt-note[data-state=hit]{background:#4fbf87;border-color:#d8f5e6;opacity:.25}
+.pt-note[data-state=miss]{background:#c9574d;border-color:#f3c9c4;opacity:.3}
+.pt-judge{position:absolute;left:16%;top:-6px;transform:translate(-30%,-100%);font:900 15px/1 system-ui,sans-serif;letter-spacing:1px;color:#0f2a4a;white-space:nowrap;pointer-events:none}
+.pt-judge[data-tone=perfect],.pt-judge[data-tone=success]{color:#a97d22}
+.pt-judge[data-tone=good]{color:#1a3d66}
+.pt-judge[data-tone=retry]{color:#b5483f}
+.pt-judge.pop{animation:pt-pop .5s ease-out}
+@keyframes pt-pop{0%{transform:translate(-30%,-60%) scale(.7);opacity:0}40%{transform:translate(-30%,-110%) scale(1.15);opacity:1}100%{transform:translate(-30%,-100%) scale(1)}}
+.pt-combo{position:absolute;right:10px;top:-4px;transform:translateY(-100%);font:800 12px/1 system-ui,sans-serif;color:#a97d22}
+.fitness-untimed .pt-rhythm{display:none}
+@media(prefers-reduced-motion:reduce){.pt-judge.pop{animation:none}.pt-note{transition:none}}
+
 @media(max-width:700px){
+  .pt-lane{height:62px}
+  .pt-note{top:15px;height:32px}
   .choice-option{font-size:14px;padding:13px 12px}
   .tile{font-size:14px;padding:9px 12px}
 }

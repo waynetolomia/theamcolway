@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "wrangler dev --local --ip 127.0.0.1 --port 8787",
-    "test": "node tests/export-checks.mjs && node tests/worker.test.mjs && node tests/local-academy.test.mjs &&node academy-checks.mjs && node book-checks.mjs && node qa/rpg-rules-checks.mjs && node qa/rpg-ui-checks.mjs && node qa/character-dashboard-checks.mjs && node --experimental-vm-modules qa/academy-ui-checks.mjs && node --experimental-vm-modules qa/academy-ui-checks.mjs --fallback",
+    "test": "node tests/export-checks.mjs && node tests/worker.test.mjs && node tests/local-academy.test.mjs && node tests/pt-rhythm.test.mjs && node academy-checks.mjs && node book-checks.mjs && node qa/rpg-rules-checks.mjs && node qa/rpg-ui-checks.mjs && node qa/character-dashboard-checks.mjs && node --experimental-vm-modules qa/academy-ui-checks.mjs && node --experimental-vm-modules qa/academy-ui-checks.mjs --fallback",
     "build": "wrangler deploy --dry-run --outdir .build",
     "configure": "node scripts/configure.mjs",
     "build:minigames": "node scripts/build-minigames.mjs",

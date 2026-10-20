@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="rpg-campus.css">
   <link rel="stylesheet" href="creator-theme.css">
   <link rel="stylesheet" href="minigames.css">
+  <link rel="stylesheet" href="mobile-play.css">
 </head>
 <body data-mode="creator">
   <header class="topbar">
@@ -32,6 +33,7 @@
     <nav class="top-actions" aria-label="Game menu">
       <button class="nav-button" id="staff-btn" aria-label="Meet AMCOL staff" title="Meet AMCOL staff"><span data-icon="user"></span><span>Staff</span></button>
       <button class="nav-button" id="journey-btn" aria-label="Your journey" title="Your journey"><span data-icon="route"></span><span>Your journey</span></button>
+      <button class="icon-button" id="fullscreen-btn" hidden aria-pressed="false" aria-label="Full screen" title="Full screen"><span data-icon="expand"></span></button>
       <button class="icon-button" id="music-btn" aria-pressed="true" aria-label="Background music" title="Background music"><span data-icon="music"></span></button>
       <button class="icon-button" id="help-btn" aria-label="How to play" title="How to play"><span data-icon="help"></span></button>
       <button class="icon-button" id="settings-btn" aria-label="Settings" title="Settings"><span data-icon="settings"></span></button>
@@ -149,6 +151,7 @@
 
   <dialog id="game-dialog" aria-labelledby="dialog-title"><div class="dialog-shell"><div class="dialog-top"><div><span id="dialog-eyebrow" class="eyebrow"></span><h2 id="dialog-title"></h2></div><button id="close-dialog" class="icon-button" aria-label="Close"><span data-icon="close"></span></button></div><div id="rpg-reward" role="status" aria-live="polite" aria-atomic="true" hidden></div><div id="dialog-body"></div></div></dialog>
   <div id="toast-stack" aria-live="polite" aria-atomic="true"></div>
+  <div id="rotate-hint" class="rotate-hint" role="status" hidden><span class="rotate-phone" aria-hidden="true"></span><p><strong>Turn your phone sideways</strong><span>Landscape gives the campus more room.</span></p><button type="button" id="rotate-go" class="rotate-go">Go landscape</button><button type="button" id="rotate-dismiss" class="rotate-dismiss" aria-label="Keep portrait">✕</button></div>
   <noscript><div class="noscript">THE AMCOL WAY needs JavaScript to run. Please enable it and reload.</div></noscript>
   <script type="module" src="app.js"></script>
   <script>window.setTimeout(function(){if(!document.body.dataset.ready){var p=document.getElementById('loading');p.innerHTML='<strong>The game could not finish loading.</strong><span>Please reload this page. If the problem continues, try a current desktop browser.</span><button class="button primary" onclick="location.reload()">Reload game</button>';}},20000);</script>

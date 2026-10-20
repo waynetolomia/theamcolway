@@ -2,6 +2,7 @@ import './asset-paths.js';
 import { createMusic, MUSIC_TRACKS } from './music.js';
 import { RPG_SKILLS, RPG_TRAITS } from './rpg-progress.js';
 import { pickTrivia, pickGreeting } from './student-trivia.js';
+import { setupMobilePlay } from './mobile-play.js';
 import { detectStorageMode, isLocalMode, isPersistent, downloadLocalBackup, restoreLocalBackup } from './local-academy.js';
 import { CAMPUS, DORM, ATLANTIC, STATIONS, DORM_STATIONS, ATLANTIC_STATIONS, NPC_STATIONS, WORKSHOP_STATIONS, SAFETY_STATIONS, REST_STATIONS, LOMA_ENTRANCES, ACTIVITY_LOCATIONS } from './campus.js';
 import { renderCampusMap, renderDormMap, renderAtlanticMap } from './map-view.js';
@@ -49,6 +50,8 @@ const ICONS = {
   shirt:'<path d="m8 3-6 5 4 4 2-2v11h8V10l2 2 4-4-6-5c-2 3-6 3-8 0Z"/>',
   download:'<path d="M12 3v12m-5-5 5 5 5-5M3 15v6h18v-6"/>',
   music:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+  expand:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  shrink:'<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>',
   'music-off':'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/><path d="m3 3 18 18"/>',
   upload:'<path d="M12 16V3m-5 5 5-5 5 5M3 15v6h18v-6"/>',
   moon:'<path d="M21 12.8A9 9 0 0 1 11.2 3a9 9 0 1 0 9.8 9.8Z"/>',
@@ -87,6 +90,8 @@ function updateMusicControls(){
 }
 function toggleMusic(){if(music.available===false){toast(`This track will play once ${trackFile()} is in the game’s assets folder. Try the other track in Settings.`);return;}prefs.music=!prefs.music;savePrefs();music.setEnabled(prefs.music);updateMusicControls();}
 music.setEnabled(prefs.music);
+// Phones: full screen, landscape rotation hint and the compact focus layout.
+setupMobilePlay({icon,toast});
 // Keep listening labs and voice playback clear: the music softens while any dialog is open.
 if(typeof MutationObserver==='function')new MutationObserver(()=>music.setQuiet(dialog.open)).observe(dialog,{attributes:true,attributeFilter:['open']});
 const stationDetails=Object.fromEntries([...STATIONS,...DORM_STATIONS,...ATLANTIC_STATIONS,...NPC_STATIONS,...WORKSHOP_STATIONS,...SAFETY_STATIONS,...REST_STATIONS,...LOMA_ENTRANCES].map(s=>[s.id,{...s,label:s.npcId?`Talk to ${s.name}`:['dorm-return','atlantic-return'].includes(s.id)?'Return to the AMCOL campus':s.id==='atlantic'?'Enter Atlantic · Offices & Simulators':s.id==='lifeboat'?'Play lifeboat safety games':s.id.startsWith('loma-lounge')?'Enter Loma Lounge · Final 50':`Explore ${s.name}`} ]));

@@ -18,6 +18,58 @@ const person=`<g class="fitness-cadet-shadow"><ellipse cx="300" cy="329" rx="56"
   <path class="fitness-smile" d="M291 132Q300 138 309 132"/></g>`;
 
 /**
+ * PT rhythm track. Hold-notes slide towards a hit line: press when a note's front edge reaches
+ * the line, keep holding while the bar passes, and release when its back edge crosses the line.
+ * Times are in milliseconds; the track is pure so it can be tested without a clock or DOM.
+ */
+export const PT_RHYTHM=Object.freeze({leadIn:900,travel:2200,gap:900,perfect:120,good:260,
+  holds:Object.freeze([700,1000,850,1200,750,1100,900,1300])});
+const JUDGE_POINTS={perfect:100,good:70,miss:0};
+export function createPtRhythm(start,{total=8}={}){
+  const notes=[];let nextHead=start+PT_RHYTHM.leadIn+PT_RHYTHM.travel,hits=0,misses=0,combo=0,bestCombo=0,points=0,judged=0;
+  const add=()=>{const hold=PT_RHYTHM.holds[notes.length%PT_RHYTHM.holds.length];notes.push({id:notes.length,head:nextHead,tail:nextHead+hold,hold,state:'waiting'});nextHead+=hold+PT_RHYTHM.gap;};
+  const fill=now=>{while(hits<total&&(notes.length<3||notes.at(-1).head<now+PT_RHYTHM.travel*1.6))add();};
+  const judge=error=>Math.abs(error)<=PT_RHYTHM.perfect?'perfect':Math.abs(error)<=PT_RHYTHM.good?'good':'miss';
+  const settle=(note,release,reason)=>{
+    note.state='done';note.release=release;note.reason=reason;judged++;points+=JUDGE_POINTS[note.press||'miss']+JUDGE_POINTS[release];
+    const hit=note.press&&note.press!=='miss'&&release!=='miss';note.result=hit?'hit':'miss';
+    if(hit){hits++;combo++;bestCombo=Math.max(bestCombo,combo);}else{misses++;combo=0;}
+    return {type:hit?'hit':'miss',note,press:note.press||'miss',release,reason};
+  };
+  fill(start);
+  return {
+    notes,
+    get hits(){return hits;},get misses(){return misses;},get combo(){return combo;},get bestCombo(){return bestCombo;},
+    get done(){return hits>=total;},
+    /** Average timing accuracy over every judged press and release, 0–100. */
+    get score(){return judged?Math.round(points/(judged*2)):0;},
+    held(){return notes.find(note=>note.state==='held')||null;},
+    press(now){
+      if(hits>=total||this.held())return null;
+      const note=notes.find(n=>n.state==='waiting');
+      if(!note)return null;
+      if(note.head-now>PT_RHYTHM.good)return {type:'early',note};
+      note.state='held';note.press=judge(now-note.head);note.pressedAt=now;
+      return {type:'press',note,press:note.press};
+    },
+    release(now){
+      const note=this.held();if(!note)return null;
+      if(now<note.tail-PT_RHYTHM.good)return settle(note,'miss','early-release');
+      return settle(note,judge(now-note.tail),'release');
+    },
+    /** Advances time: notes nobody pressed, or held too long, become misses. */
+    update(now){
+      const events=[];
+      for(const note of notes){
+        if(note.state==='waiting'&&now>note.head+PT_RHYTHM.good){note.press='miss';events.push(settle(note,'miss','missed'));}
+        else if(note.state==='held'&&now>note.tail+PT_RHYTHM.good)events.push(settle(note,'miss','held-too-long'));
+      }
+      fill(now);return events;
+    },
+  };
+}
+
+/**
  * Mount one exercise game into an existing modal region.
  * onComplete is emitted exactly once after all required actions are achieved.
  * Host must invoke returned cleanup when closing/replacing its dialog.
@@ -68,25 +120,41 @@ export function mountFitness(container,{kind='pt',onComplete,onCancel}={}){
   };
 
   if(kind==='pt'){
-    $('[data-fitness-instructions]').textContent='Guide your cadet through eight repetitions. Hold Lift, then release while the meter is inside the mint band. Choose Untimed steps to lift and lower at your own pace.';
+    $('[data-fitness-instructions]').textContent='Keep the beat for eight repetitions. Bars slide towards the gold line: press Lift as a bar’s front edge reaches the line, hold while it passes, and release as its end crosses the line. Choose Untimed steps to lift and lower at your own pace.';
     $('[data-fitness-unit]').textContent='repetitions';
     scene.innerHTML=`<svg viewBox="0 0 600 365" role="img" aria-label="A cadet exercising in the PT yard"><rect class="fitness-sky" width="600" height="365"/><path class="fitness-yard" d="M0 275H600V365H0Z"/><path class="fitness-yard-line" d="M35 317H565M100 365L188 275M500 365L412 275"/><path class="fitness-mat" d="M243 309H357L380 345H220Z"/><g class="fitness-plant"><path d="M74 275V177M74 180Q25 143 23 193M74 180Q121 140 127 193M74 180Q43 176 40 217M74 180Q109 176 111 217"/></g>${person}<g class="fitness-pt-guide"><text x="479" y="121" text-anchor="middle">LIFT</text><path d="M479 179V140M467 153L479 140L491 153"/><text x="479" y="228" text-anchor="middle">LOWER</text><path d="M479 240V279M467 267L479 279L491 267"/></g></svg>`;
-    controls.innerHTML=`<div class="fitness-meter" aria-hidden="true"><div class="fitness-meter-target"></div><div class="fitness-meter-fill" data-pt-meter></div></div><p class="fitness-meter-label" data-pt-cue>Release in the mint band</p><button type="button" class="fitness-primary fitness-hold" data-pt-hold>Hold Lift</button>`;
-    let holding=false,started=0,raised=false;
-    const button=$('[data-pt-hold]'),meter=$('[data-pt-meter]'),cue=$('[data-pt-cue]');
+    controls.innerHTML=`<div class="pt-rhythm" data-pt-rhythm aria-hidden="true"><div class="pt-lane" data-pt-lane><div class="pt-hit-line"><span>LIFT</span></div><div class="pt-notes" data-pt-notes></div></div><div class="pt-judge" data-pt-judge></div><div class="pt-combo" data-pt-combo></div></div><p class="fitness-meter-label" data-pt-cue>Press as a bar reaches the gold line</p><button type="button" class="fitness-primary fitness-hold" data-pt-hold>Start PT</button>`;
+    let raised=false,track=null,base=0,pressedAt=0,releasedAt=0,judgeTimer=0;
+    const HIT_X=16,speed=(100-HIT_X)/PT_RHYTHM.travel,noteEls=new Map();
+    const button=$('[data-pt-hold]'),cue=$('[data-pt-cue]'),notesLayer=$('[data-pt-notes]'),judgeEl=$('[data-pt-judge]'),comboEl=$('[data-pt-combo]');
     const pose=value=>{$('[data-pt-left-arm]').setAttribute('transform',`rotate(${value*136} 271 162)`);$('[data-pt-right-arm]').setAttribute('transform',`rotate(${-value*136} 329 162)`);};
-    const begin=()=>{if(disposed||complete||relaxed.checked||holding)return;holding=true;started=performance.now();button.classList.add('is-held');button.textContent='Hold… then release';status('Lift and hold. Release inside the mint band.');};
-    const release=()=>{
-      if(disposed||complete||!holding)return;
-      const duration=performance.now()-started;holding=false;button.classList.remove('is-held');button.textContent='Hold Lift';meter.style.width='0%';pose(0);
-      if(duration>=700&&duration<=1500){count++;progress();status(`Repetition ${count} of ${total} — well paced.`,'success');if(count===total)finish(100);}
-      else status(duration<700?'A little early. Hold until the meter reaches the mint band.':'A little long. Try releasing while the meter is inside the mint band.','retry');
+    const LABELS={perfect:'PERFECT',good:'GOOD',miss:'MISS'};
+    const flash=(text,tone)=>{judgeEl.textContent=text;judgeEl.dataset.tone=tone;judgeEl.classList.remove('pop');void judgeEl.offsetWidth;judgeEl.classList.add('pop');clearTimeout(judgeTimer);judgeTimer=setTimeout(()=>{judgeEl.textContent='';},900);};
+    const showCombo=()=>{comboEl.textContent=track?.combo>1?`${track.combo} combo`:'';};
+    const handle=event=>{
+      if(!event)return;
+      if(event.type==='early'){flash('TOO EARLY','retry');status('Too early — wait until the bar’s front edge reaches the gold line.','retry');return;}
+      if(event.type==='press'){pressedAt=performance.now();button.classList.add('is-held');button.textContent='Holding… release at the end';flash(LABELS[event.press],event.press);return;}
+      button.classList.remove('is-held');button.textContent='Hold Lift';if(event.note.pressedAt)releasedAt=performance.now();
+      if(event.type==='hit'){
+        count=base+track.hits;progress();flash(event.release==='perfect'&&event.press==='perfect'?'PERFECT REP':LABELS[event.release],'success');
+        status(`Repetition ${count} of ${total} — on the beat.`,'success');
+        if(track.done)finish(Math.max(1,track.score));
+      }else{
+        const why={missed:'Missed — press as the bar reaches the line.','early-release':'Released too soon — hold until the bar’s end crosses the line.','held-too-long':'Held too long — release as the bar’s end crosses the line.'}[event.reason]||'Keep the beat.';
+        flash('MISS','retry');status(why,'retry');
+      }
+      showCombo();
     };
-    const changeMode=()=>{holding=false;raised=false;button.classList.remove('is-held');meter.style.width='0%';pose(0);button.textContent=relaxed.checked?'Lift':'Hold Lift';cue.textContent=relaxed.checked?'Lift, then lower — no timer':'Release in the mint band';controls.classList.toggle('fitness-untimed',relaxed.checked);status(relaxed.checked?'Choose Lift, then Lower, to complete each repetition at your own pace.':'Hold Lift and release inside the mint band.');};
-    listen(button,'pointerdown',event=>{if(relaxed.checked)return;event.preventDefault();button.setPointerCapture?.(event.pointerId);begin();});
+    const startTrack=()=>{base=count;track=createPtRhythm(performance.now(),{total:total-count});button.textContent='Hold Lift';status('Here comes the beat. Press as a bar reaches the gold line, hold, and release at its end.');};
+    const press=()=>{if(disposed||complete||relaxed.checked)return;if(!track){startTrack();return;}handle(track.press(performance.now()));};
+    const release=()=>{if(disposed||complete||relaxed.checked||!track)return;const event=track.release(performance.now());if(event){handle(event);}};
+    const clearNotes=()=>{notesLayer.replaceChildren();noteEls.clear();judgeEl.textContent='';comboEl.textContent='';};
+    const changeMode=()=>{raised=false;track=null;clearNotes();button.classList.remove('is-held');pose(0);button.textContent=relaxed.checked?'Lift':'Start PT';cue.textContent=relaxed.checked?'Lift, then lower — no timer':'Press as a bar reaches the gold line';controls.classList.toggle('fitness-untimed',relaxed.checked);status(relaxed.checked?'Choose Lift, then Lower, to complete each repetition at your own pace.':'Choose Start PT, then keep the beat: press, hold, release.');};
+    listen(button,'pointerdown',event=>{if(relaxed.checked)return;event.preventDefault();button.setPointerCapture?.(event.pointerId);press();});
     listen(button,'pointerup',event=>{if(relaxed.checked)return;event.preventDefault();release();});
-    listen(button,'pointercancel',()=>{holding=false;button.classList.remove('is-held');button.textContent='Hold Lift';meter.style.width='0%';pose(0);});
-    listen(button,'keydown',event=>{if(relaxed.checked||![' ','Enter'].includes(event.key))return;event.preventDefault();if(!event.repeat)begin();});
+    listen(button,'pointercancel',()=>release());
+    listen(button,'keydown',event=>{if(relaxed.checked||![' ','Enter'].includes(event.key))return;event.preventDefault();if(!event.repeat)press();});
     listen(button,'keyup',event=>{if(relaxed.checked||![' ','Enter'].includes(event.key))return;event.preventDefault();release();});
     listen(button,'click',()=>{
       if(!relaxed.checked||complete||disposed)return;
@@ -95,8 +163,29 @@ export function mountFitness(container,{kind='pt',onComplete,onCancel}={}){
       else{count++;progress();status(`Repetition ${count} of ${total} complete.`,'success');if(count===total)finish(100);}
     });
     listen(relaxed,'change',changeMode);
-    listen(window,'blur',()=>{holding=false;button.classList.remove('is-held');button.textContent=relaxed.checked?(raised?'Lower':'Lift'):'Hold Lift';meter.style.width='0%';if(!relaxed.checked)pose(0);});
-    tick=now=>{if(!holding)return;const elapsed=now-started;meter.style.width=`${Math.min(100,elapsed/1900*100)}%`;pose(Math.min(1,elapsed/650));cue.textContent=elapsed<700?'Keep lifting…':elapsed<=1500?'Release now':'Release and try again';};
+    listen(window,'blur',()=>{if(!relaxed.checked)release();});
+    tick=now=>{
+      if(relaxed.checked||!track)return;
+      for(const event of track.update(now))handle(event);
+      if(complete||!track)return;
+      // Draw every bar: its front edge reaches the gold line at note.head, its end at note.tail.
+      for(const note of track.notes){
+        const left=HIT_X+(note.head-now)*speed,width=note.hold*speed;
+        let el=noteEls.get(note.id);
+        const gone=note.state==='done'&&now-(note.doneAt??=now)>650;
+        if(gone||left>104){if(el&&gone){el.remove();noteEls.delete(note.id);}continue;}
+        if(!el){el=document.createElement('div');el.className='pt-note';el.innerHTML='<i></i>';notesLayer.append(el);noteEls.set(note.id,el);}
+        el.style.left=`${left}%`;el.style.width=`${width}%`;
+        el.dataset.state=note.state==='done'?note.result:note.state;
+        // Near the line the bar glows so the press moment is easy to read.
+        el.classList.toggle('is-due',note.state==='waiting'&&Math.abs(note.head-now)<=PT_RHYTHM.good);
+        el.classList.toggle('is-ending',note.state==='held'&&Math.abs(note.tail-now)<=PT_RHYTHM.good);
+      }
+      const held=track.held();
+      // Arms rise over 260 ms after a press and lower over 260 ms after a release.
+      pose(held?Math.min(1,(now-pressedAt)/260):releasedAt>pressedAt?Math.max(0,1-(now-releasedAt)/260):0);
+      cue.textContent=held?(Math.abs(held.tail-now)<=PT_RHYTHM.good?'Release now!':'Hold… release at the end of the bar'):'Press as a bar reaches the gold line';
+    };
     changeMode();
   }
 
