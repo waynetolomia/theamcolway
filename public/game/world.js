@@ -1619,7 +1619,7 @@ export class SeaWorld {
     const look=studentLook(lookIndex);
     const avatar=this._buildAvatar(look,true);this.world.add(avatar);
     avatar.position.set(route[0][0],0,route[0][1]);
-    this._npcs.push({avatar,route,index:1,phase,speed,zone,student:{id:`student-${zone}-${lookIndex}`,name:look.name}});
+    this._npcs.push({avatar,route,index:1,phase,speed,zone,student:{id:`student-${zone}-${lookIndex}`,name:look.name,gender:look.gender}});
   }
 
   _buildDormHall() {
@@ -2231,7 +2231,7 @@ export class SeaWorld {
     for (const npc of this._npcs) {
       if (!npc.student || npc.zone !== this._zone) continue;
       const p = npc.avatar.position, d = Math.hypot(this._position.x - p.x, this._position.z - p.z);
-      if (d < Math.min(distance, STUDENT_TALK_RANGE)) { distance = d; closest = { id: npc.student.id, name: npc.student.name, x: p.x, z: p.z, student: true }; }
+      if (d < Math.min(distance, STUDENT_TALK_RANGE)) { distance = d; closest = { id: npc.student.id, name: npc.student.name, gender: npc.student.gender, x: p.x, z: p.z, student: true }; }
     }
     const id = closest?.id || null;
     if (id !== this._nearId) { this._nearId = id; this.callbacks.onNear?.(closest ? { ...closest } : null); }
