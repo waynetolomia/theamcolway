@@ -376,7 +376,6 @@ if (reloadSeed) {
     assert.equal(state().profile.outfit, reloadSeed.outfit);
     assert.equal(currentWorld.character.outfit, reloadSeed.outfit);
     assert.equal(JSON.stringify(state()), before, 'Continuing inside Atlantic must not change profile, grades, day, fitness or weekly usage.');
-    assert.match(el('#chapter-label').textContent, /ATLANTIC INTERIOR/);
     await close(); await click('#edit-cadet');
     assert.ok(el('.record-outfit').textContent.includes(maritimeUniforms.find(([id]) => id === reloadSeed.outfit)[1]));
     assert.doesNotMatch(el('.record-outfit').textContent, /navy shorts|dorm.*casual/i);

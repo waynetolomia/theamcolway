@@ -12,6 +12,33 @@ const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const mixAngle = (a, b, t) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * t;
 const editable = target => target?.closest?.('input, textarea, select, [contenteditable="true"], [role="dialog"]');
+const mix = (a, b, t) => a + (b - a) * t;
+
+// arms[0]/legs[0] are the cadet's right side (screen left when facing the camera).
+// Each pose blends from the idle stance by w (0 → 1 → 0 over the gesture).
+const GESTURES = {
+  salute: { duration: 1.7, pose({ arms, rest, w }) {
+    arms[0].rotation.x = mix(arms[0].rotation.x, -2.75, w);
+    arms[0].rotation.z = mix(rest[0], 0.24, w);
+  } },
+  wave: { duration: 2.0, pose({ arms, rest, w, local }) {
+    arms[0].rotation.x = mix(arms[0].rotation.x, -0.25, w);
+    arms[0].rotation.z = mix(rest[0], -2.5 + Math.sin(local * 12) * 0.3, w);
+  } },
+  cheer: { duration: 1.7, pose({ arms, rig, rest, w, local }) {
+    const pump = Math.sin(local * 13) * 0.16;
+    arms[0].rotation.z = mix(rest[0], -2.85 + pump, w);
+    arms[1].rotation.z = mix(rest[1], 2.85 - pump, w);
+    rig.position.y += Math.abs(Math.sin(local * 6.5)) * 0.08 * w;
+  } },
+  jump: { duration: 1.25, pose({ arms, legs, rig, rest, t }) {
+    const air = clamp((t - 0.16) / 0.6, 0, 1), lift = Math.sin(Math.PI * air);
+    const crouch = t < 0.16 ? Math.sin(Math.PI * t / 0.16) : t > 0.76 ? Math.sin(Math.PI * clamp((t - 0.76) / 0.2, 0, 1)) : 0;
+    rig.position.y += lift * 0.34 - crouch * 0.08;
+    arms[0].rotation.z = mix(rest[0], -2.4, lift); arms[1].rotation.z = mix(rest[1], 2.4, lift);
+    legs[0].rotation.x = legs[1].rotation.x = lift * 0.32;
+  } },
+};
 
 function roundShape(w, h, r) {
   r = Math.min(r, w / 2, h / 2);
@@ -176,14 +203,15 @@ export class SeaWorld {
   }
 
   _buildCreator() {
-    const shadow = this._keep(new THREE.ShadowMaterial({ color: '#5F7564', opacity: 0.12 }));
+    // Navy, gold and white pedestal for the character screen.
+    const shadow = this._keep(new THREE.ShadowMaterial({ color: '#0F2A4A', opacity: 0.13 }));
     const floor = this._mesh(this.creator, this._g('creatorfloor', () => new THREE.PlaneGeometry(200, 200)), shadow, 0, -0.16, 0);
     floor.rotation.x = -Math.PI / 2; floor.castShadow = false;
-    this._cyl(this.creator, 1.82, 1.91, 0.24, 0, -0.045, 0, '#E9E6D8', 64);
-    this._cyl(this.creator, 1.82, 1.82, 0.025, 0, 0.087, 0, '#F8F5E9', 64);
-    const rim = this._mesh(this.creator, this._g('creatorrim', () => new THREE.TorusGeometry(1.86, 0.026, 6, 80)), this._m('#94B3A0'), 0, -0.085, 0);
+    this._cyl(this.creator, 1.82, 1.91, 0.24, 0, -0.045, 0, '#1A3D66', 64);
+    this._cyl(this.creator, 1.82, 1.82, 0.025, 0, 0.087, 0, '#FBFCFE', 64);
+    const rim = this._mesh(this.creator, this._g('creatorrim', () => new THREE.TorusGeometry(1.86, 0.03, 6, 80)), this._m('#C9A24A', { metalness: 0.45, roughness: 0.4 }), 0, 0.07, 0);
     rim.rotation.x = Math.PI / 2;
-    const outer = this._mesh(this.creator, this._g('creatorouter', () => new THREE.TorusGeometry(2.3, 0.008, 4, 96)), this._m('#CAD7C7'), 0, -0.105, 0);
+    const outer = this._mesh(this.creator, this._g('creatorouter', () => new THREE.TorusGeometry(2.3, 0.008, 4, 96)), this._m('#D8C28A'), 0, -0.105, 0);
     outer.rotation.x = Math.PI / 2;
   }
 
@@ -416,6 +444,39 @@ export class SeaWorld {
     arms[0].rotation.x = -stride * amplitude * 0.75; arms[1].rotation.x = stride * amplitude * 0.75;
     body.scale.y = 1 + Math.sin(time * 2.1) * 0.009;
     rig.position.y = speed > 0.1 ? Math.abs(Math.cos(time * (speed > 5 ? 11 : 8.7))) * 0.055 : Math.sin(time * 2.1) * 0.009;
+  }
+
+  _hitsPlayer(event) {
+    const rect = this.canvas.getBoundingClientRect();
+    this._pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+    this._ray.setFromCamera(this._pointer, this.camera);
+    return this._ray.intersectObject(this.player, true).length > 0;
+  }
+
+  /** Creator-screen reactions: salute, wave, cheer or jump. A random one unless named. */
+  playGesture(name) {
+    if (!this.player || this.mode !== 'creator') return null;
+    const names = Object.keys(GESTURES).filter(key => key !== this._lastGesture);
+    const chosen = GESTURES[name] ? name : names[Math.floor(Math.random() * names.length)];
+    this._gesture = { name: chosen, start: this._time }; this._lastGesture = chosen;
+    this.callbacks.onGesture?.(chosen);
+    return chosen;
+  }
+
+  _applyGesture() {
+    const gesture = this._gesture; if (!gesture) return;
+    const { arms, legs, rig } = this.player.userData, spec = GESTURES[gesture.name];
+    const t = (this._time - gesture.start) / spec.duration;
+    if (t >= 1) {
+      this._gesture = null;
+      arms.forEach((arm, i) => { arm.rotation.z = (i ? 1 : -1) * 0.09; });
+      return;
+    }
+    // Ease into the pose, hold it, then ease back to the idle stance.
+    const ease = x => x * x * (3 - 2 * x);
+    const w = t < 0.2 ? ease(t / 0.2) : t > 0.8 ? ease((1 - t) / 0.2) : 1;
+    const local = this._time - gesture.start;
+    spec.pose({ arms, legs, rig, w, t, local, rest: [-0.09, 0.09] });
   }
 
   _buildWorld() {
@@ -1794,6 +1855,8 @@ export class SeaWorld {
     if (this._failed) return;
     this.mode = mode === 'world' ? 'world' : 'creator';
     this._cameraInput=0;this._syncDisplayedCharacter();
+    this.canvas.style.cursor = '';
+    if (this._gesture) { this._gesture = null; this.player?.userData.arms.forEach((arm, i) => { arm.rotation.z = (i ? 1 : -1) * 0.09; }); }
     this._keys.clear(); this._touch = { x: 0, z: 0, run: false }; this._path = [];
     this.creator.visible = this.mode === 'creator';
     for(const [zone,data]of Object.entries(this._zones||{}))data.group.visible=this.mode==='world'&&zone===this._zone;
@@ -2065,6 +2128,7 @@ export class SeaWorld {
       this.canvas.setPointerCapture?.(event.pointerId);
     });
     listen(this.canvas, 'pointermove', event => {
+      if (this.mode === 'creator' && !this._drag && event.pointerType === 'mouse') this.canvas.style.cursor = this._hitsPlayer(event) ? 'pointer' : '';
       if (!this._drag || this.paused) return;
       const dx = event.clientX - this._drag.lastX;
       if (Math.hypot(event.clientX - this._drag.x, event.clientY - this._drag.y) > 7) this._drag.moved = true;
@@ -2075,6 +2139,7 @@ export class SeaWorld {
     listen(this.canvas, 'pointerup', event => {
       const drag = this._drag; this._drag = null;
       this.canvas.releasePointerCapture?.(event.pointerId);
+      if (drag && !drag.moved && drag.button === 0 && this.mode === 'creator' && !this.paused && this._hitsPlayer(event)) { this.playGesture(); return; }
       if (!drag || drag.moved || drag.button !== 0 || this.mode !== 'world' || this.paused) return;
       const rect = this.canvas.getBoundingClientRect();
       this._pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
@@ -2229,6 +2294,7 @@ export class SeaWorld {
     if (this.mode === 'creator') {
       this.player.rotation.y = mixAngle(this.player.rotation.y, this._creatorYaw + Math.sin(this._time * 0.5) * 0.035, Math.min(1, dt * 8));
       this._animateAvatar(this.player, this._time, 0);
+      this._applyGesture();
     } else {
       if (!this.paused) { this._movePlayer(dt); this._updateNPCs(dt); }
       else this._animateAvatar(this.player, this._time, 0);

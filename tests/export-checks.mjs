@@ -7,11 +7,14 @@ const root = new URL('../', import.meta.url);
 const read = path => readFileSync(new URL(path, root), 'utf8');
 const manifest = JSON.parse(read('source-assets.json'));
 assert.equal(manifest.sourceCommit, '3d7019d22655fb3b681f29e2eb0a977d040330c1');
-// Browser-save beta: these original files gained a hook into local-academy.js / asset-paths.js.
-// They are checked for that hook instead of the original hash.
+// Beta changes: browser saves (local-academy.js / asset-paths.js), background music (music.js),
+// creator gestures and the navy/gold creator theme. These original files are checked for
+// their beta hooks instead of the original hash.
 const BETA_EDITS = {
   'public/game/academy-api.js': ["import { academyFetch } from './local-academy.js';", 'fetcher = academyFetch }'],
-  'public/game/app.js': ["import './asset-paths.js';", 'function saveNote()', "id=\"local-backup\""],
+  'public/game/app.js': ["import './asset-paths.js';", 'function saveNote()', "id=\"local-backup\"", "import { createMusic } from './music.js';", 'onGesture:'],
+  'public/game/index.html': ['href="creator-theme.css"', 'id="music-btn"'],
+  'public/game/world.js': ['playGesture(name)', '_applyGesture()'],
   'public/game/academy-ui.js': ["import { isLocalMode } from './local-academy.js';", 'href="/auth/login"'],
 };
 let totalBytes = 0;

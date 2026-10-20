@@ -1,0 +1,76 @@
+/* Character screen: navy, gold and white. Scoped to creator mode; the campus keeps its palette. */
+:root{--navy:#0f2a4a;--navy-2:#1a3d66;--navy-soft:#eaf0f8;--gold:#c9a24a;--gold-deep:#a97d22;--gold-soft:#f6edd5;--paper:#f7f9fc;--cool-line:#dbe3ee;--cool-muted:#5f6f86}
+
+body[data-mode=creator]{background:var(--paper);color:var(--navy)}
+body[data-mode=creator] #game-main{background:radial-gradient(ellipse 60% 70% at 50% 55%,#ffffff 0%,#f3f6fb 55%,var(--paper) 100%)}
+body[data-mode=creator] #scene{background:radial-gradient(ellipse at 50% 60%,#ffffff 0%,#eef3fa 45%,transparent 72%)}
+
+/* Top bar */
+body[data-mode=creator] .topbar{background:var(--navy);border-bottom:3px solid var(--gold);color:#fff}
+body[data-mode=creator] .brand{color:#fff}
+body[data-mode=creator] .brand small{color:var(--gold)}
+body[data-mode=creator] .brand-mark{background:var(--gold);color:var(--navy)}
+body[data-mode=creator] .nav-button{color:#fff}
+body[data-mode=creator] .nav-button svg{color:var(--gold)}
+body[data-mode=creator] .top-actions .icon-button{border-color:#ffffff40;color:#fff}
+body[data-mode=creator] .top-actions .icon-button:hover,body[data-mode=creator] .nav-button:hover{background:#ffffff14}
+body[data-mode=creator] #music-btn[aria-pressed=true]{border-color:var(--gold);color:var(--gold)}
+
+/* Intro column */
+body[data-mode=creator] .creator-intro .eyebrow{color:var(--gold-deep)}
+body[data-mode=creator] .creator-intro .eyebrow>span{background:var(--gold)}
+body[data-mode=creator] .creator-intro h1{color:var(--navy)}
+body[data-mode=creator] .creator-intro h1 em{color:var(--gold-deep)}
+body[data-mode=creator] .creator-intro>p,body[data-mode=creator] .intro-features small,body[data-mode=creator] .intro-note{color:var(--cool-muted)}
+body[data-mode=creator] .intro-features>div{color:var(--navy)}
+body[data-mode=creator] .feature-icon{background:var(--navy);color:var(--gold)}
+body[data-mode=creator] .creator-bottom{color:#8494aa}
+
+/* Stage */
+body[data-mode=creator] .avatar-role{background:var(--navy);color:var(--gold);border-color:var(--navy)}
+body[data-mode=creator] .avatar-caption h2{color:var(--navy);position:relative;z-index:1;text-shadow:0 0 3px #fff,0 0 8px #fff,0 0 14px #fff}
+body[data-mode=creator] .avatar-meta,body[data-mode=creator] .avatar-controls>span{color:var(--cool-muted)}
+body[data-mode=creator] .avatar-meta{display:inline-block;position:relative;z-index:1;background:#ffffffe6;border-radius:10px;padding:2px 10px}
+body[data-mode=creator] .circle-button{background:#fff;border-color:var(--cool-line);color:var(--navy)}
+body[data-mode=creator] .circle-button:hover{background:var(--gold-soft);border-color:var(--gold)}
+
+/* Panel */
+body[data-mode=creator] .creator-panel{background:#fff;border-color:var(--cool-line);border-top:4px solid var(--gold);box-shadow:0 22px 60px #0f2a4a1a}
+body[data-mode=creator] .panel-top .eyebrow{color:var(--gold-deep)}
+body[data-mode=creator] .panel-top h2{color:var(--navy)}
+body[data-mode=creator] .panel-top .icon-button{background:var(--gold-soft);color:var(--navy)}
+body[data-mode=creator] .panel-top .icon-button:hover{background:var(--gold);color:#fff}
+body[data-mode=creator] .creator-tabs{border-color:var(--cool-line)}
+body[data-mode=creator] .creator-tabs button{color:#7b8799}
+body[data-mode=creator] .creator-tabs button.active{color:var(--navy);border-color:var(--gold)}
+body[data-mode=creator] .panel-fields{scrollbar-color:#c8d3e2 transparent}
+body[data-mode=creator] .field-label{color:var(--navy)}
+body[data-mode=creator] .field-hint{color:var(--cool-muted)}
+body[data-mode=creator] #creator input,body[data-mode=creator] #creator select{background:#fbfcfe;border-color:var(--cool-line);color:var(--navy)}
+body[data-mode=creator] #creator input:focus,body[data-mode=creator] #creator select:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--navy)}
+
+body[data-mode=creator] .segmented{background:var(--navy-soft);border-color:var(--cool-line)}
+body[data-mode=creator] .segmented button{color:var(--navy-2)}
+body[data-mode=creator] .segmented button.active{background:var(--navy);color:#fff;box-shadow:inset 0 -2px 0 var(--gold)}
+body[data-mode=creator] .trait-button{border-color:var(--cool-line)}
+body[data-mode=creator] .trait-button .trait-icon{color:var(--gold-deep)}
+body[data-mode=creator] .trait-button small{color:var(--cool-muted)}
+body[data-mode=creator] .trait-button.active{border-color:var(--navy);background:var(--navy-soft)}
+body[data-mode=creator] .trait-button .radio-dot{border-color:#b5c2d4}
+body[data-mode=creator] .trait-button.active .radio-dot{background:var(--navy);border-color:var(--gold-soft);outline-color:var(--navy)}
+body[data-mode=creator] .path-callout{background:var(--navy);border-color:var(--navy);color:#fff}
+body[data-mode=creator] .path-callout>span{color:var(--gold)}
+body[data-mode=creator] .path-callout p{color:#c9d4e4}
+
+body[data-mode=creator] .swatch{border-color:#fff;outline-color:var(--cool-line)}
+body[data-mode=creator] .swatch.active{outline:2px solid var(--gold)}
+body[data-mode=creator] .choice-button,body[data-mode=creator] .outfit-card{background:#f8fafd;border-color:var(--cool-line);color:var(--navy)}
+body[data-mode=creator] .choice-button.active,body[data-mode=creator] .outfit-card.active{background:var(--navy-soft);border-color:var(--navy);color:var(--navy);box-shadow:inset 0 0 0 1px var(--gold)}
+body[data-mode=creator] .outfit-note{background:var(--gold-soft);color:#6c5a2c}
+
+body[data-mode=creator] .creator-footer{border-color:var(--cool-line)}
+body[data-mode=creator] #creator .button.primary{background:var(--navy);color:#fff}
+body[data-mode=creator] #creator .button.primary:hover{background:var(--navy-2);box-shadow:0 6px 20px #0f2a4a33}
+body[data-mode=creator] #creator .button.primary svg{color:var(--gold)}
+body[data-mode=creator] .creator-footer p{color:var(--cool-muted)}
+body[data-mode=creator] .creator-footer .live-dot{background:var(--gold)}
