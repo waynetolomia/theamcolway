@@ -12,8 +12,18 @@ if (!uuid.test(databaseID) || databaseID === '00000000-0000-0000-0000-0000000000
 if (process.env.DEV_MODE && process.env.DEV_MODE !== 'false') {
   throw new Error('DEV_MODE must not be enabled for a production configuration.');
 }
+if (process.env.DEV_ALLOW_USER_SWITCH && process.env.DEV_ALLOW_USER_SWITCH !== 'false') {
+  throw new Error('DEV_ALLOW_USER_SWITCH must not be enabled for a production configuration.');
+}
 config.d1_databases[0].database_id = databaseID;
-config.vars = { ENVIRONMENT: 'production', ACCESS_TEAM_DOMAIN: '', ACCESS_AUD: '' };
+const staffEmails = [...new Set(String(process.env.STAFF_EMAILS || '').split(',')
+  .map(email => email.trim().toLowerCase()).filter(Boolean))];
+if (staffEmails.some(email => email.length > 254 || !/^[^\s@,]+@[^\s@,]+$/.test(email))) {
+  throw new Error('STAFF_EMAILS must contain comma-separated staff email addresses.');
+}
+// The complete base config (including SQLite Durable Object binding/migration)
+// is retained. Development identities are never copied into production vars.
+config.vars = { ENVIRONMENT: 'production', ACCESS_TEAM_DOMAIN: '', ACCESS_AUD: '', STAFF_EMAILS: staffEmails.join(',') };
 if (!bootstrap) {
   const { team, audience } = accessConfiguration(process.env);
   config.vars.ACCESS_TEAM_DOMAIN = team;

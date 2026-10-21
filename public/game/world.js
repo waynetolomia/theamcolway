@@ -17,6 +17,11 @@ const KNEE_Y = 0.68;   // knee height below the hip joint, in avatar rig units
 const HIP_Y = 1.39;    // hip joint height in avatar rig units
 const SMALL_SCALE = 0.95;
 const STUDENT_TALK_RANGE = 3.2;
+const REMOTE_DELAY_MS = 120;
+const REMOTE_LIMIT = 30;
+const REMOTE_LOW_LIMIT = 15;
+const REMOTE_GESTURES = new Set(['wave', 'salute', 'thumbs-up', 'cheer']);
+const REMOTE_LOOK_FIELDS = ['gender', 'skin', 'hairColor', 'hairStyle', 'outfit', 'accent', 'body', 'accessory', 'uniformBottom'];
 
 // Background cadets: maritime students in campus or maritime uniform. Walking students can be
 // approached for a quick maritime trivia chat; seated students use the same full-size model.
@@ -49,6 +54,10 @@ const GESTURES = {
     arms[0].rotation.z = mix(rest[0], -2.85 + pump, w);
     arms[1].rotation.z = mix(rest[1], 2.85 - pump, w);
     rig.position.y += Math.abs(Math.sin(local * 6.5)) * 0.08 * w;
+  } },
+  'thumbs-up': { duration: 1.8, pose({ arms, rest, w }) {
+    arms[0].rotation.x = mix(arms[0].rotation.x, -1.75, w);
+    arms[0].rotation.z = mix(rest[0], -0.30, w);
   } },
   jump: { duration: 1.25, pose({ arms, legs, rig, rest, t }) {
     const air = clamp((t - 0.16) / 0.6, 0, 1), lift = Math.sin(Math.PI * air);
@@ -104,6 +113,9 @@ export class SeaWorld {
     this._cameraLook = new THREE.Vector3(CAMPUS.spawn.x, 1, CAMPUS.spawn.z);
     this._collision = BUILDINGS.filter(b => !b.open).map(b => ({ x1:b.x-b.w/2, x2:b.x+b.w/2, z1:b.z-b.d/2, z2:b.z+b.d/2 }));
     this._npcs = [];
+    this._remotePlayers = new Map();
+    this._remotePool = [];
+    this._movementSpeed = 0;
     this._staff = [];
     this._stationRings = [];
     this._canopies = [];
@@ -138,7 +150,9 @@ export class SeaWorld {
       this.scene.add(new THREE.AmbientLight('#FFFFFF', 0.25));
       this.creator = new THREE.Group();
       this.world = new THREE.Group();
-      this.scene.add(this.creator, this.world);
+      this._remoteGroup = new THREE.Group();
+      this._remoteGroup.name = 'online-cadets';
+      this.scene.add(this.creator, this.world, this._remoteGroup);
       this._buildCreator();
       this._buildWorld();
       this.setCharacter({ gender:'male', uniformBottom:'pants', skin: '#BA8061', hairColor: '#302D2A', hairStyle: 'swept', outfit: 'cadet', accent: '#3E7A80', body: 'regular', accessory: 'none' });
@@ -480,10 +494,10 @@ export class SeaWorld {
     return this._ray.intersectObject(this.player, true).length > 0;
   }
 
-  /** Creator-screen reactions: salute, wave, cheer or jump. A random one unless named. */
+  /** Creator reactions stay random; online controls request an explicit world gesture. */
   playGesture(name) {
-    if (!this.player || this.mode !== 'creator') return null;
-    const names = Object.keys(GESTURES).filter(key => key !== this._lastGesture);
+    if (!this.player || this.mode !== 'creator' && (this.mode !== 'world' || !REMOTE_GESTURES.has(name))) return null;
+    const names = ['salute', 'wave', 'cheer', 'jump'].filter(key => key !== this._lastGesture);
     const chosen = GESTURES[name] ? name : names[Math.floor(Math.random() * names.length)];
     this._gesture = { name: chosen, start: this._time }; this._lastGesture = chosen;
     this.callbacks.onGesture?.(chosen);
@@ -492,18 +506,262 @@ export class SeaWorld {
 
   _applyGesture() {
     const gesture = this._gesture; if (!gesture) return;
-    const { arms, legs, rig } = this.player.userData, spec = GESTURES[gesture.name];
-    const t = (this._time - gesture.start) / spec.duration;
+    if (!this._applyAvatarGesture(this.player, gesture, this._time)) this._gesture = null;
+  }
+
+  _applyAvatarGesture(avatar, gesture, time) {
+    const { arms, legs, rig } = avatar.userData, spec = GESTURES[gesture.name];
+    arms.forEach((arm, i) => { arm.rotation.z = (i ? 1 : -1) * 0.09; });
+    const t = (time - gesture.start) / spec.duration;
+    if (avatar.userData.gestureThumb) avatar.userData.gestureThumb.visible = false;
     if (t >= 1) {
-      this._gesture = null;
-      arms.forEach((arm, i) => { arm.rotation.z = (i ? 1 : -1) * 0.09; });
-      return;
+      return false;
     }
     // Ease into the pose, hold it, then ease back to the idle stance.
     const ease = x => x * x * (3 - 2 * x);
     const w = t < 0.2 ? ease(t / 0.2) : t > 0.8 ? ease((1 - t) / 0.2) : 1;
-    const local = this._time - gesture.start;
+    const local = time - gesture.start;
     spec.pose({ arms, legs, rig, w, t, local, rest: [-0.09, 0.09] });
+    if (gesture.name === 'thumbs-up' && w > .25) {
+      if (!avatar.userData.gestureThumb) {
+        const hand = arms[0].children.find(part => /-(hand|glove)$/.test(part.name));
+        const thumb = this._mesh(arms[0], this._g('gesture-thumb', () => new THREE.CapsuleGeometry(.048, .12, 3, 8)), hand.material, .105, -.975, .15);
+        thumb.name = 'gesture-thumb'; thumb.rotation.x = Math.PI / 2;
+        avatar.userData.gestureThumb = thumb;
+      }
+      avatar.userData.gestureThumb.visible = true;
+    }
+    return true;
+  }
+
+  _remoteNow() { return globalThis.performance?.now?.() ?? Date.now(); }
+
+  /** Presence uses this light view; the existing position/save callback is unchanged. */
+  getPresenceState() {
+    const moving = this.mode === 'world' && !this.paused && this._movementSpeed > 0.01;
+    return { ...this.getPosition(), yaw: this.player?.rotation.y || 0, moving, running: moving && this._movementSpeed > 5 };
+  }
+
+  _emitPresenceMove() {
+    if (this.mode !== 'world' || !this.callbacks.onPresenceMove) return;
+    const state = this.getPresenceState(), last = this._lastPresenceState;
+    if (last && Object.keys(state).every(key => state[key] === last[key])) return;
+    this._lastPresenceState = state;
+    this.callbacks.onPresenceMove({ ...state });
+  }
+
+  /** Join details are server-owned; label text is painted, never inserted as HTML. */
+  addRemotePlayer(k, look, label) {
+    if (this._failed || this._disposed || typeof k !== 'string' || !k || k.length > 64) return false;
+    let player = this._remotePlayers.get(k);
+    if (!player) {
+      if (this._remotePlayers.size >= 100) return false;
+      player = { k, samples: [], actor: null, gesture: null, bubble: '', bubbleUntil: 0 };
+      this._remotePlayers.set(k, player);
+    }
+    player.look = displayCharacter(look, this._zone);
+    player.lookKey = JSON.stringify(REMOTE_LOOK_FIELDS.map(key => player.look[key]));
+    player.label = String(label || 'Cadet').replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 80);
+    if (player.actor) this._prepareRemoteActor(player.actor, player);
+    return true;
+  }
+
+  updateRemotePlayer(k, state) {
+    const player = this._remotePlayers.get(k);
+    if (!player || !state || !['x', 'z', 'yaw'].every(key => Number.isFinite(state[key]))) return false;
+    const previous = player.samples.at(-1), now = this._remoteNow();
+    const sourceTime = Number.isFinite(state.t) ? state.t : null;
+    if (previous && sourceTime !== null && previous.sourceTime !== null && sourceTime <= previous.sourceTime) return false;
+    const bounds = this._zoneConfig.bounds;
+    const sample = { x: clamp(state.x, bounds.minX, bounds.maxX), z: clamp(state.z, bounds.minZ, bounds.maxZ),
+      yaw: Math.atan2(Math.sin(state.yaw), Math.cos(state.yaw)), moving: state.moving === true,
+      running: state.moving === true && state.running === true, received: now, sourceTime };
+    // A long stationary interval has no snapshots. Give the first new step its
+    // usual interpolation window rather than blending across that entire pause.
+    if (previous && !previous.moving && now - previous.received > 250) {
+      player.samples.push({ ...previous, received: now - 125 });
+    }
+    player.samples.push(sample);
+    if (player.samples.length > 8) player.samples.splice(0, player.samples.length - 8);
+    return true;
+  }
+
+  removeRemotePlayer(k) {
+    const player = this._remotePlayers.get(k);
+    if (!player) return false;
+    this._releaseRemoteActor(player);
+    this._remotePlayers.delete(k);
+    this._trimRemotePool();
+    return true;
+  }
+
+  clearRemotePlayers() {
+    for (const player of this._remotePlayers.values()) this._releaseRemoteActor(player);
+    this._remotePlayers.clear();
+    this._trimRemotePool();
+  }
+
+  showRemoteBubble(k, text) {
+    const player = this._remotePlayers.get(k);
+    if (!player) return false;
+    player.bubble = typeof text === 'string' ? text.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 100) : '';
+    player.bubbleUntil = player.bubble ? this._remoteNow() + 4000 : 0;
+    if (player.actor) {
+      this._paintRemoteText(player.actor.bubble, player.bubble);
+      player.actor.bubble.visible = Boolean(player.bubble);
+    }
+    return true;
+  }
+
+  playRemoteGesture(k, id) {
+    const player = this._remotePlayers.get(k);
+    if (!player || !REMOTE_GESTURES.has(id)) return false;
+    player.gesture = { name: id, start: this._remoteNow() / 1000 };
+    return true;
+  }
+
+  cancelRemoteGesture(k) {
+    const player = this._remotePlayers.get(k);
+    if (!player) return false;
+    player.gesture = null;
+    if (player.actor) {
+      this._animateAvatar(player.actor.avatar, this._time, 0);
+      player.actor.avatar.userData.arms.forEach((arm, i) => { arm.rotation.z = (i ? 1 : -1) * 0.09; });
+      if (player.actor.avatar.userData.gestureThumb) player.actor.avatar.userData.gestureThumb.visible = false;
+    }
+    return true;
+  }
+
+  _remoteTextSprite(bubble = false) {
+    const canvas = document.createElement('canvas');
+    canvas.width = bubble ? 768 : 640; canvas.height = 112;
+    const texture = this._keep(new THREE.CanvasTexture(canvas)); texture.colorSpace = THREE.SRGBColorSpace;
+    const material = this._keep(new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }));
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(bubble ? 6.4 : 5.4, .94, 1);
+    sprite.position.y = bubble ? 5.0 : 4.0;
+    sprite.userData = { canvas, texture, bubble, text: null };
+    sprite.visible = !bubble;
+    return sprite;
+  }
+
+  _paintRemoteText(sprite, text) {
+    if (sprite.userData.text === text) return;
+    const { canvas, texture, bubble } = sprite.userData, ctx = canvas.getContext('2d');
+    sprite.userData.text = text;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (text) {
+      ctx.beginPath(); ctx.roundRect(3, 3, canvas.width - 6, 96, 22);
+      ctx.fillStyle = bubble ? '#FFFCF1' : '#173F4B'; ctx.fill();
+      if (bubble) {
+        ctx.beginPath(); ctx.moveTo(canvas.width / 2 - 12, 96); ctx.lineTo(canvas.width / 2, 111);
+        ctx.lineTo(canvas.width / 2 + 12, 96); ctx.fill();
+      }
+      ctx.fillStyle = bubble ? '#173F4B' : '#FFFCF1';
+      ctx.font = '700 36px "Trebuchet MS", Arial, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, 51, canvas.width - 34);
+    }
+    texture.needsUpdate = true;
+  }
+
+  _prepareRemoteActor(actor, player) {
+    if (actor.lookKey !== player.lookKey) {
+      const fresh = this._buildAvatar(player.look, true);
+      if (actor.avatar) {
+        // Avatar geometry is shared with the local cadet and NPCs. Only this
+        // rig's private materials are released when a pooled look changes.
+        actor.avatar.userData.dispose();
+        actor.avatar.clear();
+        actor.avatar.userData = fresh.userData;
+        actor.avatar.add(...[...fresh.children]);
+        actor.avatar.scale.copy(fresh.scale);
+      } else actor.avatar = fresh;
+      actor.lookKey = player.lookKey;
+      actor.avatar.add(actor.label, actor.bubble);
+    }
+    actor.avatar.name = `online-cadet-${player.k}`;
+    actor.avatar.userData.remoteKey = player.k;
+    actor.avatar.userData.appearance = { ...player.look };
+    this._paintRemoteText(actor.label, player.label);
+    this._paintRemoteText(actor.bubble, player.bubble);
+  }
+
+  _acquireRemoteActor(player) {
+    const same = this._remotePool.findIndex(actor => actor.lookKey === player.lookKey);
+    const actor = this._remotePool.splice(same < 0 ? this._remotePool.length - 1 : same, 1)[0]
+      || { avatar: null, label: this._remoteTextSprite(), bubble: this._remoteTextSprite(true) };
+    this._prepareRemoteActor(actor, player);
+    player.actor = actor;
+    actor.avatar.visible = true;
+    this._remoteGroup.add(actor.avatar);
+    return actor;
+  }
+
+  _releaseRemoteActor(player) {
+    const actor = player.actor;
+    if (!actor) return;
+    actor.avatar.removeFromParent(); actor.avatar.visible = false;
+    delete actor.avatar.userData.remoteKey;
+    actor.avatar.userData.arms.forEach((arm, i) => { arm.rotation.z = (i ? 1 : -1) * 0.09; });
+    if (actor.avatar.userData.gestureThumb) actor.avatar.userData.gestureThumb.visible = false;
+    actor.bubble.visible = false;
+    this._paintRemoteText(actor.bubble, '');
+    this._paintRemoteText(actor.label, '');
+    player.actor = null;
+    this._remotePool.push(actor);
+  }
+
+  _disposeRemoteActor(actor) {
+    actor.avatar.removeFromParent(); actor.avatar.userData.dispose();
+    for (const sprite of [actor.label, actor.bubble]) {
+      sprite.material.map.dispose(); this._resources.delete(sprite.material.map);
+      sprite.material.dispose(); this._resources.delete(sprite.material);
+    }
+  }
+
+  _trimRemotePool() {
+    const limit = this.quality === 'low' ? REMOTE_LOW_LIMIT : REMOTE_LIMIT;
+    const used = [...this._remotePlayers.values()].filter(player => player.actor).length;
+    while (this._remotePool.length > Math.max(0, limit - used)) this._disposeRemoteActor(this._remotePool.pop());
+  }
+
+  _interpolateRemotePlayer(player, now) {
+    const samples = player.samples, target = now - REMOTE_DELAY_MS;
+    while (samples.length > 2 && samples[1].received <= target) samples.shift();
+    let a = samples[0], b = a;
+    for (const sample of samples) {
+      b = sample;
+      if (sample.received >= target) break;
+      a = sample;
+    }
+    const span = b.received - a.received;
+    const blend = span > 0 ? clamp((target - a.received) / span, 0, 1) : 1;
+    const latest = samples.at(-1), fresh = now - latest.received < 500;
+    return { x: mix(a.x, b.x, blend), z: mix(a.z, b.z, blend), yaw: mixAngle(a.yaw, b.yaw, blend),
+      moving: fresh && (blend < 1 ? a.moving || b.moving : b.moving), running: fresh && (blend < 1 ? a.running || b.running : b.running) };
+  }
+
+  _updateRemotePlayers(now = this._remoteNow()) {
+    if (!this._remoteGroup) return;
+    this._remoteGroup.visible = this.mode === 'world';
+    if (this.mode !== 'world') return;
+    const limit = this.quality === 'low' ? REMOTE_LOW_LIMIT : REMOTE_LIMIT;
+    const ordered = [...this._remotePlayers.values()].filter(player => player.samples.length)
+      .map(player => ({ player, state: this._interpolateRemotePlayer(player, now) }))
+      .sort((a, b) => Math.hypot(a.state.x - this._position.x, a.state.z - this._position.z)
+        - Math.hypot(b.state.x - this._position.x, b.state.z - this._position.z));
+    const visible = new Set(ordered.slice(0, limit).map(item => item.player.k));
+    for (const player of this._remotePlayers.values()) if (!visible.has(player.k)) this._releaseRemoteActor(player);
+    for (const { player, state } of ordered.slice(0, limit)) {
+      const actor = player.actor || this._acquireRemoteActor(player), avatar = actor.avatar;
+      avatar.position.set(state.x, this._groundHeight(state.x, state.z), state.z);
+      avatar.rotation.y = state.yaw;
+      this._animateAvatar(avatar, this._time, state.moving ? state.running ? 7.2 : 4.25 : 0);
+      if (player.gesture && !this._applyAvatarGesture(avatar, player.gesture, now / 1000)) player.gesture = null;
+      actor.bubble.visible = Boolean(player.bubble) && now < player.bubbleUntil;
+    }
+    this._trimRemotePool();
   }
 
   _buildWorld() {
@@ -1931,9 +2189,15 @@ export class SeaWorld {
   setMode(mode) {
     if (this._failed) return;
     this.mode = mode === 'world' ? 'world' : 'creator';
+    this._movementSpeed = 0;
+    if (this.mode === 'creator') this.clearRemotePlayers();
+    this._remoteGroup.visible = this.mode === 'world';
     this._cameraInput=0;this._syncDisplayedCharacter();
     this.canvas.style.cursor = '';
-    if (this._gesture) { this._gesture = null; this.player?.userData.arms.forEach((arm, i) => { arm.rotation.z = (i ? 1 : -1) * 0.09; }); }
+    if (this._gesture) {
+      this._gesture = null; this.player?.userData.arms.forEach((arm, i) => { arm.rotation.z = (i ? 1 : -1) * 0.09; });
+      if (this.player?.userData.gestureThumb) this.player.userData.gestureThumb.visible = false;
+    }
     this._keys.clear(); this._touch = { x: 0, z: 0, run: false }; this._path = [];
     this.creator.visible = this.mode === 'creator';
     for(const [zone,data]of Object.entries(this._zones||{}))data.group.visible=this.mode==='world'&&zone===this._zone;
@@ -1953,11 +2217,13 @@ export class SeaWorld {
     }
     this.destinationMarker.visible = false;
     this._resize();
+    this._emitPresenceMove();
   }
 
   setPaused(value) {
     this.paused = Boolean(value);
-    if (this.paused) { this._keys.clear(); this._touch = { x: 0, z: 0, run: false };this._cameraInput=0; }
+    if (this.paused) { this._keys.clear(); this._touch = { x: 0, z: 0, run: false };this._cameraInput=0;this._movementSpeed=0; }
+    this._emitPresenceMove();
   }
 
   // x is screen-right; z is screen-down. Values should be in the range -1…1.
@@ -2009,6 +2275,8 @@ export class SeaWorld {
   setZone(zone, position) {
     if(this._failed||this._disposed||!this._zones?.[zone])return false;
     if(zone===this._zone){if(position)this.setPosition(position);return true;}
+    this.clearRemotePlayers();
+    this._movementSpeed = 0;
     this._keys.clear();this._touch={x:0,z:0,run:false};this._path=[];this._drag=null;this._cameraInput=0;
     this.destinationMarker.visible=false;this.nearArrow.visible=false;
     this._nearId=undefined;this.callbacks.onNear?.(null);
@@ -2026,6 +2294,7 @@ export class SeaWorld {
 
   setPosition(position) {
     if (!position || this._failed) return;
+    this._movementSpeed = 0;
     const config=this._zoneConfig,bounds=config.bounds;
     const x=Number.isFinite(Number(position.x))?clamp(Number(position.x),bounds.minX+.7,bounds.maxX-.7):config.spawn.x;
     const z=Number.isFinite(Number(position.z))?clamp(Number(position.z),bounds.minZ+.7,bounds.maxZ-.7):config.spawn.z;
@@ -2039,6 +2308,7 @@ export class SeaWorld {
       this._cameraLook.copy(this._position).y = 1.4;
       this._updateCamera(1); this._checkNear();
     }
+    this._emitPresenceMove();
   }
 
   setQuality(quality) {
@@ -2046,6 +2316,7 @@ export class SeaWorld {
     this.quality = quality === 'low' ? 'low' : 'high';
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.quality === 'low' ? 1 : 1.5));
     this.renderer.shadowMap.enabled = this.quality !== 'low';
+    this._updateRemotePlayers();
     this._resize();
   }
 
@@ -2221,11 +2492,19 @@ export class SeaWorld {
       const rect = this.canvas.getBoundingClientRect();
       this._pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
       this._ray.setFromCamera(this._pointer, this.camera);
-      const targets = (this._staff || []).flatMap(staff => [staff.avatar, staff.label, staff.marker]).filter(object => object.visible);
-      const staffHit = this._ray.intersectObjects(targets, true)[0];
+      const remotes = [...this._remotePlayers.values()].filter(player => player.actor?.avatar.visible).map(player => player.actor.avatar);
+      const targets = [...(this._staff || []).flatMap(staff => [staff.avatar, staff.label, staff.marker]), ...remotes].filter(object => object.visible);
+      const staffHit = this._ray.intersectObjects(targets, true).find(hit => {
+        for (let object = hit.object; object; object = object.parent) if (!object.visible) return false;
+        return true;
+      });
       if (staffHit) {
         let object = staffHit.object;
-        while (object && !object.userData.stationId) object = object.parent;
+        while (object && !object.userData.stationId && !object.userData.remoteKey) object = object.parent;
+        if (object?.userData.remoteKey) {
+          this.callbacks.onRemoteSelect?.(object.userData.remoteKey);
+          return;
+        }
         const station = this._stations.find(item => item.id === object?.userData.stationId);
         if (station) {
           const distance = Math.hypot(station.x-this._position.x, station.z-this._position.z);
@@ -2310,6 +2589,7 @@ export class SeaWorld {
   }
 
   _movePlayer(dt) {
+    this._movementSpeed = 0;
     const keys = this._keys;
     const ix = (keys.has('d') || keys.has('arrowright') ? 1 : 0) - (keys.has('a') || keys.has('arrowleft') ? 1 : 0) + this._touch.x;
     const iz = (keys.has('s') || keys.has('arrowdown') ? 1 : 0) - (keys.has('w') || keys.has('arrowup') ? 1 : 0) + this._touch.z;
@@ -2338,6 +2618,7 @@ export class SeaWorld {
       speed = actual;
     }
     this._position.y=this._groundHeight(this._position.x,this._position.z);
+    this._movementSpeed = speed;
     this.player.position.copy(this._position);
     this._animateAvatar(this.player, this._time, speed);
     if (this._time - this._lastMove > 0.7) { this._lastMove = this._time; this.callbacks.onMove?.(this.getPosition()); }
@@ -2392,6 +2673,9 @@ export class SeaWorld {
     } else {
       if (!this.paused) { this._movePlayer(dt); this._updateNPCs(dt); this._checkNear(); }
       else this._animateAvatar(this.player, this._time, 0);
+      this._applyGesture();
+      this._emitPresenceMove();
+      this._updateRemotePlayers();
       this._updateCamera(dt);
       this._updateStaffLabels();
       this._updateCanopies(dt);
@@ -2409,6 +2693,10 @@ export class SeaWorld {
     this._disposed = true; cancelAnimationFrame(this._raf);
     this._observer?.disconnect();
     for (const off of this._listeners) off();
+    this.clearRemotePlayers();
+    for (const actor of this._remotePool) this._disposeRemoteActor(actor);
+    this._remotePool.length = 0;
+    this._remoteGroup?.removeFromParent();
     for (const resource of this._resources) resource.dispose?.();
     this._resources.clear(); this._geometries.clear(); this._materials.clear();
     this.renderer?.dispose();

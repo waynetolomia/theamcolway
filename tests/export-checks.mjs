@@ -53,12 +53,21 @@ assert.equal(config.main, 'src/worker.mjs');
 assert.equal(config.vars.ENVIRONMENT, 'production');
 assert.ok(!config.vars.DEV_MODE);
 assert.equal(config.preview_urls, false);
-assert.deepEqual(readdirSync(new URL('migrations/', root)).sort(), ['0000_chubby_captain_flint.sql', '0001_huge_exiles.sql']);
+assert.deepEqual(readdirSync(new URL('migrations/', root)).sort(), [
+  '0000_chubby_captain_flint.sql', '0001_huge_exiles.sql',
+  '0002_class_worlds.sql', '0003_presence_reports.sql',
+]);
+assert.deepEqual(config.durable_objects.bindings, [{ name: 'PRESENCE_ROOMS', class_name: 'PresenceRoom' }]);
+assert.deepEqual(config.migrations, [{ tag: 'presence-v1', new_sqlite_classes: ['PresenceRoom'] }]);
+assert.equal(config.vars.STAFF_EMAILS, '');
+assert.ok(!config.vars.DEV_ALLOW_USER_SWITCH);
 assert.ok(!read('src/auth.mjs').includes("headers.get('oai-authenticated-user-id')"));
 for (const options of [{}, { D1_DATABASE_ID: 'bad' }, {
   D1_DATABASE_ID: '12345678-1234-1234-1234-123456789abc', DEV_MODE: 'true',
+}, {
+  D1_DATABASE_ID: '12345678-1234-1234-1234-123456789abc', DEV_ALLOW_USER_SWITCH: 'true',
 }]) {
-  const env = { ...process.env, D1_DATABASE_ID: '', ACCESS_TEAM_DOMAIN: '', ACCESS_AUD: '', DEV_MODE: '', ...options };
+  const env = { ...process.env, D1_DATABASE_ID: '', ACCESS_TEAM_DOMAIN: '', ACCESS_AUD: '', DEV_MODE: '', DEV_ALLOW_USER_SWITCH: '', ...options };
   const result = spawnSync(process.execPath, ['scripts/configure.mjs'], { cwd: root, env, encoding: 'utf8' });
   assert.notEqual(result.status, 0, 'Production configure must reject incomplete or development configuration');
 }

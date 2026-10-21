@@ -2,7 +2,7 @@
 
 A mobile-friendly seafarer learning RPG: create a cadet, explore AMCOL and its separate dormitory, complete eight semesters, develop skills and traits, and prepare for sea training.
 
-This is the **GitHub deployment export of game version 11**, source commit `3d7019d22655fb3b681f29e2eb0a977d040330c1`. It includes the existing 3D game, the full supplied course book, mini-game content, server-owned progress rules, database migrations, tests, and deployment workflows.
+This is the **GitHub deployment export of game version 11**, source commit `3d7019d22655fb3b681f29e2eb0a977d040330c1`, with the **Solo and Online play update**. It includes the existing 3D game, the full supplied course book, mini-game content, server-owned progress rules, database migrations, tests, and deployment workflows.
 
 **GitHub stores the repository and runs deployment Actions. Cloudflare Workers hosts the game, D1 stores each cadet’s progress, and Cloudflare Access provides individual sign-in.** A custom domain is optional: you can protect the Worker’s `workers.dev` address. GitHub Pages is a static host and does not run this game’s account API or database. [Hosting references](#official-hosting-references)
 
@@ -11,6 +11,7 @@ This is the **GitHub deployment export of game version 11**, source commit `3d70
 | Area | Included behavior |
 | --- | --- |
 | Character and world | Male/female cadets; DECK/ENGINE majors; campus, two four-storey academic buildings, Atlantic simulator rooms, separate dormitory; mobile joystick, walking/running and rotating camera |
+| Play modes | Solo by default; authenticated Online rooms with up to 100 connections, private class codes, appear offline, four emotes and fixed quick chat |
 | Staff and first day | Fourteen NPC introductions, staff role dialogue, 27 staff missions, Tr. Dream’s end-of-Year-2 sea-training review |
 | Book course | 381 required mini-games (about 2,080 auto-checked questions) across four years/eight semesters: vocabulary, reading comprehension, reading trivia, fill in the blanks, sentence scrambles, grammar, listening, safety, COLREG, maritime maths and science; 248 book-page images and original PDF |
 | Safety and fitness | Eight rotating lifeboat safety mini-games; PT, running and football; workshop suit and immersion-suit entry requirements |
@@ -19,11 +20,11 @@ This is the **GitHub deployment export of game version 11**, source commit `3d70
 | RPG | Character XP, nine skills, starter traits, earned traits, care meters, optional fictional height/weight/BMI record; rewards recorded in the account ledger |
 | Answer catalog | [Complete catalog](instructor/CONTENTS.md) and answer files in `instructor/`; these are outside the deployed asset directory |
 
-The authoritative content and rules remain in `public/game/`. `source-assets.json` records the original tracked assets and SHA-256 hashes. The only frontend change in this export replaces the former hosting-specific sign-in URL with `/auth/login`.
+The authoritative content and rules remain in `public/game/`. `source-assets.json` records the original tracked assets and SHA-256 hashes; subsequent beta and Online extensions are covered by the accompanying regression checks. Online presence has its own endpoint and never writes academic progress.
 
 ## Quick start on your computer
 
-Install **Node.js 24 LTS** (minimum supported version: 22.13). Unzip the download, then open a terminal **inside `THE_AMCOL_WAY_GitHub`** so `package.json` is in the current directory.
+Install **Node.js 24 LTS** (minimum supported version: 22.13). Unzip the download, then open a terminal **inside `theamcolway`** so `package.json` is in the current directory.
 
 ```sh
 npm ci
@@ -79,6 +80,23 @@ For beta testing, `public/` also runs on any static host, including GitHub Pages
 
 Beta limits: progress stays on one browser and device, and clearing site data erases it. Inside a hub iframe, the browser keeps a separate save per hub website. Players can bypass the weekly sleep allowance by clearing storage, and instructors cannot see their results. Use the Cloudflare deployment below when those matter.
 
+## Play modes
+
+Choose **Play solo** or **Play online** when starting or continuing a cadet. The play mode and **Appear offline** preference are saved in the existing browser settings. Settings can switch modes immediately during play. The selected class code and mute choices last only for the current page session; reloading or closing the page clears them.
+
+- **Solo** opens no presence connection. The current learning, saves, sleep allowance and rewards continue as before.
+- **Online** shows other signed-in cadets in the same campus, dormitory or Atlantic room instance. Labels show only first name, major and year. Appearance is read from the saved academy profile. Up to 100 connections can share an instance; overflow joins the next available instance.
+- **Class codes:** enter an open six-character code, displayed as `ABC-DEF`, to join that class's rooms. Leaving the code returns to the public world. Staff listed in `STAFF_EMAILS` can create and close codes in the **Class world** panel. If a teacher closes your class, the chip shows **Class closed**, play continues in Solo, and the code stays selected without automatic retries or a public-room join. Use Settings to leave the class, enter another open code, or explicitly retry with **Play online**. A code is an invitation for signed-in cadets who know it; it is not a student roster.
+- **Appear offline:** keep seeing the room while hiding your own avatar. Emote and quick-chat controls are disabled while hidden; turn off **Appear offline** to send signals again.
+- **Communication:** wave, salute, thumbs-up, cheer, and twelve fixed quick-chat choices. A bubble lasts four seconds. Select a cadet to mute their bubbles and emotes for the session or send a report. Reports are recorded in D1 for college administrators to review.
+- **Connection fallback:** when the presence connection fails, remote avatars clear and the game continues with **Reconnecting…** displayed. Retries back off from 1 second to 30 seconds. Switching to Solo cancels retries. A presence-only outage does not interrupt an open activity or prevent academy saves or sleep requests. A complete internet outage still uses the existing academy save-error/retry behavior; Online fallback does not grant or save progress offline.
+
+The nearest 40 visible peers within 40 world units are included in movement updates. At most 30 are drawn as full avatars, or 15 on Low quality. The status chip reports the nearby interest set, not total school enrolment.
+
+**Browser-save beta is Solo only.** GitHub Pages and `?storage=local` hide Online and explain that it requires the college sign-in deployment.
+
+For a local two-cadet check, see [Two development cadets on one local server](DEPLOYMENT.md#two-development-cadets-on-one-local-server). No production deployment is needed for that check.
+
 ## Deploy through GitHub
 
 ### 1. Create the repository
@@ -119,6 +137,7 @@ In your repository, open **Settings → Secrets and variables → Actions**.
 | Variable | `D1_DATABASE_ID` | The UUID returned by `wrangler d1 create` |
 | Variable | `ACCESS_TEAM_DOMAIN` | Add after the Access setup below: for example `your-college.cloudflareaccess.com`, without `https://` or a trailing slash |
 | Variable | `ACCESS_AUD` | Add after the Access setup below: the exact Application Audience tag for the game’s Access application |
+| Variable | `STAFF_EMAILS` | Comma-separated verified Access email addresses allowed to create and close class worlds; matching ignores case |
 
 For the token, start with Cloudflare’s **Edit Cloudflare Workers** template, scope it to your account, and include **Account → D1 → Edit** for migrations. A `workers.dev` deployment does not need a purchased domain. See the [official GitHub Actions authentication guide](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/).
 
@@ -164,6 +183,9 @@ Mini-games award XP and skill XP on their first completion; replaying them is pr
 | `public/game/` | Existing browser game, visuals, book, page images and all shared mini-game/rule modules |
 | `src/worker.mjs` | Authenticated static routing and `/api/academy` |
 | `src/auth.mjs` | Cloudflare Access JWT verification using `jose`; explicit loopback-only development mode |
+| `src/presence-room.mjs` | Hibernating Durable Object rooms, bounded snapshots, server rate limits, class-room closure |
+| `lib/presence-store.mjs` | Class codes, read-only profile projection and moderation reports in D1 |
+| `public/game/presence*.js`, `presence.css` | Online transport, shared protocol, play-mode controls and social UI |
 | `lib/academy-store.mjs` | Existing authoritative D1 persistence, compare-and-swap revisions and atomic submission batches |
 | `migrations/` | Exact source SQL migrations |
 | `tests/`, `qa/`, `*-checks.mjs` | Offline export, JWT/API, database, progression and UI behavior checks |

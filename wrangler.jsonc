@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "the-amcol-way",
   "main": "src/worker.mjs",
-  "compatibility_date": "2026-10-20",
+  "compatibility_date": "2026-05-22",
   "workers_dev": true,
   "preview_urls": false,
   "assets": {
@@ -20,10 +20,19 @@
       "migrations_dir": "migrations"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "PRESENCE_ROOMS", "class_name": "PresenceRoom" }
+    ]
+  },
+  "migrations": [
+    { "tag": "presence-v1", "new_sqlite_classes": ["PresenceRoom"] }
+  ],
   "vars": {
     "ENVIRONMENT": "production",
     "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": ""
+    "ACCESS_AUD": "",
+    "STAFF_EMAILS": ""
   },
   "observability": {
     "enabled": false

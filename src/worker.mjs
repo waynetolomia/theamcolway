@@ -1,7 +1,11 @@
 import { ACTIVITIES } from '../public/game/book-course.js';
 import { AcademyError } from '../public/game/course-progress.js';
 import { readAccount, mutateAccount, responseFor } from '../lib/academy-store.mjs';
-import { createAuthenticator } from './auth.mjs';
+import { createAuthenticator, isStaff } from './auth.mjs';
+import { joinPresenceRoom, closeClassRooms } from './presence-room.mjs';
+import { normalizeClassCode, createClassWorld, closeClassWorld, listClassWorlds, requireOpenClassWorld } from '../lib/presence-store.mjs';
+
+export { PresenceRoom } from './presence-room.mjs';
 
 const BODY_LIMIT = 96_000;
 const JSON_HEADERS = {
@@ -44,15 +48,19 @@ function pageError(error) {
   } });
 }
 
-async function jsonBody(request) {
+function sameOrigin(request, requireOrigin = false) {
   const origin = request.headers.get('origin');
-  if (origin && origin !== new URL(request.url).origin) {
+  if ((requireOrigin && !origin) || (origin && origin !== new URL(request.url).origin)) {
     throw new AcademyError('origin_mismatch', 'Open the game directly to save progress.', 403);
   }
   const fetchSite = request.headers.get('sec-fetch-site');
   if (fetchSite === 'cross-site') {
     throw new AcademyError('origin_mismatch', 'Open the game directly to save progress.', 403);
   }
+}
+
+async function jsonBody(request) {
+  sameOrigin(request);
   if (request.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() !== 'application/json') {
     throw new AcademyError('invalid_request', 'Use a JSON request for academy actions.', 415);
   }
@@ -84,7 +92,12 @@ async function jsonBody(request) {
   catch { throw new AcademyError('invalid_json', 'The activity submission could not be read.'); }
 }
 
-export function createWorker({ authenticate = createAuthenticator(), now = () => Date.now() } = {}) {
+export function createWorker({
+  authenticate = createAuthenticator({ includeIdentity: true }),
+  now = () => Date.now(),
+  joinPresence = joinPresenceRoom,
+  closePresence = closeClassRooms,
+} = {}) {
   return {
     async fetch(request, env) {
       const url = new URL(request.url);
@@ -97,7 +110,64 @@ export function createWorker({ authenticate = createAuthenticator(), now = () =>
         } });
       }
       try {
-        const userId = await authenticate(request, env);
+        const identity = await authenticate(request, env);
+        const userId = typeof identity === 'string' ? identity : identity.userId;
+        if (url.pathname === '/api/presence') {
+          if (request.method !== 'GET') throw new AcademyError('method_not_allowed', 'Use GET for online play.', 405);
+          sameOrigin(request, true);
+          if (request.headers.get('upgrade')?.toLowerCase() !== 'websocket') {
+            throw new AcademyError('upgrade_required', 'Open an online game connection.', 426);
+          }
+          const zone = url.searchParams.get('zone');
+          if (!['campus', 'dorm', 'atlantic'].includes(zone)) {
+            throw new AcademyError('invalid_zone', 'Choose a known campus area.', 400);
+          }
+          const code = url.searchParams.has('code') ? normalizeClassCode(url.searchParams.get('code')) : null;
+          if (url.searchParams.has('code') && !code) {
+            throw new AcademyError('invalid_class_code', 'Enter the six-character class code.', 400);
+          }
+          // Only this verified subject crosses the internal Durable Object boundary.
+          // No client headers, query identity or account document are forwarded.
+          return await joinPresence(env, { userId, zone, code });
+        }
+        if (url.pathname === '/api/presence/session') {
+          if (request.method !== 'GET') throw new AcademyError('method_not_allowed', 'Use GET for online settings.', 405);
+          sameOrigin(request);
+          const result = { enabled: Boolean(env.PRESENCE_ROOMS && env.DB), staff: isStaff(identity, env) };
+          if (url.searchParams.has('code')) {
+            const code = normalizeClassCode(url.searchParams.get('code'));
+            if (!code) throw new AcademyError('invalid_class_code', 'Enter the six-character class code.', 400);
+            await requireOpenClassWorld(database(env), code);
+            result.code = code;
+          }
+          return Response.json(result, { headers: JSON_HEADERS });
+        }
+        if (url.pathname === '/api/class-worlds') {
+          sameOrigin(request);
+          if (!isStaff(identity, env)) {
+            throw new AcademyError('staff_required', 'Class world management is available to college staff.', 403);
+          }
+          if (request.method === 'GET') {
+            const worlds = await listClassWorlds(database(env), userId);
+            return Response.json({ worlds }, { headers: JSON_HEADERS });
+          }
+          if (request.method === 'POST') {
+            const payload = await jsonBody(request);
+            if (payload?.action === 'create') {
+              const world = await createClassWorld(database(env), userId, now());
+              return Response.json({ world }, { status: 201, headers: JSON_HEADERS });
+            }
+            if (payload?.action === 'close') {
+              const code = normalizeClassCode(payload.code);
+              if (!code) throw new AcademyError('invalid_class_code', 'Enter the six-character class code.', 400);
+              await closeClassWorld(database(env), code, now());
+              if (env.PRESENCE_ROOMS) await closePresence(env, code);
+              return Response.json({ code, closed: true }, { headers: JSON_HEADERS });
+            }
+            throw new AcademyError('invalid_request', 'Choose create or close for a class world.', 400);
+          }
+          throw new AcademyError('method_not_allowed', 'Use GET or POST for class worlds.', 405);
+        }
         if (isAPI) {
           if (request.method === 'GET') {
             const serverNow = now();

@@ -3,3 +3,7 @@
 ENVIRONMENT=development
 DEV_MODE=true
 DEV_USER_ID=local-cadet
+# Optional: one local server, two browser profiles at ?dev_user=cadet-a / cadet-b.
+# This override is accepted only with all of the local-development guards above.
+DEV_ALLOW_USER_SWITCH=false
+STAFF_EMAILS=

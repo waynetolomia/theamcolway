@@ -12,6 +12,7 @@
  */
 import { AcademyError, applyAction, createAccount, publicState, getWeekStatus } from './course-progress.js';
 import { ACTIVITIES } from './book-course.js';
+import { apiURL } from './api-url.js';
 
 export const LOCAL_SAVE_KEY = 'amcol.local-academy.v1';
 const BACKUP_FORMAT = 'amcol-local-academy-backup';
@@ -37,7 +38,7 @@ async function probe(fetcher) {
   const controller = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = controller ? setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS) : null;
   try {
-    const response = await fetcher(ENDPOINT, { method: 'GET', credentials: 'same-origin', cache: 'no-store', signal: controller?.signal });
+    const response = await fetcher(apiURL(ENDPOINT), { method: 'GET', credentials: 'same-origin', cache: 'no-store', signal: controller?.signal });
     return /json/i.test(response.headers.get('content-type') || '') ? 'server' : 'local';
   } catch {
     return 'server';
@@ -130,7 +131,7 @@ export function localAcademyRequest(init = {}) {
 export async function academyFetch(url, init) {
   const fetcher = globalThis.fetch?.bind(globalThis);
   if ((await detectStorageMode(fetcher)) === 'local' && String(url) === ENDPOINT) return localAcademyRequest(init);
-  return fetcher(url, init);
+  return fetcher(apiURL(url), init);
 }
 
 export function downloadLocalBackup() {

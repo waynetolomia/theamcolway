@@ -4,6 +4,8 @@ import { RPG_SKILLS, RPG_TRAITS } from './rpg-progress.js';
 import { pickTrivia, pickGreeting } from './student-trivia.js';
 import { setupMobilePlay } from './mobile-play.js';
 import { createNpcVoice } from './npc-voice.js';
+import { createPresence, normalizePlayMode } from './presence.js';
+import { createPresenceUI } from './presence-ui.js';
 import { detectStorageMode, isLocalMode, isPersistent, downloadLocalBackup, restoreLocalBackup } from './local-academy.js';
 import { CAMPUS, DORM, ATLANTIC, STATIONS, DORM_STATIONS, ATLANTIC_STATIONS, NPC_STATIONS, WORKSHOP_STATIONS, SAFETY_STATIONS, REST_STATIONS, LOMA_ENTRANCES, SHUTTLE_STATIONS, ACTIVITY_LOCATIONS } from './campus.js';
 import { renderCampusMap, renderDormMap, renderAtlanticMap } from './map-view.js';
@@ -61,11 +63,11 @@ const ICONS = {
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ICONS.compass}</svg>`;
 function paintIcons(scope=document){ $$('[data-icon]',scope).forEach(el => el.innerHTML=icon(el.dataset.icon)); }
 const SETTINGS_KEY='seapath.settings.v1', WORLD_KEY='seapath.world.v2';
-let storageOK=true, initialSave=null, prefs={sound:false,quality:'high',music:true,musicTrack:MUSIC_TRACKS[0].id,voices:true}, savedWorld=null;
+let storageOK=true, initialSave=null, prefs={sound:false,quality:'high',music:true,musicTrack:MUSIC_TRACKS[0].id,voices:true,playMode:'solo',presenceHidden:false}, savedWorld=null;
 try {
   initialSave=normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'));
   const p=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null');
-  if(p&&typeof p==='object')prefs={sound:p.sound===true,quality:p.quality==='low'?'low':'high',music:p.music!==false,musicTrack:MUSIC_TRACKS.some(t=>t.id===p.musicTrack)?p.musicTrack:MUSIC_TRACKS[0].id,voices:p.voices!==false};
+  if(p&&typeof p==='object')prefs={sound:p.sound===true,quality:p.quality==='low'?'low':'high',music:p.music!==false,musicTrack:MUSIC_TRACKS.some(t=>t.id===p.musicTrack)?p.musicTrack:MUSIC_TRACKS[0].id,voices:p.voices!==false,playMode:normalizePlayMode(p.playMode),presenceHidden:p.presenceHidden===true};
   savedWorld=JSON.parse(localStorage.getItem(WORLD_KEY)||'null');
 } catch { storageOK=false; }
 // The former prototype save is retained for its character and appearance only.
@@ -74,6 +76,8 @@ let state=initialSave||createState(), character={...state.character}, hasSave=!!
 let mode='creator', world=null, nearStation=null, destinationIntent=null, engineAvailable=false;
 let editing=false, creatorDirty=false, dialogKey='', lastMoveSave=0, audioContext=null, toastTimer=null, rewardTimer=null, academy=null;
 let joystick=null, cameraControls=null, mobileRun=false, touchVector={x:0,z:0};
+let storageReady=false, presenceUI=null, lastPresenceProfile='';
+const presence=createPresence({getWorld:()=>world,isLocalMode,onStatus:()=>presenceUI?.renderStatus()});
 const districts={campus:CAMPUS,dorm:DORM,atlantic:ATLANTIC};
 let currentZone=Object.hasOwn(districts,savedWorld?.zone)?savedWorld.zone:'campus';
 const validPosition=p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.z);
@@ -133,6 +137,13 @@ function nextStep(direction=1){
 function save(){if(!hasSave)return;try{state.character={...character};localStorage.setItem(STORAGE_KEY,JSON.stringify(state));storageOK=true;}catch{storageOK=false;}}
 function saveWorld(){try{localStorage.setItem(WORLD_KEY,JSON.stringify({zone:currentZone,...positions}));}catch{storageOK=false;}}
 function savePrefs(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(prefs));}catch{storageOK=false;}}
+function syncPresenceMode(){
+  if(mode==='world'&&storageReady&&!isLocalMode()&&prefs.playMode==='online'){
+    presence.setHidden(prefs.presenceHidden);presence.connect({zone:currentZone});void presenceUI?.ensureSession();
+  }else presence.disconnect();
+}
+function setPlayMode(value){prefs.playMode=isLocalMode()?'solo':normalizePlayMode(value);savePrefs();syncPresenceMode();}
+function setPresenceHidden(value){prefs.presenceHidden=value===true;savePrefs();presence.setHidden(prefs.presenceHidden);}
 function htmlButton(id,label,style='primary',name='arrow-right'){return `<button class="button ${style}" id="${id}">${escapeHTML(label)}${name?icon(name):''}</button>`;}
 function setProfile(profile,{preserveDraft=false}={}){
   if(!profile||preserveDraft&&mode==='creator'&&(editing||creatorDirty))return;
@@ -186,7 +197,11 @@ function choose(key,value){if(key==='major'&&academy?.getState()?.loma?.majorLoc
 function updateCreatorMajor(){const engine=character.major==='engine',s=academy?.getState();$('.avatar-role').textContent=engine?'FUTURE CHIEF ENGINEER':'FUTURE CAPTAIN';$('.avatar-meta').textContent=`${s?.initialized?s.graduated?'Academy graduate':`Year ${s.year} · Semester ${s.term}`:'Year 1'} · ${engine?'ENGINE':'DECK'} cadet`;$('#creator-path-title').textContent=engine?'Engine officer pathway':'Deck officer pathway';$('#creator-path-copy').textContent=engine?'Your long-term destination: chief engineer.':'Your long-term destination: captain.';}
 
 function saveNote(){return !isLocalMode()?'Your book journey saves to your signed-in academy account.':isPersistent()?'Beta: your journey saves in this browser on this device.':'Beta: this browser blocks storage, so progress is lost when you close the page.';}
-detectStorageMode().then(()=>{const note=$('#save-note');if(note)note.textContent=saveNote();});
+const storageReadyPromise=detectStorageMode().then(()=>{
+  storageReady=true;const note=$('#save-note');if(note)note.textContent=saveNote();
+  if(isLocalMode()&&prefs.playMode!=='solo'){prefs.playMode='solo';savePrefs();presence.disconnect();}
+  presenceUI?.updateAvailability();
+});
 function updateCreator(){
   $('#cadet-name').value=character.name;$('#cadet-origin').value=character.origin;
   if(!$('#cadet-origin').value)$('#cadet-origin').value='Somewhere else';
@@ -203,15 +218,18 @@ function selectTab(key){
 }
 async function beginJourney(){
   const name=$('#cadet-name').value.trim();if(!name){$('#cadet-name').focus();toast('Give your cadet a name to begin.');return;}
+  await storageReadyPromise;
   const wasEditing=editing||creatorDirty;character.name=name;character.origin=$('#cadet-origin').value;
   state.character=createState(character).character;character={...state.character};hasSave=true;editing=false;creatorDirty=false;
   mode='world';document.body.dataset.mode='world';$('#creator').hidden=true;$('#world-ui').hidden=false;
-  world?.setCharacter(character);world?.setMode('world');world?.setZone(currentZone,positions[currentZone]);world?.setPosition(positions[currentZone]);if(engineAvailable)positions[currentZone]=world.getPosition();world?.setPaused(false);
+  presence.setZone(currentZone);world?.setCharacter(character);world?.setMode('world');world?.setZone(currentZone,positions[currentZone]);world?.setPosition(positions[currentZone]);if(engineAvailable)positions[currentZone]=world.getPosition();world?.setPaused(false);
   save();saveWorld();updateHUD();updateTouchState();const started=await academy.start(character,{editing:wasEditing});
+  syncPresenceMode();
   if(started&&starterTraits.length===2)await academy.applyStarterTraits(starterTraits);
 }
-function editCadet(){closeDialog();mode='creator';editing=true;creatorDirty=false;character={...state.character};document.body.dataset.mode='creator';$('#creator').hidden=false;$('#world-ui').hidden=true;world?.setMode('creator');world?.setPaused(false);updateTouchState();updateCreator();}
+function editCadet(){closeDialog();presence.disconnect();presenceUI?.hideCard();mode='creator';editing=true;creatorDirty=false;character={...state.character};document.body.dataset.mode='creator';$('#creator').hidden=false;$('#world-ui').hidden=true;world?.setMode('creator');world?.setPaused(false);updateTouchState();updateCreator();}
 function openDialog(title,eyebrow,html,key='info'){
+  presenceUI?.hideCard();
   academy?.dispose();dialogKey=key;dialog.classList.toggle('map-dialog',key==='campus');dialog.classList.remove('academy-dialog');
   world?.setPaused(true);stopTouch();joystick?.setEnabled(false);window.speechSynthesis?.cancel();
   $('#dialog-title').textContent=title;$('#dialog-eyebrow').textContent=eyebrow;$('#dialog-body').innerHTML=html;
@@ -225,6 +243,7 @@ dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoun
 function updateDormShortcut(){const button=$('#dorm-btn');if(!button)return;const atDorm=currentZone==='dorm';button.querySelector('[data-dorm-label]').textContent=atDorm?'AMCOL':'Dorm';const mark=button.querySelector('svg')?.parentElement||button.firstElementChild;if(mark&&mark.dataset.zone!==String(atDorm)){mark.dataset.zone=String(atDorm);mark.innerHTML=icon(atDorm?'flag':'home');}button.setAttribute('aria-label',atDorm?'Return to the AMCOL campus':'Go to the Cadet Dormitory');}
 function dormShortcut(){if(mode!=='world')return;playTone();if(currentZone==='dorm')walkTo('dorm-return');else{toast('Taking the shuttle to the Cadet Dormitory.');walkTo('dorm');}}
 function updateHUD(){
+  if(academy?.ready){const s=academy.getState(),key=JSON.stringify([s.profile,s.year]);if(key!==lastPresenceProfile){lastPresenceProfile=key;presence.refresh();}}
   updateDormShortcut();
   $('#edit-cadet').textContent=Array.from(character.name)[0]?.toUpperCase()||'A';$('#edit-cadet').style.background=character.accent;
   $('#hud-energy').textContent=state.energy;$('#hud-energy').title=`Energy: ${state.energy} / 100`;
@@ -239,6 +258,7 @@ function updateHUD(){
 function setNear(station){nearStation=station?.id||null;nearStudent=station?.student?{...station}:null;const d=stationDetails[nearStation]||(nearStudent?{label:`Talk to ${nearStudent.name}`}:null);$('#mobile-interact').dataset.nearby=String(!!d);$('#interaction-prompt').hidden=!d||mode!=='world';if(d)$('#near-label').textContent=destinationIntent?.station===nearStation&&destinationIntent.courseId?getActivity(destinationIntent.courseId)?.title||d.label:d.label;}
 function transferTo(zone,position=null){
   closeDialog();destinationIntent=null;currentZone=Object.hasOwn(districts,zone)?zone:'campus';
+  presence.setZone(currentZone);
   positions[currentZone]=position||positions[currentZone]||{...districts[currentZone].spawn};
   cameraControls?.reset();world?.setZone(currentZone,positions[currentZone]);world?.setPosition(positions[currentZone]);if(engineAvailable)positions[currentZone]=world.getPosition();setNear(engineAvailable&&nearStation?stationDetails[nearStation]:null);updateHUD();saveWorld();
 }
@@ -335,6 +355,7 @@ function openJourney(){
 }
 function openSettings(){
   openDialog('Make the journey yours.','GAME SETTINGS',`<div class="settings-row"><div><h3>Game sounds</h3><p>Gentle feedback for learning and milestones.</p></div><button id="sound-toggle" class="button secondary" aria-pressed="${prefs.sound}">${prefs.sound?'Sound on':'Sound off'}</button></div><div class="settings-row"><div><h3>Background music</h3><p>Soft, looping music. Choose a track; it quietens while a dialog is open.</p><div class="segmented music-tracks" role="group" aria-label="Background music track">${MUSIC_TRACKS.map(t=>`<button type="button" data-music-track="${t.id}">${escapeHTML(t.label)}</button>`).join('')}</div></div><button id="music-toggle" class="button secondary"></button></div><div class="settings-row"><div><h3>NPC voices</h3><p>Staff and cadets greet you — “Sawasdee krap” or “Sawasdee ka” — when you talk to them.</p></div><button id="voices-toggle" class="button secondary" aria-pressed="${prefs.voices}">${prefs.voices?'Voices on':'Voices off'}</button></div><div class="settings-row"><div><h3>Graphics quality</h3><p>Choose lighter graphics on a slower device.</p></div><select id="quality-select" aria-label="Graphics quality"><option value="high" ${prefs.quality==='high'?'selected':''}>Beautiful</option><option value="low" ${prefs.quality==='low'?'selected':''}>Lightweight</option></select></div><div class="settings-row"><div><h3>Export your academy record</h3><p>Download your responses and semester achievements.</p></div><button id="export-save" class="button secondary" ${!academy.ready?'disabled':''}>${icon('download')} Export</button></div><div class="settings-row"><div><h3>Import a character</h3><p>Reuse a cadet’s appearance from an earlier academy save.</p></div><button id="import-save" class="button secondary">${icon('upload')} Import</button><input id="save-file" type="file" accept=".json,application/json" hidden></div>${isLocalMode()?`<div class="settings-row"><div><h3>Browser save backup</h3><p>Beta progress lives only in this browser. Download a backup before clearing browser data or switching devices.</p></div><div class="dialog-actions"><button id="local-backup" class="button secondary">${icon('download')} Download</button><button id="local-restore" class="button secondary">${icon('upload')} Restore</button></div><input id="local-restore-file" type="file" accept=".json,application/json" hidden></div>`:''}<div class="settings-row"><div><h3>A brand-new story</h3><p>Restart your book course. Used weekly resets stay on your account.</p></div><button id="new-game" class="button secondary">New journey</button></div><p class="settings-footnote">${isLocalMode()?'Beta mode: your completed work, game day, and weekly allowance save in this browser only.':'Your completed work, game day, and weekly allowance save to your academy account.'} Your map position, appearance preferences, and unsubmitted drafts also use this browser. Voice playback uses an available device voice.</p>${!storageOK?'<p class="save-warning">Local drafts cannot be saved in this browser. Submit completed work while connected.</p>':''}`,'settings');
+  $('#dialog-body').insertAdjacentHTML('afterbegin',presenceUI.settingsMarkup());presenceUI.bindSettings();
   $('#sound-toggle').onclick=()=>{prefs.sound=!prefs.sound;savePrefs();$('#sound-toggle').textContent=prefs.sound?'Sound on':'Sound off';$('#sound-toggle').setAttribute('aria-pressed',prefs.sound);playTone('success');};
   $('#quality-select').onchange=e=>{prefs.quality=e.target.value;world?.setQuality(prefs.quality);savePrefs();};$('#export-save').onclick=()=>academy.exportRecord();$('#import-save').onclick=()=>$('#save-file').click();$('#save-file').onchange=e=>importSave(e.target.files[0]);$('#new-game').onclick=confirmNewJourney;
   $('#voices-toggle').onclick=()=>{prefs.voices=!prefs.voices;savePrefs();if(!prefs.voices)npcVoice.stop();const b=$('#voices-toggle');b.textContent=prefs.voices?'Voices on':'Voices off';b.setAttribute('aria-pressed',String(prefs.voices));if(prefs.voices)npcVoice.greet(Math.random()<.5?'male':'female','settings-preview');};
@@ -356,6 +377,7 @@ function confirmNewJourney(){
 }
 function connectUI(){
   paintIcons();updateCreator();selectTab('name');
+  presenceUI=createPresenceUI({presence,getPrefs:()=>prefs,setMode:setPlayMode,setHidden:setPresenceHidden,onlineAvailable:()=>storageReady&&!isLocalMode(),isLocalMode,openSettings,openDialog,closeDialog,toast,getWorld:()=>world});
   $('#creator-next').onclick=()=>nextStep(1);$('#creator-back').onclick=()=>nextStep(-1);
   $('#cadet-name').oninput=e=>{creatorDirty=true;character.name=e.target.value;$('#preview-name').textContent=character.name.trim()||'Your cadet';};$('#cadet-origin').onchange=e=>{creatorDirty=true;character.origin=e.target.value;};
   $$('.creator-tabs [data-tab]').forEach((b,i)=>{b.onclick=()=>selectTab(b.dataset.tab);b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const buttons=$$('.creator-tabs [data-tab]');const next=buttons[(i+(e.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length];selectTab(next.dataset.tab);next.focus();};});
@@ -370,7 +392,8 @@ function connectUI(){
   cameraControls=mountCameraControls([{left:$('#camera-left'),reset:$('#camera-reset'),right:$('#camera-right')},{left:$('#mobile-camera-left'),reset:$('#mobile-camera-reset'),right:$('#mobile-camera-right')}],{enabled:false,rotate:direction=>world?.rotateCamera(direction),setInput:direction=>world?.setCameraInput?.(direction),resetView:()=>world?.resetCamera?.()});
   window.addEventListener('blur',stopTouch);updateTouchState();
   window.addEventListener('keydown',e=>{if(mode!=='world'||dialog.open||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;const key=e.key.toLowerCase();if(key==='m'){e.preventDefault();openCampus();}if(key==='j'){e.preventDefault();openJournal();}if(key==='c'){e.preventDefault();academy.openDashboard();}if(key==='h'&&!e.repeat){e.preventDefault();dormShortcut();}});
-  window.addEventListener('beforeunload',()=>{save();saveWorld();academy.dispose();joystick?.destroy();cameraControls?.destroy();});document.addEventListener('visibilitychange',()=>{if(document.hidden){save();saveWorld();world?.setPaused(true);stopTouch();}else{world?.setPaused(dialog.open);if(academy.ready)academy.refresh();}updateTouchState();});
+  window.addEventListener('beforeunload',()=>{save();saveWorld();presence.destroy();academy.dispose();joystick?.destroy();cameraControls?.destroy();});document.addEventListener('visibilitychange',()=>{if(document.hidden){save();saveWorld();world?.setPaused(true);stopTouch();}else{world?.setPaused(dialog.open);if(academy.ready)academy.refresh();}updateTouchState();});
+  window.addEventListener('pagehide',()=>presence.disconnect());window.addEventListener('pageshow',event=>{if(event.persisted)syncPresenceMode();});
   $('#dismiss-fallback').onclick=()=>{$('#engine-fallback').hidden=true;toast('Learning mode is ready. Use Campus after creating your cadet.');};
 }
 
@@ -380,10 +403,11 @@ async function boot(){
   connectUI();
   try{
     const {SeaWorld}=await import('./world.js');
-    world=new SeaWorld($('#game-canvas'),{onGesture:()=>playTone('success'),onNear:setNear,onInteract:id=>{if(!dialog.open)interact(id);},onWorkshopBlocked:trainingGate,onLifeboatBlocked:trainingGate,onMove:pos=>{if(mode!=='world')return;positions[currentZone]={x:pos.x,z:pos.z};if(currentZone==='campus')state.position={...positions.campus};if(Date.now()-lastMoveSave>2500){lastMoveSave=Date.now();save();saveWorld();}},onError:engineFailure});
+    world=new SeaWorld($('#game-canvas'),{onGesture:()=>playTone('success'),onNear:setNear,onInteract:id=>{if(!dialog.open)interact(id);},onRemoteSelect:k=>{if(mode==='world'&&!dialog.open)presenceUI?.showRemoteCard(k);},onPresenceMove:state=>{if(mode==='world')presence.move(state);},onWorkshopBlocked:trainingGate,onLifeboatBlocked:trainingGate,onMove:pos=>{if(mode!=='world')return;positions[currentZone]={x:pos.x,z:pos.z};if(currentZone==='campus')state.position={...positions.campus};if(Date.now()-lastMoveSave>2500){lastMoveSave=Date.now();save();saveWorld();}},onError:engineFailure});
     engineAvailable=world.isReady;
     if(engineAvailable){world.setCharacter(character);world.setQuality(prefs.quality);world.setMode(mode);if(mode==='world'){world.setZone(currentZone,positions[currentZone]);world.setPosition(positions[currentZone]);positions[currentZone]=world.getPosition();}world.setPaused(dialog.open||document.hidden);$('#loading').hidden=true;}
   }catch(error){engineFailure(error);}
+  presence.syncWorld();
   document.body.dataset.ready='true';updateTouchState();
 }
 boot();
