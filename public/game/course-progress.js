@@ -4,9 +4,14 @@ import { normalizeCharacter } from './progress.js';
 import { SAFETY_GAMES, getSafetyGame } from './lifeboat-content.js';
 import { LOMA_FINAL_COUNT, LOMA_DAILY_LIMIT, getLomaGame, drawLomaSet } from './loma-content.js';
 import { createRPGState, prepareRPGJourney, getRPGSummary, awardRPGReward,
-  updateRPGProfile, applyRPGCare, restoreRPGAfterSleep } from './rpg-progress.js';
+  updateRPGProfile, applyRPGCare, restoreRPGAfterSleep, spendEnergy } from './rpg-progress.js';
+import { BALANCE } from './game-config.js';
+import { activityHost, plannedVariant } from './curriculum.js';
 
-export const WEEKLY_RESET_LIMIT = 5;
+/** Sleeps per real week. The fifth sleep closes study Day 5 and starts weekly rest. */
+export const WEEKLY_RESET_LIMIT = BALANCE.week.studyDays;
+export const MISSIONS_PER_DAY = BALANCE.missions.perDay;
+export const MISSIONS_PER_WEEK = BALANCE.missions.perWeek;
 export const COURSE_SEMESTERS = 8;
 export const CAMPUS_TIMEZONE = 'Asia/Bangkok';
 export const ORIENTATION_ID = 'first-day-orientation';
@@ -51,11 +56,20 @@ export function getBangkokWeek(now) {
   };
 }
 
+/**
+ * Five study days per real week. `used` counts sleeps this week; study day = used + 1.
+ * After the fifth sleep the cadet is in weekly rest until Monday 00:00 Bangkok time:
+ * exploring and practice continue, but new graded credit and XP wait for the next allowance.
+ */
 export function getWeekStatus(account, now) {
   const week = getBangkokWeek(now);
-  const used = account?.allowance?.weekKey === week.key
-    ? Math.min(WEEKLY_RESET_LIMIT, Math.max(0, Number(account.allowance.used) || 0)) : 0;
-  return { ...week, used, remaining: WEEKLY_RESET_LIMIT - used, limit: WEEKLY_RESET_LIMIT };
+  const current = account?.allowance?.weekKey === week.key;
+  const used = current ? Math.min(WEEKLY_RESET_LIMIT, Math.max(0, Number(account.allowance.used) || 0)) : 0;
+  const missions = current ? Math.min(MISSIONS_PER_WEEK, Math.max(0, Number(account.allowance.missions) || 0)) : 0;
+  const rest = used >= WEEKLY_RESET_LIMIT;
+  return { ...week, used, remaining: WEEKLY_RESET_LIMIT - used, limit: WEEKLY_RESET_LIMIT,
+    studyDay: Math.min(used + 1, WEEKLY_RESET_LIMIT), studyDays: WEEKLY_RESET_LIMIT, rest,
+    missionsUsed: missions, missionsLimit: MISSIONS_PER_WEEK, missionsRemaining: MISSIONS_PER_WEEK - missions };
 }
 
 function cleanProfile(profile) {
@@ -82,7 +96,7 @@ function createJourney(now, journeyId, profile = null) {
 export function createAccount(now, journeyId) {
   return {
     schemaVersion: 1,
-    allowance: { weekKey: getBangkokWeek(now).key, used: 0 },
+    allowance: { weekKey: getBangkokWeek(now).key, used: 0, missions: 0 },
     journey: createJourney(now, journeyId),
     sleepReceipts: [],
     completedJourneys: [],
@@ -98,31 +112,113 @@ export function semesterActivities(activities, semester) {
   return activities.filter(activity => activity.required !== false && activitySemester(activity) === Number(semester));
 }
 
-/** The next item at each location unlocks only when the server day advances. */
+// ---------------------------------------------------------------- daily plan and mission slots
+const refOf = (kind, id) => `${kind}:${id}`;
+const STAFF_PRIORITY = () => [...STAFF_SIGNOFF_IDS, ...NPC_MISSIONS.map(mission => mission.id).filter(id => !STAFF_SIGNOFF_IDS.includes(id))];
+
+function planWindowOpen(state) {
+  return Boolean(state?.initialized && !state.graduated && getOrientationProgress(state).completed && state.day >= state.semesterStartDay);
+}
+
+function suggestStaff(state, activities) {
+  for (const id of STAFF_PRIORITY()) {
+    const mission = getNPCMission(id);
+    if (mission && !hasNPCCompletion(state, id) && isNPCMissionAvailable(state, mission, activities)) return mission;
+  }
+  return null;
+}
+
+/**
+ * Fills today's plan up to the daily slot count: unfinished work first, then at most one
+ * staff mission, then new curriculum missions chosen for a mix of locations and mechanics.
+ * In Year 4 Semester 2, once the book work is done, the plan lists the saved Loma final games.
+ */
+function fillDailyPlan(state, activities, plan, carryFrom) {
+  if (!planWindowOpen(state)) return plan;
+  const add = (kind, id) => {
+    if (plan.length < MISSIONS_PER_DAY && !plan.some(item => item.kind === kind && item.id === id)) plan.push({ kind, id });
+  };
+  const required = semesterActivities(activities, state.semester);
+  const bookDone = id => state.results[id]?.completed === true;
+  for (const item of carryFrom?.plan || []) {
+    if (item.kind === 'book' && required.some(activity => activity.id === item.id) && !bookDone(item.id)) add('book', item.id);
+    if (item.kind === 'staff' && !hasNPCCompletion(state, item.id) && isNPCMissionAvailable(state, getNPCMission(item.id), activities)) add('staff', item.id);
+  }
+  // Attempts already started (including older saves) are resumed before anything new.
+  for (const activity of required) {
+    const result = state.results[activity.id];
+    if (!bookDone(activity.id) && (result?.startedAt || result?.attempts)) add('book', activity.id);
+  }
+  if (BALANCE.missions.staffSuggestedPerDay > 0 && !plan.some(item => item.kind === 'staff')) {
+    const staff = suggestStaff(state, activities);
+    if (staff) add('staff', staff.id);
+  }
+  const pending = required.filter(activity => !bookDone(activity.id) && !plan.some(item => item.id === activity.id));
+  const byId = new Map(activities.map(activity => [activity.id, activity]));
+  const usedLocations = new Set(plan.map(item => byId.get(item.id)?.location).filter(Boolean));
+  const usedTypes = new Set(plan.map(item => byId.get(item.id)?.type).filter(Boolean));
+  for (const activity of pending.slice(0, 12)) {
+    if (usedLocations.has(activity.location) || (activity.type && usedTypes.has(activity.type))) continue;
+    add('book', activity.id); usedLocations.add(activity.location); if (activity.type) usedTypes.add(activity.type);
+  }
+  for (const activity of pending) add('book', activity.id);
+  if (!pending.length && Number(state.semester) === COURSE_SEMESTERS) {
+    const final = getLomaProgress(state, activities);
+    if (final.available && final.started) for (const id of final.gameIds) if (!final.results[id]?.completed) add('loma', id);
+  }
+  return plan;
+}
+
+/** Today's plan without changing the saved record (used for read-only views). */
+export function computeDaily(state, activities) {
+  const same = state?.daily?.day === state?.day && Array.isArray(state.daily?.plan);
+  const daily = same
+    ? { day: state.day, plan: state.daily.plan.map(item => ({ ...item })), used: [...(state.daily.used || [])] }
+    : { day: state?.day || 1, plan: [], used: [] };
+  // Between semesters (or before orientation) nothing is planned; used slots still count today.
+  if (!planWindowOpen(state)) daily.plan = [];
+  fillDailyPlan(state, activities, daily.plan, same ? null : state?.daily);
+  return daily;
+}
+
+/** Saves today's plan on the journey before an action uses it. */
+function refreshDaily(state, activities) {
+  state.daily = computeDaily(state, activities);
+  return state.daily;
+}
+
+function planEntryStatus(state, item) {
+  const record = item.kind === 'book' ? state.results?.[item.id] : item.kind === 'staff' ? state.npcResults?.[item.id]
+    : item.kind === 'loma' ? state.loma?.results?.[item.id] : null;
+  return record?.completed ? 'done' : record?.startedAt || record?.attempts ? 'in-progress' : 'ready';
+}
+
+/** Today's itinerary plus compatibility fields used by the interface. */
 export function getAssignments(state, activities) {
-  if (!state?.initialized || state.graduated) return { assignments: [], backlog: [], unlocked: [], byLocation: {} };
-  const elapsed = state.day - state.semesterStartDay;
-  const groups = new Map();
+  if (!state?.initialized || state.graduated) return { assignments: [], backlog: [], unlocked: [], byLocation: {}, plan: [] };
+  const daily = computeDaily(state, activities);
+  const byId = new Map(activities.map(activity => [activity.id, activity]));
+  const plan = daily.plan.map(item => {
+    const activity = item.kind === 'book' ? byId.get(item.id) : null;
+    const mission = item.kind === 'staff' ? getNPCMission(item.id) : null;
+    return { ...item, ref: refOf(item.kind, item.id), status: planEntryStatus(state, item),
+      slotUsed: daily.used.includes(refOf(item.kind, item.id)),
+      location: activity?.location || (mission ? getNPC(mission.npcId)?.location : item.kind === 'loma' ? 'loma-lounge' : null),
+      room: activity?.room || null, host: activity ? activityHost(activity) : mission?.npcId || null };
+  });
+  const bookIds = plan.filter(item => item.kind === 'book').map(item => item.id);
+  const assignments = bookIds;
+  const byLocation = {};
   for (const activity of semesterActivities(activities, state.semester)) {
-    if (!groups.has(activity.location)) groups.set(activity.location, []);
-    groups.get(activity.location).push(activity);
+    const entry = byLocation[activity.location] ||= { today: null, backlog: [], unlocked: [], practice: [], remainingToUnlock: 0 };
+    if (bookIds.includes(activity.id)) {
+      entry.unlocked.push(activity.id);
+      if (!entry.today && !state.results[activity.id]?.completed) entry.today = activity.id;
+    } else if (state.results[activity.id]?.completed) entry.practice.push(activity.id);
+    else entry.remainingToUnlock++;
   }
-  const assignments = [], backlog = [], unlocked = [], byLocation = {};
-  for (const [location, group] of groups) {
-    const open = elapsed < 0 ? [] : group.slice(0, elapsed + 1);
-    const today = elapsed >= 0 ? group[elapsed]?.id ?? null : null;
-    const oldIncomplete = open.filter(item => item.id !== today && !state.results[item.id]?.completed).map(item => item.id);
-    if (today) assignments.push(today);
-    backlog.push(...oldIncomplete);
-    unlocked.push(...open.map(item => item.id));
-    byLocation[location] = {
-      today, backlog: oldIncomplete,
-      unlocked: open.map(item => item.id),
-      remainingToUnlock: Math.max(0, group.length - open.length),
-      practice: open.filter(item => state.results[item.id]?.completed).map(item => item.id),
-    };
-  }
-  return { assignments, backlog, unlocked, byLocation };
+  return { assignments, backlog: [], unlocked: bookIds, byLocation, plan,
+    slots: { used: daily.used.length, limit: MISSIONS_PER_DAY, left: Math.max(0, MISSIONS_PER_DAY - daily.used.length) } };
 }
 
 export function getSemesterProgress(state, activities) {
@@ -131,7 +227,7 @@ export function getSemesterProgress(state, activities) {
   const bookReady = required.length > 0 && completed === required.length;
   const seaTrainingBlocked = Number(state.semester) === 4 && getSeaTrainingProgress(state, activities).status !== 'approved';
   const orientationBlocked = !getOrientationProgress(state).completed;
-  const lomaBlocked = Number(state.semester) === 8 && !state.graduated && !getLomaProgress(state).complete;
+  const lomaBlocked = Number(state.semester) === 8 && !state.graduated && !getLomaProgress(state, activities).complete;
   return {
     required: required.length, completed, remaining: required.length - completed,
     bookReady, seaTrainingBlocked, orientationBlocked, lomaBlocked, ready: bookReady && !seaTrainingBlocked && !orientationBlocked && !lomaBlocked,
@@ -278,11 +374,16 @@ export function getSafetyProgress(state = {}) {
 /** A saved final set is immutable. Daily credit comes from first-completion days,
  * not client counters or wall-clock dates, so a real-week refresh cannot refill it.
  */
-export function getLomaProgress(state = {}) {
+export function getLomaProgress(state = {}, activities = null) {
   const final = state?.loma;
   const legacyGraduate = state?.lomaLegacyGraduate === true
     || Boolean(state?.graduated && state?.lomaRequirementVersion !== 1);
-  const available = Boolean(state?.initialized && (startedSemester(state) >= 8 || legacyGraduate));
+  // The final unlocks once Year 4 Semester 2's book work is complete. A final that was
+  // already started (older saves) stays open so saved selections and passes are never lost.
+  const semesterEight = Array.isArray(activities) ? semesterActivities(activities, COURSE_SEMESTERS) : null;
+  const bookComplete = semesterEight ? semesterEight.every(item => state?.results?.[item.id]?.completed === true) : true;
+  const available = Boolean(state?.initialized && (legacyGraduate || Boolean(final)
+    || (startedSemester(state) >= COURSE_SEMESTERS && bookComplete)));
   const major = final?.major || state?.profile?.major || 'deck';
   const gameIds = Array.isArray(final?.gameIds) ? final.gameIds : [];
   const results = final?.results || {};
@@ -295,12 +396,14 @@ export function getLomaProgress(state = {}) {
   const completedIds = validIds.filter(id => results[id]?.completed === true);
   const completedToday = completedIds.filter(id => results[id].completionDay === state.day).length;
   const complete = recordValid && completedIds.length === LOMA_FINAL_COUNT;
+  // Final games use the normal daily mission slots.
+  const slotsUsed = state?.daily?.day === state?.day ? (state.daily.used || []).length : 0;
   return {
-    available, started, recordValid, major, majorLocked: started, legacyGraduate,
+    available, started, recordValid, major, majorLocked: started, legacyGraduate, bookComplete,
     gameIds: [...gameIds], results, completedCount: completedIds.length, total: LOMA_FINAL_COUNT,
     complete, required: !legacyGraduate, selectedAt: final?.selectedAt || null, completedAt: final?.completedAt || null,
     canResetDay: Boolean(legacyGraduate && started && !complete),
-    today: { day: state?.day || 1, completed: completedToday, remaining: Math.max(0, LOMA_DAILY_LIMIT - completedToday), limit: LOMA_DAILY_LIMIT },
+    today: { day: state?.day || 1, completed: completedToday, remaining: Math.max(0, LOMA_DAILY_LIMIT - slotsUsed), limit: LOMA_DAILY_LIMIT },
   };
 }
 
@@ -319,6 +422,19 @@ export function normalizeAnswer(value) {
     .replace(/(\d)\s*['′]\s*(?=\d|[nsew]\b)/g, '$1′')
     .replace(/\s*([°′″])\s*/g, '$1')
     .replace(/[.!?]+$/, '').trim();
+}
+
+/**
+ * Number-entry questions carry `value` and an optional `tolerance`: the first number typed
+ * (units, “1,250” and a decimal comma allowed) is correct when it is within the tolerance.
+ */
+export function numberWithinTolerance(question, supplied) {
+  const value = Number(question?.value);
+  if (question?.format !== 'number' || !Number.isFinite(value) || typeof supplied !== 'string') return false;
+  const text = supplied.normalize('NFKC').replace(/(\d),(?=\d{3}(?:\D|$))/g, '$1').replace(/(\d),(\d)/, '$1.$2');
+  const match = text.match(/[+-]?(?:\d+(?:\.\d+)?|\.\d+)/);
+  const tolerance = Math.max(0, Number(question.tolerance) || 0);
+  return Boolean(match) && Math.abs(Number(match[0]) - value) <= tolerance + 1e-9;
 }
 
 function responsePresent(value) {
@@ -341,7 +457,8 @@ export function evaluateActivity(activity, answers = {}, reviews = {}) {
       const correct = ordered
         ? Array.isArray(supplied) && supplied.length === question.answer.length
           && supplied.every((value, index) => normalizeAnswer(value) === normalizeAnswer(question.answer[index]))
-        : present && !Array.isArray(supplied) && accepted.some(answer => normalizeAnswer(supplied) === normalizeAnswer(answer));
+        : present && !Array.isArray(supplied) && (numberWithinTolerance(question, supplied)
+          || accepted.some(answer => normalizeAnswer(supplied) === normalizeAnswer(answer)));
       return {
         questionId: question.id, status: correct ? 'correct' : present ? 'needs-review' : 'unanswered',
         passed: correct, exact: true,
@@ -409,13 +526,27 @@ export function evaluateLomaGame(game, answers = {}) {
 export function publicState(account, now, activities) {
   const state = normalizeNPCFields(clone(account.journey));
   const assignment = getAssignments(state, activities);
+  const week = getWeekStatus(account, now);
+  const energy = Number(state.rpg?.wellbeing?.energy ?? BALANCE.energy.max);
+  // Saved plan storage stays private; the computed `plan` and `slots` are the public view.
+  const { daily: _daily, ...visible } = state;
   return {
-    ...state, ...assignment,
+    ...visible, ...assignment,
     year: Math.ceil(state.semester / 2), term: ((state.semester - 1) % 2) + 1,
+    // Today at a glance: study day, mission slots, weekly allowance and what still waits.
+    today: {
+      studyDay: week.studyDay, studyDays: week.studyDays, rest: week.rest,
+      slotsUsed: assignment.slots?.used || 0, slotsLimit: MISSIONS_PER_DAY, slotsLeft: assignment.slots?.left ?? MISSIONS_PER_DAY,
+      weekMissionsUsed: week.missionsUsed, weekMissionsLimit: MISSIONS_PER_WEEK,
+      pending: (assignment.plan || []).filter(item => item.status !== 'done').length,
+      fitnessDone: state.fitness?.day === state.day, energy, entryCost: BALANCE.energy.missionEntry,
+      canStartMission: !week.rest && week.missionsRemaining > 0 && energy >= BALANCE.energy.missionEntry && (assignment.slots?.left ?? 0) > 0,
+      resetsAt: week.resetsAt, timezone: BALANCE.week.timezoneLabel,
+    },
     semesterProgress: getSemesterProgress(state, activities),
     npc: getNPCProgress(state, activities),
     safety: getSafetyProgress(state),
-    loma: getLomaProgress(state),
+    loma: getLomaProgress(state, activities),
     orientation: getOrientationProgress(state),
     workshop: getWorkshopAccess(state),
     lifeboat: getLifeboatAccess(state),
@@ -448,12 +579,74 @@ function cleanResponses(activity, answers, reviews) {
   return { answers: safeAnswers, reviews: safeReviews };
 }
 
+// ---------------------------------------------------------------- attempts, slots and energy
+
+/**
+ * The question set a cadet plays: a saved equivalent variant (index into `variants`), or the
+ * activity's main set (no variant, or -1). See plannedVariant in curriculum.js.
+ */
+export function activityQuestions(activity, variant = null) {
+  const sets = Array.isArray(activity?.variants) ? activity.variants : [];
+  const chosen = Number.isInteger(variant) && variant >= 0 ? sets[variant] : null;
+  return chosen?.questions || activity?.questions || [];
+}
+
+function restMessage() {
+  return `Weekly rest: all ${WEEKLY_RESET_LIMIT} study days are used this week. Explore, chat with NPCs and practise freely — new graded missions open ${BALANCE.week.resetLabel}, ${BALANCE.week.timezoneLabel}.`;
+}
+
+/**
+ * Starts (or resumes) a graded attempt. A new attempt uses one of today's mission slots and
+ * charges the entry energy once; retries, reloads and resumed attempts never charge again.
+ */
+function startAttempt(account, state, ref, record, now) {
+  const week = getWeekStatus(account, now);
+  const daily = state.daily;
+  const newSlot = !daily.used.includes(ref);
+  if (newSlot) {
+    requireRule(!week.rest, 'weekly_rest', restMessage(), 409, { week });
+    requireRule(daily.used.length < MISSIONS_PER_DAY, 'daily_limit',
+      `All ${MISSIONS_PER_DAY} mission slots for today are used. Unfinished work stays on your plan — exercise at the dormitory and sleep to start the next study day.`,
+      409, { slots: { used: daily.used.length, limit: MISSIONS_PER_DAY } });
+    requireRule(week.missionsUsed < MISSIONS_PER_WEEK, 'weekly_mission_limit',
+      `All ${MISSIONS_PER_WEEK} graded missions for this week are used. New missions open ${BALANCE.week.resetLabel}, ${BALANCE.week.timezoneLabel}.`, 409, { week });
+  }
+  if (!record.energyChargedAt) {
+    // Older saves: an attempt already made counts as started, so it is never charged again.
+    if (record.attempts > 0) record.energyChargedAt = record.lastAttemptAt || iso(now);
+    else { spendEnergy(state, BALANCE.energy.missionEntry, requireRule); record.energyChargedAt = iso(now); }
+  }
+  record.startedAt ||= iso(now);
+  if (newSlot) {
+    daily.used.push(ref);
+    account.allowance = { weekKey: week.key, used: week.used, missions: week.missionsUsed + 1 };
+  }
+  return newSlot;
+}
+
+function bookRecord(state, activity) {
+  return state.results[activity.id] ||= { activityId: activity.id, semester: activitySemester(activity), location: activity.location,
+    completed: false, status: 'in-progress', attempts: 0, firstAssignedDay: state.day };
+}
+
+function requireBookPlanned(state, activity) {
+  requireRule(state.daily.plan.some(item => item.kind === 'book' && item.id === activity.id), 'activity_locked',
+    'This mini-game is not on today’s plan. Check the Academic Office for today’s missions; completed games can be replayed as practice.', 409);
+}
+
+/** Saves the question set with the first attempt; the set is the one the game already showed. */
+function chooseVariant(activity, state, record) {
+  if (Number.isInteger(record.variant)) return;
+  if (Array.isArray(activity.variants) && activity.variants.length) record.variant = plannedVariant(activity, state.journeyId, state.profile?.major || 'deck');
+}
+
 /** Return a complete candidate document; the repository commits it with CAS. */
 export function applyAction(previous, payload, now, activities, options = {}) {
   requireRule(payload && typeof payload === 'object' && !Array.isArray(payload), 'invalid_request', 'A valid action is required.');
   const account = clone(previous);
   const state = normalizeNPCFields(account.journey);
   prepareRPGJourney(state, activities, account.sleepReceipts);
+  if (state.initialized) refreshDaily(state, activities);
   const action = payload.action;
   let feedback = null, duplicate = false, reward = null;
 
@@ -511,7 +704,7 @@ export function applyAction(previous, payload, now, activities, options = {}) {
     requireRule(week.remaining > 0, 'weekly_limit', 'All five day resets for this week are used. Sleep unlocks again on Monday at 00:00 Bangkok time.', 409, { week });
     requireRule(state.fitness?.day === state.day && FITNESS_KINDS.has(state.fitness.kind),
       'fitness_required', 'Complete PT, a run, or football at the dorm before sleeping.', 409);
-    account.allowance = { weekKey: week.key, used: week.used + 1 };
+    account.allowance = { weekKey: week.key, used: week.used + 1, missions: week.missionsUsed };
     const fromDay = state.day;
     state.day += 1; state.fitness = null;
     restoreRPGAfterSleep(state);
@@ -529,9 +722,13 @@ export function applyAction(previous, payload, now, activities, options = {}) {
     requireRule(Number.isFinite(score) && score >= 1 && score <= 100
       && payload.proof.completedCount === target && payload.proof.total === target,
       'fitness_incomplete', 'Finish every repetition, checkpoint, or goal in the fitness mini-game first.');
+    const firstToday = !(state.fitness?.day === state.day && FITNESS_KINDS.has(state.fitness.kind));
     state.fitness = { kind: payload.kind, day: state.day, completedAt: iso(now), score,
       completedCount: target, total: target, evidence: 'game-reported' };
-    reward = awardRPGReward(state, 'fitness', String(state.day), null, now, activities);
+    // Exercise always works, even on low energy, so the dormitory routine can be finished.
+    if (firstToday) spendEnergy(state, BALANCE.fitness.energyCost, null);
+    // During weekly rest exercise is recorded but progression XP waits for the next allowance.
+    if (!getWeekStatus(account, now).rest) reward = awardRPGReward(state, 'fitness', String(state.day), null, now, activities);
   } else if (action === 'npcComplete') {
     expectCurrent(state, payload);
     requireOrientation(state);
@@ -547,11 +744,16 @@ export function applyAction(previous, payload, now, activities, options = {}) {
           : 'This follow-up opens when Year 2 starts after a dormitory sleep.',
       409, { missionId: mission.id, seaTraining: readiness });
     const cleaned = cleanResponses(mission, payload.answers || {}, {});
+    if (!hasNPCCompletion(state, mission.id)) {
+      const record = state.npcResults[mission.id] ||= { missionId: mission.id, npcId: mission.npcId, completed: false, status: 'in-progress', attempts: 0 };
+      startAttempt(account, state, refOf('staff', mission.id), record, now);
+    }
     feedback = evaluateNPCMission(mission, cleaned.answers);
     const prior = state.npcResults[mission.id];
     const priorCompleted = hasNPCCompletion(state, mission.id);
     const completed = priorCompleted || feedback.passed;
     state.npcResults[mission.id] = {
+      startedAt: prior?.startedAt || null, energyChargedAt: prior?.energyChargedAt || null,
       missionId: mission.id, npcId: mission.npcId, completed,
       status: completed ? 'complete' : 'in-progress', attempts: (prior?.attempts || 0) + 1,
       completedAt: prior?.completedAt || (feedback.passed ? iso(now) : null),
@@ -588,7 +790,10 @@ export function applyAction(previous, payload, now, activities, options = {}) {
     if (prior && JSON.stringify(prior.answers) === JSON.stringify(cleaned.answers)) {
       return { account: previous, feedback, duplicate: true, changed: false };
     }
+    const safetyRecord = prior ? { ...prior } : { safetyId: game.id, completed: false, attempts: 0 };
+    startAttempt(account, state, refOf('safety', game.id), safetyRecord, now);
     state.safetyResults[game.id] = {
+      startedAt: safetyRecord.startedAt, energyChargedAt: safetyRecord.energyChargedAt,
       safetyId: game.id, year: game.year, location: 'lifeboat', completed: feedback.passed,
       status: feedback.passed ? 'complete' : 'in-progress', outcome: feedback.passed ? 'correct' : 'in-progress',
       attempts: (prior?.attempts || 0) + 1, answers: cleaned.answers,
@@ -600,8 +805,8 @@ export function applyAction(previous, payload, now, activities, options = {}) {
   } else if (action === 'startLoma') {
     expectCurrent(state, payload);
     requireOrientation(state);
-    const final = getLomaProgress(state);
-    requireRule(final.available, 'loma_locked', 'The Loma final opens after sleeping to begin Year 4, Semester 2.', 409);
+    const final = getLomaProgress(state, activities);
+    requireRule(final.available, 'loma_locked', 'The Loma final opens once every Year 4, Semester 2 book mission is complete.', 409);
     if (final.started) {
       requireRule(final.recordValid, 'loma_record_invalid', 'Your saved final needs attention. It has not been replaced or rerolled.', 503);
       return { account: previous, feedback: null, duplicate: true, changed: false };
@@ -614,8 +819,8 @@ export function applyAction(previous, payload, now, activities, options = {}) {
   } else if (action === 'completeLoma') {
     expectCurrent(state, payload);
     requireOrientation(state);
-    const final = getLomaProgress(state);
-    requireRule(final.available, 'loma_locked', 'The Loma final opens after sleeping to begin Year 4, Semester 2.', 409);
+    const final = getLomaProgress(state, activities);
+    requireRule(final.available, 'loma_locked', 'The Loma final opens once every Year 4, Semester 2 book mission is complete.', 409);
     requireRule(final.started && final.recordValid, 'loma_not_started', 'Begin your final at Loma Lounge to save your fifty-game set.', 409);
     const game = getLomaGame(payload.gameId);
     requireRule(game && final.gameIds.includes(game.id), 'loma_game_unassigned', 'This mini-game is not part of your saved Loma final.', 409);
@@ -628,35 +833,66 @@ export function applyAction(previous, payload, now, activities, options = {}) {
     if (prior && JSON.stringify(prior.answers) === JSON.stringify(cleaned.answers)) {
       return { account: previous, feedback, duplicate: true, changed: false };
     }
-    requireRule(!feedback.passed || final.today.remaining > 0, 'loma_daily_limit',
-      'You have completed five final mini-games this game day. Finish your dormitory exercise and sleep before earning another final completion.',
-      409, { today: final.today });
+    // Final games use the normal mission slots: one slot and one energy charge per game attempt.
+    const lomaRecord = prior ? { ...prior } : { gameId: game.id, completed: false, attempts: 0 };
+    try { startAttempt(account, state, refOf('loma', game.id), lomaRecord, now); }
+    catch (error) {
+      if (error.code === 'daily_limit') throw new AcademyError('loma_daily_limit',
+        `You have used all ${MISSIONS_PER_DAY} mission slots today. Exercise at the dormitory and sleep before the next final games.`, 409, { today: final.today });
+      throw error;
+    }
     state.loma.results[game.id] = {
+      startedAt: lomaRecord.startedAt, energyChargedAt: lomaRecord.energyChargedAt,
       gameId: game.id, completed: feedback.passed, status: feedback.passed ? 'complete' : 'in-progress',
       outcome: feedback.passed ? 'correct' : 'in-progress', attempts: (prior?.attempts || 0) + 1,
       answers: cleaned.answers, objectiveCorrect: feedback.objectiveCorrect, objectiveTotal: feedback.objectiveTotal,
       firstAttemptDay: prior?.firstAttemptDay || state.day, completionDay: feedback.passed ? state.day : null,
       completedAt: feedback.passed ? iso(now) : null, lastAttemptAt: iso(now),
     };
-    if (getLomaProgress(state).complete) state.loma.completedAt = state.loma.completedAt || iso(now);
+    if (getLomaProgress(state, activities).complete) state.loma.completedAt = state.loma.completedAt || iso(now);
     if (feedback.passed) reward = awardRPGReward(state, 'loma', game.id, game, now, activities);
+  } else if (action === 'startMission') {
+    // Opening a graded book mission: uses a slot, charges entry energy once, saves the question set.
+    expectCurrent(state, payload);
+    requireOrientation(state);
+    const activity = activities.find(item => item.id === payload.activityId);
+    requireRule(activity, 'activity_missing', 'This activity could not be found.', 404);
+    if (activity.location === 'workshop') requireWorkshopOutfit(state);
+    if (state.results[activity.id]?.completed) return { account: previous, feedback: null, duplicate: true, changed: false };
+    requireBookPlanned(state, activity);
+    const ref = refOf('book', activity.id), existing = state.results[activity.id];
+    if (state.daily.used.includes(ref) && existing?.startedAt && (Number.isInteger(existing.variant) || !activity.variants?.length)) {
+      return { account: previous, feedback: null, duplicate: true, changed: false };
+    }
+    const record = bookRecord(state, activity);
+    startAttempt(account, state, ref, record, now);
+    chooseVariant(activity, state, record);
   } else if (action === 'complete') {
     expectCurrent(state, payload);
     requireOrientation(state);
     const activity = activities.find(item => item.id === payload.activityId);
     requireRule(activity, 'activity_missing', 'This activity could not be found.', 404);
     if (activity.location === 'workshop') requireWorkshopOutfit(state);
-    const assigned = getAssignments(state, activities).unlocked.includes(activity.id);
-    const prior = state.results[activity.id];
-    requireRule(assigned || prior?.completed, 'activity_locked', 'This mini-game is not assigned yet. Finish a dorm routine and sleep to unlock the next day.', 409);
-    const cleaned = cleanResponses(activity, payload.answers || {}, payload.reviews || {});
-    feedback = evaluateActivity(activity, cleaned.answers, cleaned.reviews);
+    const prior = state.results[activity.id]?.completed ? state.results[activity.id] : null;
+    if (!prior) {
+      requireBookPlanned(state, activity);
+      const record = bookRecord(state, activity);
+      startAttempt(account, state, refOf('book', activity.id), record, now);
+      chooseVariant(activity, state, record);
+    }
+    const current = state.results[activity.id];
+    const played = { ...activity, questions: activityQuestions(activity, current.variant) };
+    const cleaned = cleanResponses(played, payload.answers || {}, payload.reviews || {});
+    feedback = evaluateActivity(played, cleaned.answers, cleaned.reviews);
     const completed = Boolean(prior?.completed || feedback.passed);
     state.results[activity.id] = {
       activityId: activity.id, semester: activitySemester(activity), location: activity.location,
       completed, status: completed ? 'complete' : 'in-progress',
-      attempts: (prior?.attempts || 0) + 1,
-      firstAssignedDay: prior?.firstAssignedDay || state.day,
+      attempts: (current.attempts || 0) + 1,
+      startedAt: current.startedAt || null, energyChargedAt: current.energyChargedAt || null,
+      ...(Number.isInteger(current.variant) ? { variant: current.variant } : {}),
+      completionDay: prior?.completionDay || (feedback.passed ? state.day : null),
+      firstAssignedDay: current.firstAssignedDay || state.day,
       completedAt: prior?.completedAt || (feedback.passed ? iso(now) : null),
       lastAttemptAt: iso(now),
       outcome: prior?.completed ? prior.outcome : feedback.passed ? feedback.outcome : 'in-progress',

@@ -4,13 +4,20 @@ import {
   AcademyError, applyAction, createAccount, evaluateActivity, getAssignments,
   getBangkokWeek, getWeekStatus, getSemesterProgress, publicState, normalizeAnswer,
   evaluateNPCMission, getNPCProgress, getSeaTrainingProgress, isNPCMissionAvailable,
-  getOrientationProgress, getWorkshopAccess, getLomaProgress,
+  getOrientationProgress, getWorkshopAccess, getLomaProgress, activityQuestions,
 } from './public/game/course-progress.js';
+import { plannedVariant } from './public/game/curriculum.js';
 import { NPCS, NPC_MISSIONS, STAFF_SIGNOFF_IDS, SEA_TRAINING_REVIEW_ID, ORIENTATION_ROUTE, getNPCMission } from './public/game/npc-content.js';
 import { DEFAULT_CHARACTER, createState, normalizeCharacter, normalizeState } from './public/game/progress.js';
 import { mutateAccount, readAccount, responseFor } from './lib/academy-store.mjs';
 import { AcademyAPI, AcademyAPIError } from './public/game/academy-api.js';
 import { getLomaGame } from './public/game/loma-content.js';
+
+/** The question set the game shows for a book mission: the saved set, else the planned one. */
+function playedQuestions(account, activity) {
+  const saved = account.journey.results[activity.id]?.variant;
+  return activityQuestions(activity, Number.isInteger(saved) ? saved : plannedVariant(activity, account.journey.journeyId, account.journey.profile?.major || 'deck'));
+}
 
 let checks = 0;
 function test(name, callback) {
@@ -54,8 +61,22 @@ function finish(account, id, now = NOW) {
 function npcAnswers(id) {
   return Object.fromEntries(getNPCMission(id).questions.map(question => [question.id, question.answers[0]]));
 }
+/** Test fixtures that build long records in one call stand in for several study days:
+ *  they clear today's used slots, the weekly mission count and refill energy. */
+function freshSlots(original) {
+  const account = structuredClone(original);
+  if (account.journey.daily) account.journey.daily.used = [];
+  if (account.allowance) account.allowance.missions = 0;
+  if (account.journey.rpg?.wellbeing) account.journey.rpg.wellbeing.energy = 100;
+  return account;
+}
+/** Marks a semester's required book missions complete (fixtures for later-year records). */
+function bookSemesterDone(account, semester, catalog = activities) {
+  for (const activity of catalog.filter(item => item.semester === semester)) account.journey.results[activity.id] ||= { completed: true };
+  return account;
+}
 function finishNPC(account, id, now = NOW, catalog = activities) {
-  const result = applyAction(account, { action: 'npcComplete', ...tokens(account), missionId: id, answers: npcAnswers(id) }, now, catalog);
+  const result = applyAction(freshSlots(account), { action: 'npcComplete', ...tokens(account), missionId: id, answers: npcAnswers(id) }, now, catalog);
   assert.equal(result.feedback.passed, true, id);
   return result.account;
 }
@@ -80,8 +101,8 @@ function yearTwoRecord({ books = true, staff = false } = {}) {
 }
 
 function finishLomaToday(account, now = NOW, catalog = activities) {
-  if (!getLomaProgress(account.journey).available) return account;
-  if (!getLomaProgress(account.journey).started) account = applyAction(account,
+  if (!getLomaProgress(account.journey, catalog).available) return account;
+  if (!getLomaProgress(account.journey, catalog).started) account = applyAction(account,
     { action: 'startLoma', ...tokens(account), expectedMajor: account.journey.profile.major }, now, catalog).account;
   for (const id of account.journey.loma.gameIds) {
     if (account.journey.loma.results[id]?.completed) continue;
@@ -151,6 +172,8 @@ await test('white and navy maritime uniforms preserve saved progression and majo
   let account = finishNPC(finish(initialized(), 's1-pacific-1'), 'asawin-workshop-ready');
   account = fitness(account); account.allowance.used = 4;
   account.journey.semester = 8; account.journey.semesterStartDay = account.journey.day;
+  // The final unlocks once Year 4 Semester 2's book work is complete.
+  for (const activity of activities.filter(item => item.semester === 8)) account.journey.results[activity.id] = { completed: true };
   account = action(account, { action: 'startLoma', expectedMajor: 'deck' });
   const before = structuredClone(account);
   for (const outfit of ['maritime', 'maritime-white']) for (const gender of ['female', 'male']) {
@@ -200,7 +223,7 @@ await test('the first mission gates graded book work, staff work, advancement, a
 
 await test('all fourteen introductions can be completed in any order, remain idempotent, and unlock learning on the same day', () => {
   let account = initialized(NOW, false);
-  account.allowance.used = 5;
+  account.allowance.used = 4; // study Day 5 of 5: still a rewarded day
   const before = structuredClone(account);
   account = action(account, { action: 'introduceNPC', npcId: 'asawin' });
   assert.equal(getOrientationProgress(account.journey).completedCount, 1, 'Asawin can be introduced without a suit.');
@@ -225,7 +248,7 @@ await test('all fourteen introductions can be completed in any order, remain ide
   account = finish(account, 's1-pacific-1');
   assert.equal(account.journey.results['s1-pacific-1'].completed, true);
   assert.equal(account.journey.day, 1);
-  assert.equal(getWeekStatus(account, NOW).remaining, 0);
+  assert.equal(getWeekStatus(account, NOW).remaining, 1);
 });
 
 await test('old account migration requires introductions while preserving grades, clearance, fitness, and weekly quota', () => {
@@ -264,6 +287,7 @@ await test('returning cadets retain their original ten or twelve introductions a
     account.journey.npcResults['asawin-workshop-ready'].answers['eng-room1-q1'] = 'Immersion suit';
     account = action(account, { action: 'profile', profile: { ...account.journey.profile, major: 'engine', gender: 'female', outfit: 'maritime-white' } });
     account.journey.semester = 8; account.journey.semesterStartDay = account.journey.day;
+    bookSemesterDone(account, 8);
     account = action(account, { action: 'startLoma', expectedMajor: 'engine' });
     account = fitness(account); account.allowance.used = 4;
     for (const id of missing) delete account.journey.orientation.introductions[id];
@@ -309,8 +333,9 @@ await test('forged or malformed orientation flags cannot replace timestamped kno
 await test('Workshop and Tr. Amara challenges require the saved workshop suit, including direct API submissions', () => {
   const workshopActivity = { id: 'workshop-training-check', semester: 1, location: 'workshop', required: true,
     questions: [{ id: 'q1', type: 'number', answers: ['10'] }] };
-  const catalog = [...activities, workshopActivity];
+  const catalog = [workshopActivity, ...activities];
   let account = initialized();
+  delete account.journey.daily; // today's plan is built from this test's catalog
   const bookPayload = { action: 'complete', ...tokens(account), activityId: workshopActivity.id, answers: { q1: '10' },
     outfit: 'coverall', workshop: { equipped: true } };
   throwsCode(() => applyAction(account, bookPayload, NOW, catalog), 'workshop_required');
@@ -320,6 +345,7 @@ await test('Workshop and Tr. Amara challenges require the saved workshop suit, i
   const before = structuredClone(account);
   account = action(account, { action: 'profile', profile: { ...account.journey.profile, gender: 'female', uniformBottom: 'skirt', outfit: 'coverall' } });
   assert.deepEqual(publicState(account, NOW, catalog).workshop, { equipped: true, requiredOutfit: 'coverall' });
+  delete account.journey.daily; // rebuild today's plan from this test's catalog (workshop activity first)
   const result = applyAction(account, bookPayload, NOW, catalog);
   assert.equal(result.feedback.passed, true);
   account = result.account;
@@ -327,7 +353,7 @@ await test('Workshop and Tr. Amara challenges require the saved workshop suit, i
   assert.equal(account.journey.npcResults['amara-workshop-ready'].completed, true);
   assert.equal(account.journey.profile.uniformBottom, 'skirt');
   assert.equal(account.journey.day, before.journey.day);
-  assert.deepEqual(account.allowance, before.allowance);
+  assert.equal(account.allowance.used, before.allowance.used, 'Graded work never spends a day reset.');
   account = action(account, { action: 'profile', profile: { ...account.journey.profile, outfit: 'cadet' } });
   throwsCode(() => applyAction(account, bookPayload, NOW, catalog), 'workshop_required');
   throwsCode(() => finishNPC(account, 'amara-workshop-ready'), 'workshop_required');
@@ -385,18 +411,72 @@ await test('new journeys restart the introduction mission while profile changes 
   throwsCode(() => action(fitness(account), { action: 'sleep', requestId: 'orientation-new-quota' }), 'weekly_limit');
 });
 
-await test('one game per location per day, backlog persists, future work is locked', () => {
+await test('the daily plan offers four graded missions; retries reuse their slot and energy; unfinished work carries over', () => {
   const first = initialized();
-  assert.deepEqual(getAssignments(first.journey, activities).assignments, ['s1-pacific-1', 's1-dome-1']);
-  throwsCode(() => finish(first, 's1-pacific-2'), 'activity_locked');
-  const second = sleep(first, 'sleep-00000001');
-  const assignment = getAssignments(second.journey, activities);
-  assert.deepEqual(assignment.assignments, ['s1-pacific-2', 's1-dome-2']);
-  assert.deepEqual(assignment.backlog, ['s1-pacific-1', 's1-dome-1']);
-  assert.equal(second.journey.fitness, null);
-  const third = sleep(second, 'sleep-00000002');
-  assert.deepEqual(getAssignments(third.journey, activities).assignments, []);
-  assert.equal(getAssignments(third.journey, activities).backlog.length, 4);
+  const today = publicState(first, NOW, activities);
+  assert.equal(today.plan.length, 4, 'Four graded mission slots per study day');
+  assert.equal(today.plan[0].kind, 'staff', 'One staff mission is suggested');
+  assert.deepEqual(today.assignments, ['s1-pacific-1', 's1-dome-1', 's1-pacific-2'], 'Book missions mix locations');
+  assert.equal(today.today.slotsLeft, 4); assert.equal(today.today.studyDay, 1); assert.equal(today.today.rest, false);
+  throwsCode(() => finish(first, 's1-dome-2'), 'activity_locked');
+  // A wrong first attempt starts the mission: one slot, one 15-energy charge.
+  let account = action(first, { action: 'complete', activityId: 's1-pacific-1', answers: { q1: 'stern' } });
+  assert.deepEqual(account.journey.daily.used, ['book:s1-pacific-1']);
+  assert.equal(account.journey.rpg.wellbeing.energy, 85);
+  // The retry belongs to the same mission: no new slot, no new energy, credit and XP once.
+  account = finish(account, 's1-pacific-1');
+  assert.deepEqual(account.journey.daily.used, ['book:s1-pacific-1']);
+  assert.equal(account.journey.rpg.wellbeing.energy, 85);
+  assert.equal(account.journey.results['s1-pacific-1'].attempts, 2);
+  const xp = Object.keys(account.journey.rpg.rewards).filter(key => key === 'book:s1-pacific-1').length;
+  account = finish(account, 's1-pacific-1'); // practice replay
+  assert.equal(Object.keys(account.journey.rpg.rewards).filter(key => key === 'book:s1-pacific-1').length, xp);
+  assert.deepEqual(account.journey.daily.used, ['book:s1-pacific-1'], 'Practice never uses a slot');
+  // Start a mission and leave it unfinished: it carries into tomorrow's plan without a second energy charge.
+  account = action(account, { action: 'complete', activityId: 's1-dome-1', answers: { q1: 'Unchecked draft.' } });
+  assert.equal(account.journey.results['s1-dome-1'].completed, false);
+  account = sleep(account, 'sleep-carry-0001');
+  const tomorrow = publicState(account, NOW, activities);
+  assert.equal(account.journey.rpg.wellbeing.energy, 100, 'Sleep restores energy');
+  const carried = tomorrow.plan.find(item => item.id === 's1-dome-1');
+  assert.equal(carried.status, 'in-progress');
+  account = finish(account, 's1-dome-1');
+  assert.equal(account.journey.results['s1-dome-1'].completed, true);
+  assert.equal(account.journey.rpg.wellbeing.energy, 100, 'A carried attempt is not charged again');
+  assert.deepEqual(account.journey.daily.used, ['book:s1-dome-1'], 'Carried work uses a slot on the new day');
+});
+
+await test('the daily slot cap holds across book and staff missions', () => {
+  let account = initialized();
+  const plan = publicState(account, NOW, activities).plan;
+  for (const item of plan) {
+    if (item.kind === 'staff') account = applyAction(account, { action: 'npcComplete', ...tokens(account), missionId: item.id, answers: npcAnswers(item.id) }, NOW, activities).account;
+    else account = finish(account, item.id);
+  }
+  assert.equal(account.journey.daily.used.length, 4);
+  assert.equal(publicState(account, NOW, activities).today.slotsLeft, 0);
+  const extraStaff = NPC_MISSIONS.find(mission => !account.journey.npcResults[mission.id]?.completed && isNPCMissionAvailable(account.journey, mission, activities) && mission.npcId !== 'amara');
+  throwsCode(() => applyAction(account, { action: 'npcComplete', ...tokens(account), missionId: extraStaff.id, answers: npcAnswers(extraStaff.id) }, NOW, activities), 'daily_limit');
+  account = sleep(account, 'sleep-cap-00001');
+  assert.equal(publicState(account, NOW, activities).today.slotsLeft, 4, 'Sleeping opens the next study day’s slots');
+});
+
+await test('energy: entry costs 15 once, exercise costs 10 and always works, free meals and rests recover', () => {
+  let account = initialized();
+  account.journey.rpg.wellbeing.energy = 10;
+  throwsCode(() => finish(account, 's1-pacific-1'), 'low_energy');
+  assert.equal(account.journey.daily?.used?.length || 0, 0, 'A refused start uses no slot');
+  account = action(account, { action: 'rpgCare', kind: 'meal', location: 'cafe' });
+  assert.equal(account.journey.rpg.wellbeing.energy, 35);
+  account = finish(account, 's1-pacific-1');
+  assert.equal(account.journey.rpg.wellbeing.energy, 20);
+  account = action(account, { action: 'rpgCare', kind: 'rest', location: 'dorm' });
+  assert.equal(account.journey.rpg.wellbeing.energy, 40);
+  account.journey.rpg.wellbeing.energy = 4;
+  account = fitness(account);
+  assert.equal(account.journey.rpg.wellbeing.energy, 0, 'Exercise never blocks the dormitory routine');
+  account = action(account, { action: 'sleep', requestId: 'sleep-energy-01' });
+  assert.equal(account.journey.rpg.wellbeing.energy, 100);
 });
 
 await test('sleep requires a completed daily fitness game and resets that proof', () => {
@@ -408,29 +488,50 @@ await test('sleep requires a completed daily fitness game and resets that proof'
   throwsCode(() => action(second, { action: 'sleep', requestId: 'sleep-unfit-0002' }), 'fitness_required');
 });
 
-await test('exactly five successful resets; current work remains playable at the cap', () => {
+await test('five rewarded study days per week: the fifth sleep starts weekly rest, never a sixth rewarded day', () => {
   let account = initialized();
-  for (let index = 1; index <= 5; index++) account = sleep(account, `sleep-quota-000${index}`);
-  assert.equal(account.journey.day, 6);
-  assert.equal(getWeekStatus(account, NOW).remaining, 0);
+  for (let index = 1; index <= 4; index++) {
+    assert.equal(getWeekStatus(account, NOW).studyDay, index);
+    account = sleep(account, `sleep-quota-000${index}`);
+  }
+  assert.equal(getWeekStatus(account, NOW).studyDay, 5);
+  assert.equal(getWeekStatus(account, NOW).rest, false);
+  account = finish(account, 's1-pacific-1'); // Day 5 is still rewarded
+  account = sleep(account, 'sleep-quota-0005');
+  const week = getWeekStatus(account, NOW);
+  assert.equal(week.rest, true); assert.equal(week.remaining, 0);
+  assert.equal(publicState(account, NOW, activities).today.rest, true);
+  // Weekly rest: no new graded credit, no sixth sleep, but practice and exploring continue.
+  throwsCode(() => finish(account, 's1-dome-1'), 'weekly_rest');
   throwsCode(() => action(fitness(account), { action: 'sleep', requestId: 'sleep-quota-0006' }), 'weekly_limit');
-  account = finish(account, 's1-pacific-1');
-  assert.equal(account.journey.results['s1-pacific-1'].completed, true);
-  assert.equal(getWeekStatus(account, NOW).remaining, 0);
+  const practice = finish(account, 's1-pacific-1');
+  assert.equal(practice.journey.results['s1-pacific-1'].completed, true);
+  account = action(account, { action: 'introduceNPC', npcId: 'wayne' }); // conversations stay open
 });
 
-await test('weekly rollover refills only allowance and never accumulates weeks or unlocks a day', () => {
+await test('Monday 00:00 Bangkok refreshes the allowance, keeps all progress, and resumes an attempt without re-charging it', () => {
   let account = initialized();
-  for (let index = 0; index < 5; index++) account = sleep(account, `sleep-week-000${index}`);
-  const later = NOW + 21 * 86_400_000;
-  assert.equal(getWeekStatus(account, later).remaining, 5);
-  const visible = publicState(account, later, activities);
-  assert.equal(visible.day, 6);
-  assert.equal(visible.week.used, 0);
-  assert.deepEqual(visible.assignments, []);
-  account = sleep(account, 'sleep-week-fresh', later);
-  assert.equal(account.journey.day, 7);
-  assert.equal(getWeekStatus(account, later).remaining, 4);
+  for (let index = 1; index <= 4; index++) account = sleep(account, `sleep-roll-000${index}`);
+  // Day 5: start a mission, leave it unfinished, then sleep into weekly rest.
+  account = action(account, { action: 'complete', activityId: 's1-dome-1', answers: { q1: 'Draft only.' } });
+  const charged = account.journey.results['s1-dome-1'].energyChargedAt;
+  account = sleep(account, 'sleep-roll-0005');
+  const reset = Date.parse(getBangkokWeek(NOW).resetsAt);
+  assert.equal(reset, Date.parse('2026-10-25T17:00:00Z'), 'Monday 00:00 Asia/Bangkok');
+  assert.equal(getWeekStatus(account, reset - 1).rest, true, 'Still weekly rest one millisecond before Monday');
+  throwsCode(() => finish(account, 's1-dome-1', reset - 1), 'weekly_rest');
+  const monday = getWeekStatus(account, reset);
+  assert.equal(monday.rest, false); assert.equal(monday.studyDay, 1); assert.equal(monday.remaining, 5);
+  const before = structuredClone(account);
+  account = finish(account, 's1-dome-1', reset);
+  assert.equal(account.journey.results['s1-dome-1'].completed, true);
+  assert.equal(account.journey.results['s1-dome-1'].energyChargedAt, charged, 'The resumed attempt keeps its original charge');
+  assert.equal(account.journey.rpg.wellbeing.energy, 100);
+  assert.equal(getWeekStatus(account, reset).missionsUsed, 1, 'It occupies a slot in the new week');
+  for (const field of ['semester', 'day', 'orientation', 'npcResults', 'seaTraining', 'profile']) assert.deepEqual(account.journey[field], before.journey[field], field);
+  for (const key of Object.keys(before.journey.rpg.rewards)) assert.ok(account.journey.rpg.rewards[key], `Kept reward ${key}`);
+  // Unused days do not accumulate: three weeks later the allowance is still five.
+  assert.equal(getWeekStatus(account, reset + 21 * 86_400_000).remaining, 5);
 });
 
 await test('new characters and repeated init preserve account budget; stale journeys cannot mutate', () => {
@@ -480,8 +581,8 @@ await test('exact answer formatting tolerates slash, coordinate, unit and time s
 await test('every semester gate requires all work; advance grants no free day; Year 4 also requires its fifty-game final', () => {
   let account = initialized(), now = NOW;
   function nextDay() {
-    if (getWeekStatus(account, now).remaining === 0) now += 7 * 86_400_000;
     account = sleep(account, `sleep-course-${account.journey.day.toString().padStart(4, '0')}`, now);
+    if (getWeekStatus(account, now).rest) now += 7 * 86_400_000; // weekly rest ends next Monday
   }
   for (let semester = 1; semester <= 8; semester++) {
     assert.equal(account.journey.semester, semester);
@@ -510,7 +611,8 @@ await test('every semester gate requires all work; advance grants no free day; Y
     account = action(account, { action: 'advance', expectedSemester: semester }, now);
     assert.equal(account.journey.day, beforeDay);
     if (semester < 8) {
-      assert.deepEqual(getAssignments(account.journey, activities).assignments, []);
+      const opened = getAssignments(account.journey, activities).assignments.filter(id => activities.find(item => item.id === id).semester > semester);
+      assert.deepEqual(opened, [], 'No new-semester mission opens before the next study day');
       assert.equal(account.journey.semesterStartDay, beforeDay + 1);
     }
   }
@@ -934,10 +1036,17 @@ await test('concurrent staff submissions including Bank and Duke preserve every 
   assert.deepEqual(saved.document.journey.results, {});
   const raw = await db.prepare('SELECT document FROM academy_accounts WHERE user_id = ?').bind('cadet').first();
   for (const id of ids) assert.deepEqual(JSON.parse(raw.document).journey.npcResults[id].answers, npcAnswers(id));
-  db.failNextUpdate = true;
+  // All four mission slots are used today; a further new mission is refused before any write.
   await assert.rejects(mutateAccount(db, 'cadet', {
     action: 'npcComplete', ...stateTokens(first.state), missionId: 'anne-science-discovery', answers: npcAnswers('anne-science-discovery'),
+  }, NOW, activities), /mission slots/);
+  // A failed database write of a practice replay leaves the saved record unchanged.
+  const attempts = saved.document.journey.npcResults['wayne-sentence-builder'].attempts;
+  db.failNextUpdate = true;
+  await assert.rejects(mutateAccount(db, 'cadet', {
+    action: 'npcComplete', ...stateTokens(first.state), missionId: 'wayne-sentence-builder', answers: npcAnswers('wayne-sentence-builder'),
   }, NOW, activities), /simulated write failure/);
+  assert.equal((await readAccount(db, 'cadet', NOW)).document.journey.npcResults['wayne-sentence-builder'].attempts, attempts);
   assert.equal((await readAccount(db, 'cadet', NOW)).document.journey.npcResults['anne-science-discovery'], undefined);
   db.close();
 });
@@ -1054,14 +1163,17 @@ await test('the complete book catalog unlocks and graduates with every source ac
       const activity = ACTIVITIES.find(item => item.id === id);
       if (activity.location === 'workshop') account = applyAction(account, { action: 'profile', ...tokens(account),
         profile: { ...account.journey.profile, outfit: 'coverall' } }, now, ACTIVITIES).account;
+      // Answer the set the game shows this cadet (a saved or planned equivalent variant).
+      const shown = playedQuestions(account, activity);
       const answers = {}, reviews = {};
-      for (const question of activity.questions) {
+      for (const question of shown) {
         answers[question.id] = question.answers?.[0] ?? question.answer ?? 'A test submission checked against the listed review criteria.';
         reviews[question.id] = (question.criteria || []).map((_, index) => index);
       }
       const result = applyAction(account, { action: 'complete', ...tokens(account), activityId: id, answers, reviews }, now, ACTIVITIES);
       assert.equal(result.feedback.passed, true, id);
-      if (activity.questions.some(question => !question.answers?.length && !question.answer)) assert.notEqual(result.feedback.outcome, 'correct');
+      if (activity.variants?.length) assert.equal(result.account.journey.results[id].variant, plannedVariant(activity, account.journey.journeyId, account.journey.profile.major), `${id} saves the planned set`);
+      if (shown.some(question => !question.answers?.length && !question.answer)) assert.notEqual(result.feedback.outcome, 'correct');
       account = result.account; submissionCount++;
     }
     account = finishAvailableNPCs(account, now, ACTIVITIES);
@@ -1069,11 +1181,12 @@ await test('the complete book catalog unlocks and graduates with every source ac
     if (getSemesterProgress(account.journey, ACTIVITIES).ready) {
       account = applyAction(account, { action: 'advance', ...tokens(account), expectedSemester: account.journey.semester }, now, ACTIVITIES).account;
       if (account.journey.graduated) break;
-      assert.deepEqual(getAssignments(account.journey, ACTIVITIES).assignments, []);
+      const opened = getAssignments(account.journey, ACTIVITIES).assignments.filter(id => !account.journey.results[id]?.completed);
+      assert.deepEqual(opened, [], 'No new-semester mission opens before the next study day');
     }
-    if (getWeekStatus(account, now).remaining === 0) now += 7 * 86_400_000;
     account = applyAction(account, { action: 'fitness', ...tokens(account), kind: 'pt', proof }, now, ACTIVITIES).account;
     account = applyAction(account, { action: 'sleep', ...tokens(account), requestId: `book-sleep-${String(++sleepCount).padStart(4, '0')}` }, now, ACTIVITIES).account;
+    if (getWeekStatus(account, now).rest) now += 7 * 86_400_000; // weekly rest ends next Monday
     assert.ok(sleepCount < 400, 'Catalog progression must terminate.');
   }
   assert.equal(submissionCount, ACTIVITIES.filter(activity => activity.required !== false).length);
@@ -1083,6 +1196,30 @@ await test('the complete book catalog unlocks and graduates with every source ac
   assert.equal(getSeaTrainingProgress(account.journey, ACTIVITIES).status, 'approved');
   assert.equal(getLomaProgress(account.journey).completedCount, 50);
   process.stdout.write(`  Catalog: ${submissionCount} completed activities, ${sleepCount} resets across ${Math.ceil(sleepCount / 5)} weekly allowances.\n`);
+});
+
+await test('a save from before daily plans keeps its work, resumes its started attempt first and is not charged again', async () => {
+  const { ACTIVITIES } = await import('./public/game/book-course.js');
+  const now = Date.parse('2026-10-21T03:00:00Z');
+  let account = applyAction(createAccount(now, 'legacy-journey-01'), { action: 'init', profile: { name: 'Old Save', major: 'engine' } }, now, ACTIVITIES).account;
+  account = introduced(account, now, ACTIVITIES);
+  const semesterTwo = ACTIVITIES.filter(activity => activity.semester === 2);
+  account.journey.semester = 2; account.journey.day = 9; account.journey.semesterStartDay = 7;
+  delete account.journey.daily; delete account.allowance.missions; account.allowance.used = 2;
+  for (const activity of semesterTwo.slice(0, 10)) account.journey.results[activity.id] = { completed: true, attempts: 1, outcome: 'correct', answers: {}, firstAssignedDay: 7 };
+  const started = semesterTwo[10];
+  account.journey.results[started.id] = { completed: false, attempts: 2, answers: {}, firstAssignedDay: 8, lastAttemptAt: new Date(now - 86_400_000).toISOString() };
+  const before = JSON.stringify(account), state = publicState(account, now, ACTIVITIES);
+  assert.equal(JSON.stringify(account), before, 'Reading an old save does not change it');
+  assert.equal(state.today.studyDay, 3); assert.equal(state.today.weekMissionsUsed, 0);
+  assert.equal(state.plan[0].id, started.id); assert.equal(state.plan[0].status, 'in-progress');
+  assert.equal(Object.values(state.results).filter(result => result.completed).length, 10);
+  const done = applyAction(account, { action: 'complete', ...tokens(account), activityId: started.id,
+    answers: Object.fromEntries(playedQuestions(account, started).map(question => [question.id, question.answers[0]])) }, now, ACTIVITIES);
+  assert.equal(done.feedback.passed, true);
+  const after = publicState(done.account, now, ACTIVITIES);
+  assert.equal(after.rpg.wellbeing.energy, state.rpg.wellbeing.energy, 'An attempt started before the update is not charged entry energy');
+  assert.equal(after.today.slotsUsed, 1); assert.equal(after.week.used, 2);
 });
 
 process.stdout.write(`\n${checks} academy rule, persistence, and API checks passed.\n`);

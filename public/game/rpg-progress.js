@@ -1,11 +1,12 @@
 /** Saved, dependency-free RPG rules. Values describe a fictional game avatar. */
 import { NPCS, NPC_MISSIONS, getNPCMission } from './npc-content.js';
+import { BALANCE, levelFromXp, rankForLevel } from './game-config.js';
 import { SAFETY_GAMES } from './lifeboat-content.js';
 import { getLomaGame } from './loma-content.js';
 
 export const RPG_VERSION = 1;
-export const RPG_LEVEL_XP = 100;
-export const RPG_SKILL_LEVEL_XP = 30;
+export const RPG_LEVEL_XP = BALANCE.xp.levelBase;
+export const RPG_SKILL_LEVEL_XP = BALANCE.xp.skillLevel;
 export const RPG_SKILLS = Object.freeze([
   { id: 'english', label: 'English', description: 'Vocabulary, sentence building, reading and presentations.' },
   { id: 'maths', label: 'Mathematics', description: 'Numbers, algebra, measurements and calculations.' },
@@ -29,10 +30,22 @@ export const RPG_TRAITS = Object.freeze([
 
 export const RPG_CARE = Object.freeze([
   { id: 'water', label: 'Drink water', description: 'Refill your avatar’s hydration.', restores: { hydration: 40 } },
-  { id: 'meal', label: 'Have a meal', description: 'Refill nourishment and a little energy.', restores: { nourishment: 40, energy: 5 } },
-  { id: 'rest', label: 'Take a break', description: 'Rest your avatar without advancing the game day.', restores: { energy: 40 } },
+  { id: 'meal', label: 'Have a meal', description: `A free basic meal: +${BALANCE.energy.meal} energy and refilled nourishment.`, restores: { nourishment: 40, energy: BALANCE.energy.meal } },
+  { id: 'rest', label: 'Take a break', description: `A short rest: +${BALANCE.energy.rest} energy without advancing the game day.`, restores: { energy: BALANCE.energy.rest } },
 ].map(item => Object.freeze({ ...item, restores: Object.freeze(item.restores), xp: 2, skillId: 'fitness', skillXp: 2,
   locations: Object.freeze(['cafe', 'garden', 'dorm']) })));
+
+/**
+ * Spends energy. With a validator, too little energy is a clear, recoverable error
+ * (eat a free meal or rest); without one (exercise) the meter simply stops at zero.
+ */
+export function spendEnergy(journey, amount, requireRule) {
+  const wellbeing = journey.rpg.wellbeing;
+  if (requireRule) requireRule(wellbeing.energy >= amount, 'low_energy',
+    `You need ${amount} energy to start a graded mission (you have ${wellbeing.energy}). Have a free meal at Loma Café, Palm Garden or the dormitory (+${BALANCE.energy.meal}), or take a rest (+${BALANCE.energy.rest}).`,
+    409, { energy: wellbeing.energy, needed: amount });
+  wellbeing.energy = Math.max(0, wellbeing.energy - amount);
+}
 
 const SKILL_BY_ID = new Map(RPG_SKILLS.map(item => [item.id, item]));
 const TRAIT_BY_ID = new Map(RPG_TRAITS.map(item => [item.id, item]));
@@ -92,11 +105,25 @@ export function getGameSkillIds(source, value, activities = []) {
   return [];
 }
 
+/** Energy is the mission budget, so the care bonus follows water and food only. */
+const isCareReady = wellbeing => wellbeing.hydration >= 40 && wellbeing.nourishment >= 40;
+
+/** XP for a first completion, from the balance configuration (book games grow with the year). */
+export function rewardXp(source, item, activities = []) {
+  const xp = BALANCE.xp;
+  if (source === 'book') {
+    const activity = item && typeof item === 'object' ? item : activities.find(entry => entry.id === item);
+    return xp.bookByYear[activity?.year || Math.ceil((activity?.semester || 1) / 2)] || xp.bookByYear[1];
+  }
+  return { staff: xp.staff, safety: xp.safety, loma: xp.loma, fitness: xp.fitness, intro: xp.intro, care: xp.care }[source] ?? 0;
+}
+
 export function getRPGRewardPreview(source, item, activities = []) {
   const ids = getGameSkillIds(source, item, activities);
-  const xp = source === 'intro' || source === 'care' ? 2 : ids.length ? 10 : 0;
+  const small = source === 'intro' || source === 'care';
+  const xp = ids.length ? rewardXp(source, item, activities) : 0;
   return { xp, skills: ids.map((id, index) => ({ id, label: SKILL_BY_ID.get(id).label,
-    xp: source === 'intro' || source === 'care' ? 2 : index === 0 ? 10 : 4 })) };
+    xp: small ? xp : index === 0 ? xp : BALANCE.xp.secondarySkill })) };
 }
 
 export function createRPGState() {
@@ -152,11 +179,12 @@ export function prepareRPGJourney(journey, activities = [], sleepReceipts = []) 
     if (!known) continue;
     const skills = {};
     for (const [id, amount] of Object.entries(reward.skills || {})) {
-      if (SKILL_BY_ID.has(id) && Number.isInteger(amount) && amount > 0 && amount <= 20) skills[id] = amount;
+      if (SKILL_BY_ID.has(id) && Number.isInteger(amount) && amount > 0 && amount <= 30) skills[id] = amount;
     }
     if (!Object.keys(skills).length) continue;
+    const item = reward.source === 'book' ? activities.find(entry => entry.id === reward.id) : null;
     rpg.rewards[key] = { source: reward.source, id: reward.id,
-      xp: ['intro', 'care'].includes(reward.source) ? 2 : 10,
+      xp: rewardXp(reward.source, item, activities),
       skills, day: validDay(reward.day) ? reward.day : null, at: atISO(reward.at), legacy: reward.legacy === true };
   }
   const selected = Array.isArray(original.traits?.selected)
@@ -227,12 +255,13 @@ function summaryFromPrepared(journey) {
     { id: 'care-routine', label: 'Care Routine', description: 'You balance avatar care and exercise.', goal: 'Use water, meal, rest and exercise on 3 game days', current: routineDays, target: 3 },
     { id: 'all-round-cadet', label: 'All-round Cadet', description: 'Your strengths cover several subjects.', goal: 'Reach level 3 in 5 different skills', current: broadSkills, target: 5 },
   ].map(item => ({ ...item, current: Math.min(item.current, item.target), unlocked: item.current >= item.target }));
-  return { version: RPG_VERSION, totalXp, ...levelAt(totalXp, RPG_LEVEL_XP), skills,
+  const curve = levelFromXp(totalXp);
+  return { version: RPG_VERSION, totalXp, ...curve, rank: rankForLevel(curve.level).title, skills,
     traits: { selected: [...rpg.traits.selected], locked: Boolean(rpg.traits.lockedAt), lockedAt: rpg.traits.lockedAt,
       options: RPG_TRAITS, earned },
     wellbeing: { ...rpg.wellbeing, careDay: journey.day || 1,
       careToday: Object.fromEntries(RPG_CARE.map(care => [care.id, Boolean(rpg.rewards[`care:${journey.day || 1}:${care.id}`])])),
-      careReady: Object.values(rpg.wellbeing).every(value => value >= 40) },
+      careReady: isCareReady(rpg.wellbeing) },
     body: { ...rpg.body, history: rpg.body.history.map(entry => ({ ...entry })),
       bmi: calculateBMI(rpg.body.heightCm, rpg.body.weightKg), fictional: true },
     rewardCount: entries.length, completedGames, fitnessDays, careRoutineDays: routineDays,
@@ -255,7 +284,7 @@ export function awardRPGReward(journey, source, id, item, now, activities = []) 
   if (!preview.xp) return null;
   const before = summaryFromPrepared(journey);
   const eligible = GAME_SOURCES.has(source) || source === 'fitness';
-  const careReady = eligible && Object.values(rpg.wellbeing).every(value => value >= 40);
+  const careReady = eligible && isCareReady(rpg.wellbeing);
   const trained = new Set(rpg.traits.selected.flatMap(traitId => TRAIT_BY_ID.get(traitId)?.skillIds || []));
   const skills = preview.skills.map((skill, index) => {
     const traitBonus = eligible && trained.has(skill.id) ? 2 : 0;
@@ -267,7 +296,8 @@ export function awardRPGReward(journey, source, id, item, now, activities = []) 
     at: new Date(now).toISOString(), legacy: false };
   if (eligible) {
     if (rpg.traits.selected.length === 2) rpg.traits.lockedAt = rpg.traits.lockedAt || new Date(now).toISOString();
-    const cost = source === 'fitness' ? { energy: 8, hydration: 12, nourishment: 4 } : { energy: 3, hydration: 2, nourishment: 2 };
+    // Energy is charged explicitly (mission entry, exercise); games still use a little water and food.
+    const cost = source === 'fitness' ? { hydration: 12, nourishment: 4 } : { hydration: 2, nourishment: 2 };
     for (const [meter, amount] of Object.entries(cost)) rpg.wellbeing[meter] = Math.max(0, rpg.wellbeing[meter] - amount);
   }
   const after = summaryFromPrepared(journey);
@@ -323,7 +353,7 @@ export function applyRPGCare(journey, payload, now, activities, requireRule) {
 }
 
 export function restoreRPGAfterSleep(journey) {
-  journey.rpg.wellbeing.energy = 100;
+  journey.rpg.wellbeing.energy = BALANCE.energy.max;
   journey.rpg.wellbeing.hydration = Math.min(100, journey.rpg.wellbeing.hydration + 20);
   journey.rpg.wellbeing.nourishment = Math.min(100, journey.rpg.wellbeing.nourishment + 10);
 }

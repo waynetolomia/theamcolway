@@ -192,8 +192,8 @@ check('The record exposes saved major, final progress, and actual records withou
   dashboard.openDashboard();
   assert.equal(shown.at(-1).key, 'character-record'); assert.ok(selected('#game-dialog').classList.contains('character-dialog'));
   assert.ok(selected('#dialog-body').textContent.includes(`0 / ${NPCS.length}`));
-  assert.match(selected('#dialog-body').textContent, /5 \/ 5 day resets left/);
-  assert.match(selected('#dialog-body').textContent, /10 game XP per completed book, staff, safety, or Loma final mini-game/);
+  assert.match(selected('#dialog-body').textContent, /5 \/ 5 study days left/);
+  assert.match(selected('#dialog-body').textContent, /book missions grow with your year, and staff, safety and Loma final games earn 10 XP/);
   assert.match(selected('.record-major').textContent, /DECK/); assert.match(selected('.record-major').textContent, /Navigation/);
   assert.equal(selected('.record-loma [role="progressbar"]').getAttribute('aria-valuenow'), '0');
   assert.equal(selected('.record-loma [role="progressbar"]').getAttribute('aria-valuemax'), '50');

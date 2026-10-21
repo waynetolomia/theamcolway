@@ -10,11 +10,17 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { choice, blank, scramble, shuffle, rng, normal, clean } from './minigames/lib.mjs';
+import { lightsQuestions } from './minigames/banks/lights.mjs';
+import { sequenceQuestions } from './minigames/banks/sequences.mjs';
 import { mathQuestions } from './minigames/banks/math.mjs';
 import { scienceQuestions } from './minigames/banks/science.mjs';
 import COLREG from './minigames/banks/colreg.mjs';
+import COLREG_SCENARIOS from './minigames/banks/colreg-scenarios.mjs';
 import SAFETY from './minigames/banks/safety.mjs';
-import GRAMMAR from './minigames/banks/grammar.mjs';
+import BASE_GRAMMAR from './minigames/banks/grammar.mjs';
+import MORE_GRAMMAR from './minigames/banks/grammar-more.mjs';
+// Each unit's grammar bank: the original items first, then the added ones.
+const GRAMMAR = Object.fromEntries(Object.keys(BASE_GRAMMAR).map(unit => [unit, [...BASE_GRAMMAR[unit], ...(MORE_GRAMMAR[unit] || [])]]));
 
 const root = new URL('../', import.meta.url);
 const coursePath = new URL('public/game/book-course.js', root);
@@ -35,6 +41,10 @@ if (!existsSync(sourcePath)) {
 const SOURCE = JSON.parse(readFileSync(sourcePath, 'utf8'));
 const { BOOK_PAGES, UNITS } = await import(pathToFileURL(fileURLToPath(coursePath)).href);
 const pageText = page => BOOK_PAGES[page - 1]?.text || '';
+const { activitySubject, activityMajor, activityDifficulty, activityHost } = await import(new URL('public/game/curriculum.js', root).href);
+const { getGameSkillIds } = await import(new URL('public/game/rpg-progress.js', root).href);
+/** Bump when generated wording or answers change, so instructor reviews can be matched to a version. */
+const CONTENT_VERSION = 2;
 
 // Authored reading comprehension, keyed by the book's question id.
 const READING = {};
@@ -152,6 +162,11 @@ function bankTake(bank, name) {
     return items;
   };
 }
+/** An equivalent set drawn from a bank with its own seed (used for alternative question sets). */
+function bankPick(bank, name, seed, count, idPrefix) {
+  return shuffle(bank, seed).slice(0, count).map(([prompt, correct, distractors, explanation], i) =>
+    choice({ id: `${idPrefix}-${i + 1}`, prompt, correct, distractors, explanation, label: name }));
+}
 const takeColreg = bankTake(COLREG, 'COLREG 1972');
 const takeSafety = bankTake(SAFETY, 'Safety at sea');
 const grammarCursor = new Map();
@@ -234,7 +249,10 @@ function build(a) {
   const unit = Number.isInteger(a.unit) ? a.unit : null;
   const pages = [...new Set([...(a.studyPages || []), ...(a.sourcePages || [])])];
   const exactQs = a.questions.filter(q => q.answers?.length);
+  const year = Math.min(4, Math.max(1, Math.ceil(a.semester / 2)));
   let questions = [];
+  // Equivalent alternative sets: a cadet plays one, chosen per journey (see plannedVariant).
+  const variants = [];
 
   if (kind === 'reading') {
     for (const q of a.questions) {
@@ -249,6 +267,8 @@ function build(a) {
   if (kind === 'fill-vocab') {
     const pairs = shuffle(unitPairs(unit), a.id).slice(0, QUESTIONS_PER_GAME);
     questions = pairs.map((p, i) => vocabQuestion(`${a.id}-v${i + 1}`, p, unit, i % 2 ? 'meaning' : 'example'));
+    const spare = shuffle(unitPairs(unit).filter(p => !pairs.includes(p)), `${a.id}:b`).slice(0, QUESTIONS_PER_GAME);
+    if (spare.length >= 4) variants.push({ set: 'b', major: 'common', questions: spare.map((p, i) => vocabQuestion(`${a.id}-b-v${i + 1}`, p, unit, i % 2 ? 'example' : 'meaning')) });
     kind = 'fill';
   }
   if ((kind === 'quiz' || kind === 'fill') && !questions.length) questions = exactQs.map(q => kind === 'fill' ? blank({ id: q.id, prompt: q.prompt, answers: q.answers, explanation: q.explanation, label: q.sourceLabel }) : convertExact(q, exactQs, q.id));
@@ -285,10 +305,32 @@ function build(a) {
     }
   }
   if (kind === 'grammar' && !questions.length) questions = takeGrammar(unit, QUESTIONS_PER_GAME, `${a.id}-g`);
-  if (kind === 'colreg') questions = takeColreg(QUESTIONS_PER_GAME, `${a.id}-c`);
-  if (kind === 'safety') questions = takeSafety(QUESTIONS_PER_GAME, `${a.id}-sf`);
-  if (kind === 'math') questions = mathQuestions(a.id, QUESTIONS_PER_GAME, { unit, semester: a.semester });
-  if (kind === 'science') questions = scienceQuestions(a.id, QUESTIONS_PER_GAME, { unit, semester: a.semester });
+  if (kind === 'grammar') {
+    // An equivalent set from the unit's other grammar items.
+    const used = new Set(questions.map(q => normal(q.prompt)));
+    const spare = shuffle((GRAMMAR[unit] || GRAMMAR.review).filter(item => !used.has(normal(item.scramble ? item.prompt || 'Put the words in the correct order.' : item[0]))), `${a.id}:b`).slice(0, QUESTIONS_PER_GAME);
+    if (spare.length >= 4) variants.push({ set: 'b', major: 'common', questions: spare.map((item, i) => item.scramble
+      ? scramble({ id: `${a.id}-b-gr${i + 1}`, prompt: item.prompt || 'Put the words in the correct order.', sentence: item.scramble, explanation: item.explanation, label: `Grammar · ${UNITS.find(u => u.id === unit)?.grammar || 'review'}` })
+      : choice({ id: `${a.id}-b-gr${i + 1}`, prompt: item[0], correct: item[1], distractors: item[2], explanation: item[3], label: `Grammar · ${UNITS.find(u => u.id === unit)?.grammar || 'review'}` })) });
+  }
+  if (kind === 'colreg') {
+    // Years 3–4 apply the rules to situations; earlier years learn the rules and lights.
+    const situations = year >= 3 ? 2 : 0;
+    questions = [...takeColreg(3 - situations, `${a.id}-c`), ...bankPick(COLREG_SCENARIOS, 'COLREG 1972 · situation', `${a.id}:situations`, situations, `${a.id}-cs`), ...lightsQuestions(a.id, 2)];
+    variants.push({ set: 'b', major: 'common', questions: [...bankPick(COLREG, 'COLREG 1972', `${a.id}:b`, 3 - situations, `${a.id}-b-c`), ...bankPick(COLREG_SCENARIOS, 'COLREG 1972 · situation', `${a.id}:b:situations`, situations, `${a.id}-b-cs`), ...lightsQuestions(a.id, 2, `${a.id}:b`, 'b-')] });
+  }
+  if (kind === 'safety') {
+    questions = [...takeSafety(4, `${a.id}-sf`), ...sequenceQuestions(`${a.id}-p`, 1, { year })];
+    variants.push({ set: 'b', major: 'common', questions: [...bankPick(SAFETY, 'Safety at sea', `${a.id}:b`, 4, `${a.id}-b-sf`), ...sequenceQuestions(`${a.id}-b-p`, 1, { year, seed: `${a.id}:b` })] });
+  }
+  if (kind === 'math') {
+    questions = mathQuestions(a.id, QUESTIONS_PER_GAME, { unit, semester: a.semester });
+    for (const [set, major] of [['b', 'deck'], ['c', 'engine']]) variants.push({ set, major, questions: mathQuestions(a.id, QUESTIONS_PER_GAME, { semester: a.semester, major, set }) });
+  }
+  if (kind === 'science') {
+    questions = scienceQuestions(a.id, QUESTIONS_PER_GAME, { unit, semester: a.semester });
+    for (const [set, major] of [['b', 'deck'], ['c', 'engine']]) variants.push({ set, major, questions: scienceQuestions(a.id, QUESTIONS_PER_GAME, { semester: a.semester, major, set }) });
+  }
 
   if (!questions.length) throw new Error(`No questions generated for ${a.id} (${kind}).`);
   // Short book rounds are topped up with vocabulary from the same unit so every game has 4+ questions.
@@ -300,7 +342,7 @@ function build(a) {
   const game = GAME[kind];
   const unitTitle = UNITS.find(u => u.id === unit)?.title || 'Final assessment';
   const { questions: _q, criteria, reviewMode, presentation, adaptation, wordBank, ...slot } = a;
-  return {
+  const built = {
     ...slot,
     type: kind,
     title: `${game.title} — ${unitTitle}${a.title.match(/ · (round )?\d+$/)?.[0] || ''}`,
@@ -310,6 +352,32 @@ function build(a) {
     ...(kind === 'listen' && a.script ? { adaptation: 'Device speech reads the book dialogue. Listen or read the transcript, then answer.' } : {}),
     questions,
   };
+  const everyQuestion = [questions, ...variants.map(v => v.questions)].flat();
+  built.studyNotes = studyNotesFor(kind, unit, a, everyQuestion);
+  built.meta = { version: CONTENT_VERSION, subject: activitySubject(built), major: activityMajor(built), difficulty: activityDifficulty(built),
+    host: activityHost(built), mechanics: [...new Set(everyQuestion.map(q => q.format))], source: BANK_KINDS.has(kind) ? 'authored-bank' : 'book',
+    reviewStatus: 'auto-checked; instructor review pending' };
+  if (variants.length) built.variants = variants;
+  return built;
+}
+
+const BANK_KINDS = new Set(['colreg', 'safety', 'math', 'science', 'grammar']);
+const KIND_NOTES = {
+  math: ['Write down what you know and what you need before you calculate.', 'Distance = speed × time, so time = distance ÷ speed.', 'Check the units: knots, nautical miles, tonnes, cubic metres.'],
+  science: ['Mass = density × volume.', 'Read a gauge by finding the value of one small division first.', 'Ohm’s law: V = I × R. Power: P = V × I.'],
+  colreg: ['Rule 5: keep a proper lookout at all times.', 'Rules 13–15: overtaking, head-on and crossing situations.', 'Sidelights: red is port and green is starboard; the stern light is white.', 'Lights in a vertical line show a special status (Rules 26–30).'],
+  safety: ['Raise the alarm first, then act only when it is safe.', 'Know your muster station and your duties on the muster list.', 'Never enter an enclosed space without a permit and a tested atmosphere.'],
+};
+/** Short review notes shown under each game: no answers, only what to look at or remember. */
+function studyNotesFor(kind, unit, a, questions) {
+  const unitInfo = UNITS.find(u => u.id === unit);
+  const notes = [...(KIND_NOTES[kind] || [])];
+  if (!KIND_NOTES[kind]) {
+    notes.push(`Review ${unitInfo ? `Unit ${unitInfo.id}, ${unitInfo.title}` : 'the final assessment'} on PDF p.${a.sourcePages.join(', ')}.`);
+    if (unitInfo?.grammar) notes.push(`Grammar focus: ${unitInfo.grammar}.`);
+  }
+  for (const hint of new Set(questions.map(q => q.hint).filter(Boolean))) if (notes.length < 6) notes.push(hint);
+  return notes;
 }
 
 // Tidy prompts: no exam mark labels, and very long book instructions keep only their first sentence.
@@ -322,18 +390,42 @@ const tidyPrompt = prompt => {
 const ACTIVITIES = SOURCE.map(build).map(a => ({ ...a, questions: a.questions.map(q => ({ ...q, prompt: tidyPrompt(q.prompt) })) }));
 
 // ---------------------------------------------------------------- write outputs
+for (const a of ACTIVITIES) for (const v of a.variants || []) v.questions = v.questions.map(q => ({ ...q, prompt: tidyPrompt(q.prompt) }));
 const questions = ACTIVITIES.flatMap(a => a.questions);
-const ids = new Set(); for (const q of questions) { if (ids.has(q.id)) throw new Error(`Duplicate question id ${q.id}`); ids.add(q.id); }
+const allSets = ACTIVITIES.flatMap(a => [{ a, set: 'a', major: 'common', questions: a.questions }, ...(a.variants || []).map(v => ({ a, ...v }))]);
+const ids = new Set(); for (const { questions: qs } of allSets) for (const q of qs) { if (ids.has(q.id)) throw new Error(`Duplicate question id ${q.id}`); ids.add(q.id); }
 lines[activitiesLine] = `export const ACTIVITIES = ${JSON.stringify(ACTIVITIES)};`;
 const coverage = JSON.parse(lines[coverageLine].replace(/^export const COVERAGE = /, '').replace(/;\s*$/, ''));
-coverage.counts = { ...coverage.counts, activities: ACTIVITIES.length, questions: questions.length, exactQuestions: questions.length, selfReviewQuestions: 0 };
+const playable = allSets.reduce((n, s) => n + s.questions.length, 0);
+coverage.counts = { ...coverage.counts, activities: ACTIVITIES.length, questions: questions.length, exactQuestions: questions.length, selfReviewQuestions: 0, variantSets: allSets.length - ACTIVITIES.length, playableQuestions: playable };
 coverage.minigames = { generator: 'scripts/build-minigames.mjs', types: stats };
 lines[coverageLine] = `export const COVERAGE = ${JSON.stringify(coverage)};`;
 writeFileSync(coursePath, lines.join('\n'));
 
+const keyQuestion = q => ({ id: q.id, format: q.format, prompt: q.prompt, answer: q.answers[0], ...(q.options ? { options: q.options } : {}),
+  ...(q.format === 'number' ? { value: q.value, tolerance: q.tolerance, unit: q.unit } : {}), ...(q.figure ? { figure: q.figure.kind } : {}) });
 const key = ACTIVITIES.map(a => ({ id: a.id, semester: a.semester, location: a.location, type: a.type, title: a.title,
-  questions: a.questions.map(q => ({ id: q.id, format: q.format, prompt: q.prompt, answer: q.answers[0], ...(q.options ? { options: q.options } : {}) })) }));
-writeFileSync(new URL('instructor/MINIGAME_ANSWER_KEY.json', root), JSON.stringify({ generatedBy: 'scripts/build-minigames.mjs', games: key.length, questions: questions.length, types: stats, games_list: key }, null, 1));
+  questions: a.questions.map(keyQuestion), ...(a.variants ? { variants: a.variants.map(v => ({ set: v.set, major: v.major, questions: v.questions.map(keyQuestion) })) } : {}) }));
+writeFileSync(new URL('instructor/MINIGAME_ANSWER_KEY.json', root), JSON.stringify({ generatedBy: 'scripts/build-minigames.mjs', games: key.length, questions: questions.length, playableQuestions: playable, types: stats, games_list: key }, null, 1));
+
+// Structured question bank: one record per playable question with its curriculum metadata.
+const OBJECTIVES = {
+  match: 'Recognise and use maritime vocabulary from the unit.', fill: 'Use unit vocabulary and grammar accurately in context.',
+  quiz: 'Apply the unit’s vocabulary and language accurately.', reading: 'Understand key information in a maritime text.',
+  trivia: 'Read a maritime text for key words and figures.', listen: 'Understand and rebuild spoken maritime messages.',
+  order: 'Build clear, correctly ordered maritime sentences.', grammar: 'Use the unit’s grammar structure accurately.',
+  safety: 'Recall safe practice and emergency procedures at sea.', colreg: 'Apply the COLREG 1972 rules and identify lights.',
+  math: 'Carry out maritime calculations with the correct units.', science: 'Apply basic science to ships, engines and the sea.',
+};
+const bank = allSets.flatMap(({ a, set, major, questions: qs }) => qs.map(q => ({
+  id: q.id, version: CONTENT_VERSION, activityId: a.id, set, setMajor: major, objective: OBJECTIVES[a.type] || 'Apply the unit’s learning.',
+  subject: a.meta.subject, year: Math.ceil(a.semester / 2), semester: a.semester, major: a.meta.major, difficulty: a.meta.difficulty,
+  activityType: a.type, location: a.location, room: a.room || null, npc: a.meta.host, format: q.format, prompt: q.prompt,
+  ...(q.options ? { options: q.options } : {}), ...(q.tokens ? { tokens: q.tokens } : {}), answers: q.answers,
+  ...(q.format === 'number' ? { value: q.value, tolerance: q.tolerance, unit: q.unit || '' } : {}), ...(q.figure ? { figure: q.figure } : {}),
+  hint: q.hint || null, explanation: q.explanation || '', skills: getGameSkillIds('book', a, ACTIVITIES), xpCategory: 'book',
+  source: q.sourceLabel || a.meta.source, sourcePages: a.sourcePages, reviewStatus: a.meta.reviewStatus })));
+writeFileSync(new URL('instructor/QUESTION_BANK.json', root), JSON.stringify({ generatedBy: 'scripts/build-minigames.mjs', version: CONTENT_VERSION, questions: bank.length, bank }, null, 1));
 
 const formats = questions.reduce((m, q) => (m[q.format] = (m[q.format] || 0) + 1, m), {});
-console.log(`Built ${ACTIVITIES.length} mini-games, ${questions.length} questions.`, { types: stats, formats });
+console.log(`Built ${ACTIVITIES.length} mini-games, ${questions.length} main questions, ${playable} playable with ${allSets.length - ACTIVITIES.length} alternative sets.`, { types: stats, formats });

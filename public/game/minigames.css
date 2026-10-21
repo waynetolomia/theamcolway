@@ -56,3 +56,33 @@
   .choice-option{font-size:14px;padding:13px 12px}
   .tile{font-size:14px;padding:9px 12px}
 }
+
+/* Study day card, Cadet Handbook explainer and the study notes under each mini-game. */
+.today-card{margin:10px 0 14px;padding:14px;border:1px solid #d4dde9;border-radius:14px;background:#fff;color:#0f2a4a}
+.today-card.rest{border-color:#c9a24a;background:#fbf6e8}
+.today-head{display:flex;align-items:center;gap:10px}
+.today-head>span{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#0f2a4a;color:#f3d98b}
+.today-head strong{display:block;font-size:15px}
+.today-head small{display:block;font-size:11px;color:#5f6f86}
+.today-meters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.today-meters>div{padding:9px 10px;border-radius:10px;background:#f2f5fa}
+.today-meters small{display:block;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:#5f6f86}
+.today-meters strong{display:block;font-size:16px;margin-top:2px}
+.today-meters span{display:block;font-size:10px;color:#5f6f86}
+.today-notice{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:#fbefed;color:#7a2e27;font-size:12px;line-height:1.45}
+.today-card.rest .today-notice{background:#f6edd5;color:#6d5214}
+.handbook-explainer{margin:0 0 14px;padding:14px 16px;border-left:4px solid #c9a24a;border-radius:12px;background:#f6edd5;color:#0f2a4a}
+.handbook-explainer ul{margin:8px 0 4px;padding-left:18px;font-size:13px;line-height:1.5}
+.handbook h3{margin:18px 0 6px;color:#0f2a4a}
+.study-notes{margin-top:18px;padding-top:6px;border-top:1px solid #dbe3ee}
+.study-note-list{margin:6px 0 10px;padding-left:18px;font-size:13px;line-height:1.5}
+@media(max-width:700px){.today-meters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Number entry, hints and drawn figures (gauges, navigation lights). */
+.number-answer{display:flex;align-items:center;gap:10px;margin-top:12px}
+.number-answer .blank-answer{margin-top:0;max-width:220px}
+.number-unit{font-weight:700;color:#1a3d66}
+.answer-hint-toggle{margin-top:10px;font-size:12px;color:#5f6f86}
+.answer-hint-toggle summary{cursor:pointer;color:#a97d22;font-weight:700}
+.question-figure{display:block;width:min(240px,70vw);height:auto;margin:12px auto 4px}
+.lights-figure{width:min(320px,80vw)}

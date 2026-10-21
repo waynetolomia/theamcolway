@@ -602,6 +602,7 @@ export class SeaWorld {
     }
     this._buildWorkshopLocker();
     this._campusGate();
+    this._buildSignalMast();
     this._buildLifeboat();
     this._buildTeacherPlaza();
     this._buildTrainingGates();
@@ -1729,6 +1730,50 @@ export class SeaWorld {
     this._box(g,7.7,.52,.74,0,4.73,0,C.navy,.045);
     this._sign(g,'AMCOL',0,4.74,.40,4.35,C.navy,C.cream,.48);
     this._sign(g,'MAIN CAMPUS',0,4.14,.40,3.5,C.cream,C.navy,.46);
+  }
+
+  /**
+   * The training signal mast inside the main gate (from the campus photo): a white lattice
+   * trunk with a ladder, a railed lookout platform, a slim topmast with a yardarm and masthead
+   * light, six halyards down to a cleat rail, the Thai flag hoisted, and an ASSEMBLY POINT sign.
+   * The ladder side faces the west walk.
+   */
+  _buildSignalMast() {
+    const white = '#F2F2EC', steel = '#C9CDC6', line = '#9AA19A';
+    const g = new THREE.Group(); g.name = 'signal-mast'; g.position.set(-37.0, 0, 20.6); g.rotation.y = Math.PI / 2; this.world.add(g);
+    this._box(g, 1.5, .10, 1.5, 0, .05, 0, '#CFCFC4', .03);
+    // Square trunk with corner posts, bracing bands and ladder rungs on the front face.
+    for (const x of [-.27, .27]) for (const z of [-.27, .27]) this._box(g, .07, 6.0, .07, x, 3.05, z, white, .01);
+    for (let y = .4; y < 6; y += .55) { this._box(g, .6, .05, .05, 0, y, .27, white, .006); this._box(g, .6, .05, .05, 0, y, -.27, white, .006); this._box(g, .05, .05, .6, .27, y, 0, white, .006); this._box(g, .05, .05, .6, -.27, y, 0, white, .006); }
+    this._box(g, .46, 6.0, .46, 0, 3.05, 0, '#E9EAE3', .01);
+    for (let y = .3; y < 6; y += .3) this._box(g, .34, .03, .03, 0, y, .32, steel, .004);
+    // Lookout platform with railings on both sides of the topmast, and the PA speaker below it.
+    this._box(g, 1.65, .12, 1.15, 0, 6.1, 0, white, .02);
+    for (const side of [-1, 1]) {
+      for (const [x, z] of [[side * .8, -.55], [side * .8, .55], [side * .35, -.55], [side * .35, .55]]) this._box(g, .045, 1.0, .045, x, 6.66, z, white, .006);
+      for (const y of [6.62, 7.12]) { this._box(g, .48, .04, .04, side * .575, y, .55, white, .005); this._box(g, .48, .04, .04, side * .575, y, -.55, white, .005); this._box(g, .04, .04, 1.12, side * .8, y, 0, white, .005); }
+    }
+    this._box(g, .32, .22, .2, .36, 5.75, .3, '#6E7570', .03);
+    // Topmast with step rungs, yardarm and masthead light.
+    this._cyl(g, .08, .11, 5.4, 0, 8.8, 0, white, 12);
+    for (let y = 6.5; y < 10.8; y += .32) this._box(g, .02, .02, .2, .1, y, 0, steel, .003);
+    this._box(g, 4.2, .1, .1, 0, 9.9, 0, white, .01);
+    this._cyl(g, .08, .08, .3, 0, 11.65, 0, steel, 10);
+    this._cyl(g, .095, .095, .05, 0, 11.82, 0, '#B9BDB4', 10);
+    // Six halyards from the yardarm to cleats on the rail at the foot of the mast.
+    const halyards = [-1.9, -1.35, -.8, .8, 1.35, 1.9];
+    for (const x of halyards) this._cyl(g, .008, .008, 8.95, x, 5.42, .45, line, 4).castShadow = false;
+    this._box(g, 4.4, .09, .09, 0, .95, .45, white, .02);
+    for (const x of [-1.95, 1.95]) this._box(g, .08, .95, .08, x, .47, .45, white, .01);
+    for (const x of halyards) this._box(g, .16, .05, .05, x, 1.02, .45, steel, .01);
+    // The Thai national flag flying from the outer starboard halyard.
+    const flag = new THREE.Group(); flag.position.set(1.9, 9.25, .5); g.add(flag);
+    for (const [y, h, color] of [[.47, .1, '#C8102E'], [.37, .1, '#F4F5F0'], [.22, .2, '#2D2A64'], [.07, .1, '#F4F5F0'], [-.03, .1, '#C8102E']]) this._box(flag, .9, h, .015, .45, y, 0, color, 0).castShadow = false;
+    // Muster sign beside the mast, as in the photo.
+    for (const x of [2.85, 3.55]) this._box(g, .05, 1.5, .05, x, .75, .7, white, .006);
+    this._sign(g, 'ASSEMBLY POINT', 3.2, 1.65, .73, 1.2, '#1F5A3A', '#FFFFFF', .62);
+    // Keep walkers out of the trunk and rail (local x lies along the world z axis here).
+    this._collision.push({ x1: -37.6, x2: -36.3, z1: 18.4, z2: 22.8 });
   }
 
   _buildLifeboat() {

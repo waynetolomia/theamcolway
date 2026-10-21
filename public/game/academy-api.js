@@ -56,6 +56,10 @@ export class AcademyAPI {
 
   load() { return this._request(); }
   init(profile) { return this._request({ action: 'init', profile }); }
+  /** Opens a graded book mission: uses a slot, charges entry energy once and saves its question set. */
+  startMission(activityId) {
+    return this._request({ action: 'startMission', ...this._tokens(), activityId });
+  }
   complete(activityId, answers = {}, reviews = {}) {
     return this._request({ action: 'complete', ...this._tokens(), activityId, answers, reviews });
   }

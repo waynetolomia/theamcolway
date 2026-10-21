@@ -15,7 +15,9 @@
     "build:minigames": "node scripts/build-minigames.mjs",
     "db:local": "wrangler d1 migrations apply DB --local",
     "db:remote": "wrangler d1 migrations apply DB --remote --config wrangler.production.json",
-    "deploy": "wrangler deploy --config wrangler.production.json"
+    "deploy": "wrangler deploy --config wrangler.production.json",
+    "audit": "node scripts/content-audit.mjs",
+    "pacing": "node scripts/pacing-report.mjs"
   },
   "dependencies": {
     "jose": "6.2.12"

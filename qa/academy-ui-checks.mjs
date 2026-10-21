@@ -4,7 +4,8 @@ import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { parseHTML } from 'linkedom';
-import { createAccount, applyAction, getAssignments, getSemesterProgress, publicState, getWeekStatus } from '../public/game/course-progress.js';
+import { createAccount, applyAction, getAssignments, getSemesterProgress, publicState, getWeekStatus, activityQuestions } from '../public/game/course-progress.js';
+import { plannedVariant } from '../public/game/curriculum.js';
 import { ACTIVITIES, getActivity } from '../public/game/book-course.js';
 import { STATIONS, NPC_STATIONS, CAMPUS_STATIONS, DORM_DESTINATIONS, ATLANTIC_STATIONS, ATLANTIC_DESTINATIONS, CAMPUS, DORM, ATLANTIC } from '../public/game/campus.js';
 import { NPCS, ORIENTATION_ROUTE, getNPCMissions, getNPCMission } from '../public/game/npc-content.js';
@@ -210,6 +211,25 @@ function deferNextRequest() {
   return release;
 }
 async function office() { await close(); await click('#journal-btn'); }
+/**
+ * Test fixture: the daily plan picks four missions, so a test that needs one at a given
+ * place puts it on today's plan, with free slots and full energy, then reloads the client.
+ */
+async function planned(match) {
+  const test = typeof match === 'string' ? activity => activity.id === match : match;
+  const id = ACTIVITIES.find(activity => activity.semester === account.journey.semester
+    && !account.journey.results[activity.id]?.completed && test(activity))?.id;
+  assert.ok(id, 'No unfinished activity matches the requested plan fixture.');
+  account = structuredClone(account);
+  const journey = account.journey;
+  journey.daily = { day: journey.day, plan: (journey.daily?.day === journey.day ? journey.daily.plan : []).filter(item => item.id !== id), used: [] };
+  journey.daily.plan.unshift({ kind: 'book', id });
+  journey.daily.plan = journey.daily.plan.slice(0, 4);
+  account.allowance.missions = 0; journey.rpg.wellbeing.energy = 100; revision++;
+  await app.academy.refresh(); await settle();
+  assert.ok(state().assignments.includes(id));
+  return id;
+}
 async function finishWalk(location, control = '#interaction-prompt') {
   const zone = destinationZone(location);
   if (app.engineAvailable) {
@@ -255,10 +275,16 @@ async function importCharacterRecord(record) {
   assert.equal(app.dialogKey, 'confirm-import');
   await click('#confirm-import');
 }
+/** The question set the game shows for a graded book mission (saved or planned variant). */
+function shownQuestions(activity) {
+  const saved = account.journey.results[activity.id]?.variant;
+  return activityQuestions(activity, Number.isInteger(saved) ? saved : plannedVariant(activity, account.journey.journeyId, account.journey.profile?.major || 'deck'));
+}
 async function answerAll(activity, { wrong = false, review = true } = {}) {
-  for (let index = 0; index < activity.questions.length; index++) {
+  const questions = shownQuestions(activity);
+  for (let index = 0; index < questions.length; index++) {
     if (index > 0) await click(`[data-question="${index}"]`);
-    const question = activity.questions[index];
+    const question = questions[index];
     await value('[data-answer]', question.answers?.length ? wrong ? 'incorrect test answer' : question.answers[0] : 'I used the supplied source, explained my response, and checked the listed criteria.');
     if (review) for (const checkbox of document.querySelectorAll('[data-criterion]')) {
       checkbox.checked = true; checkbox.dispatchEvent(new window.Event('change', { bubbles: true }));
@@ -351,6 +377,11 @@ async function answerLoma(game, { wrong = false, submit = true } = {}) {
   }
   if (submit) await click('#loma-next');
 }
+/** Sleeps, accepting the end-of-day check when unfinished work or the last study day asks for it. */
+async function sleepNow() {
+  await click('#dorm-sleep-now');
+  if (document.querySelector('#dorm-sleep-confirm')) await click('#dorm-sleep-confirm');
+}
 async function pt() {
   await click('[data-fitness="pt"]');
   assert.equal(el('[data-fitness-kind]').dataset.fitnessKind, 'pt');
@@ -423,13 +454,14 @@ await test('initial creator edits update a returning saved cadet and open the gu
   assert.equal(app.dialogKey, 'orientation');
   assert.match(el('#dialog-title').textContent, /first day starts with hello/);
   assert.equal(document.querySelectorAll('[data-orientation-npc]').length, NPCS.length);
-  assert.equal(state().day, 1); assert.equal(state().assignments.length, 10);
+  // Orientation sits outside the daily mission limits, so no graded plan exists yet.
+  assert.equal(state().day, 1); assert.equal(state().assignments.length, 0); assert.equal(state().today.slotsUsed, 0);
   assert.equal(state().orientation.completed, false);
   assert.match(el('#hud-time').textContent, /5 \/ 5/);
 });
 
 await test('first-day learning and sleep remain locked while the avatar opens the real character dashboard', async () => {
-  const id = state().assignments.find(id => getActivity(id).location === 'pacific');
+  const id = ACTIVITIES.find(activity => activity.semester === 1 && activity.location === 'pacific').id;
   app.academy.openActivity(id); await settle();
   assert.equal(app.dialogKey, 'orientation');
   assert.equal(document.querySelector('[data-answer]'), null);
@@ -584,6 +616,7 @@ await test('all fourteen staff routes expose playable learning or the explicit Y
 
 await test('Atlantic entrance, five room menus and room maps connect the correct indoor staff without changing progress', async () => {
   if (app.zone !== 'campus') { await close(); await click('#campus-btn'); await click('#campus-transfer'); }
+  const bookId = await planned(activity => activity.location === 'atlantic');
   const before = JSON.stringify(state()), posts = requests.filter(request => request.method === 'POST').length;
   const entrance = STATIONS.find(station => station.id === 'atlantic');
   const roomStaff = { captain: ['chalermvut'], bridge: ['jakk'], engine: ['asawin', 'gerald'], ecdis: ['duke'], gmdss: ['bank'] };
@@ -636,7 +669,6 @@ await test('Atlantic entrance, five room menus and room maps connect the correct
   await click('#atlantic-room-exit');
   assert.equal(app.zone, 'campus');
   assert.deepEqual(currentWorld.getPosition(), { x: entrance.x, z: entrance.z });
-  const bookId = state().assignments.find(id => getActivity(id).location === 'atlantic');
   await mission(bookId);
   assert.equal(app.zone, 'atlantic');
   assert.equal(el('#dialog-title').textContent, getActivity(bookId).title, 'An outside Office task must retain its activity intent through the Atlantic entrance.');
@@ -778,9 +810,13 @@ await test('the Lifeboat map route requires a saved immersion suit before record
   assert.equal(state().safety.results[id].objectiveTotal, 4);
   assert.match(el('.lifeboat-feedback').textContent, /Review this answer/);
   assert.equal(getCharacterSummary(state()).totalXP, xpBefore);
-  assert.equal(JSON.stringify(state().rpg), rpgBefore, 'An imperfect safety attempt must not award skills or spend wellbeing.');
+  // Starting a graded attempt takes the entry energy and one mission slot once; nothing else changes.
+  const expectedRPG = JSON.parse(rpgBefore); expectedRPG.wellbeing.energy -= 15;
+  assert.equal(JSON.stringify(state().rpg), JSON.stringify(expectedRPG), 'An imperfect safety attempt must not award skills or spend other wellbeing.');
+  assert.equal(state().today.slotsUsed, 1);
   assert.equal(state().safety.todayId, id, 'An attempt does not release a different same-day game.');
-  assert.equal(JSON.stringify({ results: state().results, npc: state().npc, semester: state().semester, assignments: state().assignments, day: state().day, week: state().week }), academicBefore);
+  const week = { ...state().week, missionsUsed: 0, missionsRemaining: 20 };
+  assert.equal(JSON.stringify({ results: state().results, npc: state().npc, semester: state().semester, assignments: state().assignments, day: state().day, week }), academicBefore);
 });
 
 await test('failed safety saves retain all answers and a successful retry earns one completion and 10 XP', async () => {
@@ -834,7 +870,7 @@ await test('saved safety practice keeps account results and XP while Office and 
 });
 
 await test('Workshop entry and its book task require a saved suit, with recovery from an unsuccessful equip request', async () => {
-  const id = state().assignments.find(id => getActivity(id).location === 'workshop');
+  const id = await planned(activity => activity.location === 'workshop');
   app.academy.openLocation('workshop'); await settle();
   assert.equal(app.dialogKey, 'character-wardrobe');
   assert.match(el('#dialog-eyebrow').textContent, /WORKSHOP CHANGING AREA/);
@@ -896,10 +932,11 @@ await test('saving an outfit after opening Help updates the avatar without repla
 
 await test('all ten campus locations open their assigned activities', async () => {
   for (const station of STATIONS) {
+    await close();
+    const id = await planned(activity => activity.location === station.id);
+    assert.ok(id, `No semester activity at ${station.id}`);
     await travel(station.id);
     assert.equal(el('#dialog-title').textContent, station.id === 'academic' ? 'Academic Office' : station.id === 'atlantic' ? 'Inside Atlantic Building' : station.name);
-    const id = state().assignments.find(id => getActivity(id).location === station.id);
-    assert.ok(id, `No initial assignment at ${station.id}`);
     if (['academic', 'atlantic'].includes(station.id)) {
       await click(`[data-mission="${id}"]`);
       await finishWalk(activityDestination(id));
@@ -978,7 +1015,7 @@ await test('remote outfit refresh updates the world and Workshop gate while pres
 });
 
 await test('a delayed book completion saves its answers without replacing a later wardrobe or clearing its unsaved choices', async () => {
-  const id = state().assignments.find(item => getActivity(item).location === 'cruise');
+  const id = await planned(activity => activity.location === 'cruise');
   const activity = getActivity(id), beforeProfile = JSON.stringify(state().profile);
   assert.equal(state().results[id]?.completed, undefined);
   await mission(id);
@@ -1006,10 +1043,12 @@ await test('a delayed book completion saves its answers without replacing a late
   await close();
 });
 
-const exactId = state().assignments.find(id => getActivity(id).location === 'pacific');
-const openId = state().assignments.find(id => getActivity(id).location === 'entrance');
+const firstAt = location => ACTIVITIES.find(activity => activity.semester === 1 && activity.location === location
+  && !account.journey.results[activity.id]?.completed).id;
+const exactId = firstAt('pacific');
+const openId = firstAt('entrance');
 await test('drafts and original book source pages survive reader navigation', async () => {
-  await mission(openId); await value('[data-answer]', 'My first campus draft.');
+  await planned(openId); await mission(openId); await value('[data-answer]', 'My first campus draft.');
   const sourceButton = el('[data-page-open]'); const page = Number(sourceButton.dataset.pageOpen);
   await click(sourceButton); assert.equal(Number(el('#book-page-number').value), page);
   await value('#book-page-number', '12'); await click('#book-go');
@@ -1020,7 +1059,7 @@ await test('drafts and original book source pages survive reader navigation', as
 });
 
 await test('wrong exact answers retain the attempt; correct answers complete the mini-game', async () => {
-  await mission(exactId); await answerAll(getActivity(exactId), { wrong: true });
+  await planned(exactId); await mission(exactId); await answerAll(getActivity(exactId), { wrong: true });
   assert.equal(state().results[exactId].completed, false);
   assert.equal(state().results[exactId].attempts, 1);
   await click('[data-question="0"]'); await answerAll(getActivity(exactId));
@@ -1032,7 +1071,7 @@ await test('wrong exact answers retain the attempt; correct answers complete the
 await test('multiple-choice games are checked automatically: a wrong option fails, the right option completes', async () => {
   const activity = getActivity(openId);
   assert.ok(activity.questions.every(q => q.answers?.length && !q.criteria), 'No self-review work remains');
-  await mission(openId);
+  await planned(openId); await mission(openId);
   const choose = async (question, pickRight) => {
     const index = question.options.findIndex(option => (option === question.answers[0]) === pickRight);
     await click(`[data-choice="${index}"]`);
@@ -1049,7 +1088,7 @@ await test('multiple-choice games are checked automatically: a wrong option fail
 });
 
 await test('sentence scrambles build the answer from tiles, and placed tiles can be removed', async () => {
-  const id = state().assignments.find(id => getActivity(id).location === 'dome');
+  const id = await planned(activity => activity.location === 'dome' && activity.type === 'order');
   const activity = getActivity(id); assert.equal(activity.type, 'order');
   await mission(id);
   for (const [i, q] of activity.questions.entries()) {
@@ -1117,8 +1156,9 @@ await test('walking students chat with maritime trivia without changing saved pr
 });
 
 await test('typed fill-in-the-blank games accept the book answer', async () => {
-  const id = state().assignments.find(id => getActivity(id).questions.some(q => q.format === 'blank'));
-  if (!id) return;
+  if (!ACTIVITIES.some(activity => activity.semester === state().semester && !state().results[activity.id]?.completed
+    && activity.questions.some(q => q.format === 'blank'))) return;
+  const id = await planned(activity => activity.questions.some(q => q.format === 'blank'));
   const activity = getActivity(id);
   await mission(id);
   assert.equal(el('[data-answer]').tagName, activity.questions[0].format === 'blank' ? 'INPUT' : el('[data-answer]').tagName);
@@ -1126,16 +1166,79 @@ await test('typed fill-in-the-blank games accept the book answer', async () => {
   assert.equal(state().results[id].completed, true);
 });
 
+await test('the Office shows today’s plan and limits; a low-energy start explains why and offers practice; the Handbook uses the configured rules', async () => {
+  const id = await planned(() => true);
+  await office();
+  const today = el('[data-today]').textContent;
+  assert.match(today, /Study day 1 of 5/); assert.match(today, /Missions today\s*0 \/ 4/); assert.match(today, /15 per new mission/);
+  assert.ok(el(`.assignment-list [data-mission="${id}"]`));
+  assert.ok(document.querySelectorAll('.assignment-list [data-mission], .assignment-list [data-plan-staff], .assignment-list [data-plan-loma]').length <= 4);
+  assert.ok(el('[data-handbook-explainer]'), 'The first-time explainer is shown until dismissed.');
+  await click('#handbook-dismiss');
+  assert.equal(document.querySelector('[data-handbook-explainer]'), null);
+  await office(); assert.equal(document.querySelector('[data-handbook-explainer]'), null, 'A dismissed explainer stays dismissed.');
+  account = structuredClone(account); account.journey.rpg.wellbeing.energy = 5; revision++;
+  await app.academy.refresh(); await settle();
+  const posts = requests.filter(request => request.method === 'POST').length;
+  app.academy.openActivity(id); await settle();
+  assert.equal(app.dialogKey, 'mission-gate'); assert.match(el('#dialog-title').textContent, /Low energy/);
+  assert.match(el('[data-today-gate="low_energy"]').textContent, /needs 15 energy and you have 5/);
+  assert.ok(el('#gate-meal'));
+  await click('#gate-practice');
+  assert.ok(el('[data-answer]')); assert.match(el('.activity-topline').textContent, /Practice/);
+  assert.equal(requests.filter(request => request.method === 'POST').length, posts, 'A blocked start sends no graded request.');
+  assert.ok(el('.study-notes [data-page-open]'), 'Book pages sit under the game in the study notes.');
+  await close(); await click('#help-btn');
+  const handbook = el('#dialog-body').textContent;
+  for (const rule of [/5 study days per real week/, /20 graded missions per week/, /uses one of today’s 4 slots and 15 energy/, /\+25 energy/, /\+20 energy/, /Monday 00:00, Bangkok time/, /50 final games/, /at least 13 study days/]) assert.match(handbook, rule);
+  await close();
+  account = structuredClone(account); account.journey.rpg.wellbeing.energy = 100; revision++;
+  await app.academy.refresh(); await settle();
+});
+
+await test('step-order, navigation-light and gauge games render, and the planned question set passes the real rules', async () => {
+  const outside = activity => activity.location !== 'workshop';
+  const safetyId = await planned(activity => activity.type === 'safety' && outside(activity));
+  const safety = getActivity(safetyId), shown = shownQuestions(safety);
+  await mission(safetyId);
+  const stepIndex = shown.findIndex(question => question.format === 'sequence');
+  assert.ok(stepIndex >= 0, 'Safety drills include a procedure to put in order.');
+  await click(`[data-question="${stepIndex}"]`);
+  assert.match(el('.tile-help').textContent, /order you would do them/);
+  const steps = shown[stepIndex];
+  for (const step of steps.answers[0].split(' | ')) await click(`[data-tile="${steps.tokens.indexOf(step)}"]`);
+  assert.equal(el('[data-answer]').value, steps.answers[0]);
+  await click('[data-question="0"]'); await answerAll(safety);
+  assert.equal(state().results[safetyId].completed, true);
+  assert.equal(state().results[safetyId].variant ?? -1, plannedVariant(safety, account.journey.journeyId, account.journey.profile.major), 'The played set is the saved set.');
+  for (const [type, selector] of [['colreg', '.lights-figure'], ['science', '.gauge-figure']]) {
+    if (!ACTIVITIES.some(activity => activity.semester === state().semester && activity.type === type && outside(activity) && !state().results[activity.id]?.completed)) continue;
+    const id = await planned(activity => activity.type === type && outside(activity));
+    const index = shownQuestions(getActivity(id)).findIndex(question => question.figure);
+    await mission(id);
+    await click(`[data-question="${index}"]`);
+    assert.ok(el(`${selector}[role="img"]`), `${type} games draw their figure`);
+    await click('#activity-save-exit');
+  }
+});
+
 await test('dorm travel, PT and sleep advance one day and preserve unfinished assignments', async () => {
+  await close(); await planned(() => true);
   await office(); await click('#office-dorm');
   assert.equal(app.zone, 'dorm'); assert.equal(el('#dorm-sleep-now').disabled, true);
   const safetyBefore = state().safety.todayId;
   const original = [...state().assignments]; await pt();
   assert.equal(el('#dorm-sleep-now').disabled, false);
   await click('#dorm-sleep-now');
+  assert.equal(app.dialogKey, 'sleep-confirm', 'Sleeping with planned work left asks first.');
+  assert.match(el('#dialog-body').textContent, /stay on your plan/);
+  await click('#dorm-sleep-cancel'); assert.equal(state().day, 1);
+  await sleepNow();
   assert.equal(state().day, 2); assert.equal(state().week.remaining, 4); assert.equal(state().fitness, null);
   assert.notEqual(state().safety.todayId, safetyBefore, 'Sleep releases the next Year 1 lifeboat game.');
-  assert.ok(original.some(id => state().backlog.includes(id)));
+  const unfinished = original.filter(id => !state().results[id]?.completed);
+  assert.ok(unfinished.length > 0 && unfinished.every(id => state().assignments.includes(id)), 'Unfinished plan work carries over to the next study day.');
+  assert.equal(state().today.slotsUsed, 0); assert.equal(state().today.studyDay, 2);
   assert.equal(el('#dorm-sleep-now').disabled, true);
 });
 
@@ -1222,7 +1325,7 @@ await test('running and football controls require all checkpoints and goals', as
     for (let stride = 0; stride < 4; stride++) await click('[data-run-toggle]');
   }
   assert.equal(state().fitness.kind, 'run'); assert.equal(state().fitness.completedCount, 8);
-  await click('#dorm-sleep-now');
+  await sleepNow();
   await click('[data-fitness="football"]');
   if (!el('[data-fitness-relaxed]').checked) {
     el('[data-fitness-relaxed]').checked = true; el('[data-fitness-relaxed]').dispatchEvent(new window.Event('change', { bubbles: true }));
@@ -1237,8 +1340,8 @@ await test('running and football controls require all checkpoints and goals', as
 });
 
 await test('five-reset cap and real-week refresh are visible without changing the day', async () => {
-  await click('#dorm-sleep-now');
-  while (state().week.remaining > 0) { await pt(); await click('#dorm-sleep-now'); }
+  await sleepNow();
+  while (state().week.remaining > 0) { await pt(); await sleepNow(); }
   assert.equal(state().day, 6); assert.equal(state().week.used, 5);
   await pt(); assert.equal(el('#dorm-sleep-now').disabled, true);
   const day = state().day, safetyToday = state().safety.todayId; serverNow += 7 * 86_400_000;
@@ -1251,17 +1354,17 @@ await test('semester advancement waits for sleep and completed prior work can be
   // Prepare the remainder through the real API rules, then exercise the Office UI.
   let serial = 0;
   while (!getSemesterProgress(account.journey, ACTIVITIES).ready) {
+    if (getWeekStatus(account, serverNow).rest) serverNow += 7 * 86_400_000;
     for (const id of getAssignments(account.journey, ACTIVITIES).unlocked) {
       if (account.journey.results[id]?.completed) continue;
       const activity = getActivity(id), answers = {}, reviews = {};
-      for (const question of activity.questions) {
+      for (const question of shownQuestions(activity)) {
         answers[question.id] = question.answers?.[0] || 'A saved review response for the course integration test.';
         reviews[question.id] = (question.criteria || []).map((_, index) => index);
       }
       serverAction({ action: 'complete', ...tokens(), activityId: id, answers, reviews });
     }
     if (getSemesterProgress(account.journey, ACTIVITIES).ready) break;
-    if (getWeekStatus(account, serverNow).remaining === 0) serverNow += 7 * 86_400_000;
     serverAction({ action: 'fitness', ...tokens(), kind: 'pt', proof: { completed: true, score: 100, completedCount: 8, total: 8 } });
     serverAction({ action: 'sleep', ...tokens(), requestId: `ui-semester-${String(++serial).padStart(4, '0')}` });
   }
@@ -1283,13 +1386,17 @@ await test('Loma opens only after the last semester starts, saves one final draw
   // progression, but still awaiting its first sleep boundary.
   account.journey.semester = 8; account.journey.day = 200;
   account.journey.semesterStartDay = 201; account.journey.fitness = null;
+  // The final opens once the last semester's book missions are complete.
+  for (const activity of ACTIVITIES.filter(item => item.semester === 8)) account.journey.results[activity.id] = { completed: true, firstAssignedDay: 201, attempts: 1, outcome: 'correct', answers: {} };
   revision++; await app.academy.refresh(); await settle();
   await travel('loma-lounge-east');
   assert.equal(state().loma.available, false);
   assert.equal(document.querySelector('#loma-begin-final'), null);
   await office(); await click('#office-dorm');
   if (state().week.remaining === 0) { serverNow += 7 * 86_400_000; await click('#dorm-refresh'); }
-  await pt(); await click('#dorm-sleep-now');
+  await pt(); await sleepNow();
+  // A fifth sleep starts weekly rest; graded finals wait for the Monday reset.
+  if (state().week.rest) { serverNow += 7 * 86_400_000; await app.academy.refresh(); await settle(); }
   assert.equal(state().day, 201); assert.equal(state().loma.available, true);
   await equip('maritime');
   await travel('loma-lounge-east');
@@ -1322,7 +1429,7 @@ await test('Loma opens only after the last semester starts, saves one final draw
   assert.deepEqual([...state().loma.gameIds], finalIds);
 });
 
-await test('a final source page preserves the draft, wrong answers spend no slot, and delayed retries save without replacing Help', async () => {
+await test('a final source page preserves the draft, a retry spends no extra slot, and delayed retries save without replacing Help', async () => {
   const game = getLomaGame(firstFinalId), booksBefore = JSON.stringify(state().results), beforeXP = getCharacterSummary(state()).totalXP;
   await openFinalGame(firstFinalId);
   const typed = game.questions[0].type === 'text';
@@ -1336,12 +1443,12 @@ await test('a final source page preserves the draft, wrong answers spend no slot
   await answerLoma(game, { wrong: true });
   assert.equal(state().loma.results[firstFinalId].completed, false);
   assert.equal(state().loma.results[firstFinalId].attempts, 1);
-  assert.equal(state().loma.today.remaining, 5);
+  assert.equal(state().loma.today.remaining, 3, 'The first attempt takes one of the four daily slots.');
   await answerLoma(game, { submit: false });
   nextFailure = true; await click('#loma-next');
   const answers = requests.at(-1).payload.answers;
   assert.equal(state().loma.results[firstFinalId].attempts, 1);
-  assert.equal(state().loma.today.remaining, 5);
+  assert.equal(state().loma.today.remaining, 3);
   assert.equal(el('#loma-next').disabled, false);
   const release = deferNextRequest(); await click('#loma-next');
   assert.equal(el('#loma-next').disabled, true);
@@ -1350,20 +1457,20 @@ await test('a final source page preserves the draft, wrong answers spend no slot
   release(); await settle();
   assert.equal(app.dialogKey, key); assert.equal(el('#dialog-title').textContent, title);
   assert.equal(state().loma.results[firstFinalId].completed, true);
-  assert.equal(state().loma.completedCount, 1); assert.equal(state().loma.today.remaining, 4);
+  assert.equal(state().loma.completedCount, 1); assert.equal(state().loma.today.remaining, 3, 'The passing retry uses no extra slot.');
   assert.deepEqual(JSON.parse(JSON.stringify(state().loma.results[firstFinalId].answers)), answers);
   assert.equal(getCharacterSummary(state()).totalXP, beforeXP + 10);
   assert.equal(JSON.stringify(state().results), booksBefore, 'A final attempt does not replace its original book result.');
   assert.deepEqual([...state().loma.gameIds], finalIds);
 });
 
-await test('five final completions stop new games; practice and real-week refresh preserve that cap until dormitory sleep', async () => {
-  for (const id of finalIds.filter(id => id !== firstFinalId).slice(0, 4)) {
+await test('four final completions fill the daily slots; practice and real-week refresh preserve that cap until dormitory sleep', async () => {
+  for (const id of finalIds.filter(id => id !== firstFinalId).slice(0, 3)) {
     await openFinalGame(id); await answerLoma(getLomaGame(id));
     assert.equal(state().loma.results[id].completed, true);
   }
   await click('#loma-result-board');
-  assert.equal(state().loma.completedCount, 5); assert.equal(state().loma.today.remaining, 0);
+  assert.equal(state().loma.completedCount, 4); assert.equal(state().loma.today.remaining, 0);
   assert.ok(el('.loma-day-card.exhausted'));
   assert.equal(document.querySelector('#loma-start-next'), null);
   const pending = [...document.querySelectorAll('[data-loma-game]')].filter(control => !state().loma.results[control.dataset.lomaGame]?.completed);
@@ -1372,7 +1479,7 @@ await test('five final completions stop new games; practice and real-week refres
   serverNow += 7 * 86_400_000; await app.academy.refresh(); await settle();
   app.academy.openLoma(); await settle();
   assert.equal(state().week.remaining, 5); assert.equal(state().day, day);
-  assert.equal(state().loma.today.remaining, 0, 'A real-week refresh does not grant another five same-day completions.');
+  assert.equal(state().loma.today.remaining, 0, 'A real-week refresh does not grant more same-day completions.');
   await openFinalGame(firstFinalId);
   const requestCount = requests.length;
   await click('#loma-record-practice'); await answerLoma(getLomaGame(firstFinalId));
@@ -1381,9 +1488,9 @@ await test('five final completions stop new games; practice and real-week refres
   assert.equal(getCharacterSummary(state()).totalXP, xp);
   assert.equal(state().loma.today.remaining, 0);
   await click('#loma-result-board'); await click('#loma-go-dorm');
-  await pt(); await click('#dorm-sleep-now');
+  await pt(); await sleepNow();
   assert.equal(state().day, day + 1); assert.equal(state().week.remaining, 4);
-  assert.equal(state().loma.today.remaining, 5); assert.equal(state().loma.completedCount, 5);
+  assert.equal(state().loma.today.remaining, 4); assert.equal(state().loma.completedCount, 4);
   assert.deepEqual([...state().loma.gameIds], finalIds, 'Sleeping cannot draw a different final.');
 });
 
@@ -1420,7 +1527,12 @@ await test('Bank and Duke room cards save graded answers, survive a failed save 
     assert.equal(document.querySelectorAll('.saved-response').length, 4);
   }
   assert.equal(getCharacterSummary(state()).totalXP, beforeXP + 20);
-  for (const key of ['profile', 'results', 'safety', 'loma', 'fitness', 'week']) assert.deepEqual(state()[key], before[key], `New optional staff work must retain ${key}.`);
+  for (const key of ['profile', 'results', 'safety', 'fitness']) assert.deepEqual(state()[key], before[key], `New optional staff work must retain ${key}.`);
+  // Staff sign-offs share the daily mission slots, so only the slot counters move.
+  assert.deepEqual({ ...state().loma, today: null }, { ...before.loma, today: null });
+  assert.equal(state().loma.today.remaining, before.loma.today.remaining - 2);
+  assert.equal(state().week.missionsUsed, before.week.missionsUsed + 2);
+  assert.deepEqual({ ...state().week, missionsUsed: 0, missionsRemaining: 0 }, { ...before.week, missionsUsed: 0, missionsRemaining: 0 });
   assert.equal(state().day, before.day); assert.equal(state().semester, before.semester);
   assert.deepEqual(state().npc.seaTraining, before.npc.seaTraining);
   for (const [id, result] of Object.entries(before.npc.results)) assert.deepEqual(state().npc.results[id], result);
@@ -1437,7 +1549,7 @@ await test('export includes saved responses and the authoritative weekly allowan
     assert.deepEqual(record.state.safety.results[id].answers, account.journey.safetyResults[id].answers);
   }
   assert.equal(record.state.profile.major, 'engine');
-  assert.equal(record.state.loma.completedCount, 5);
+  assert.equal(record.state.loma.completedCount, 4);
   assert.deepEqual(record.state.loma.gameIds, finalIds);
   assert.deepEqual(record.state.loma.results, account.journey.loma.results);
   for (const id of ['bank-radio-message', 'duke-chart-reader']) assert.deepEqual(record.state.npc.results[id].answers, account.journey.npcResults[id].answers);

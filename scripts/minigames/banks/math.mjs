@@ -1,6 +1,6 @@
 // Maritime mathematics. Each family generates a fresh, exact question from a seed, with
 // distractors built from typical mistakes. Contexts reuse situations from the book.
-import { choice, rng, shuffle } from '../lib.mjs';
+import { choice, number, rng, shuffle } from '../lib.mjs';
 
 const fmt = (n, dp = 1) => { const v = +n.toFixed(dp); return Number.isInteger(v) ? String(v) : v.toFixed(dp); };
 const hm = hours => { const total = Math.round(hours * 60), h = Math.floor(total / 60), m = total % 60; return h ? `${h} h ${String(m).padStart(2, '0')} min` : `${m} min`; };
@@ -84,14 +84,99 @@ const FAMILIES = [
   // Simple algebra on watch data
   r => { const per = [2, 3, 4][r(3)], rounds = 24 / per;
     return { prompt: `The duty engineer makes rounds every ${per} hours. How many rounds in 24 hours?`, correct: `${rounds}`,
-      distractors: [`${rounds + 2}`, `${rounds - 1}`, `${per * 2}`], explanation: `24 ÷ ${per} = ${rounds}.` }; },
+      distractors: [`${rounds + 2}`, `${rounds - 1}`, `${per * 2}`], explanation: `24 ÷ ${per} = ${rounds}.`, value: rounds, unit: 'rounds' }; },
+  // ---- Year 2–4 families. `value` lets the game ask for a typed number instead of a choice.
+  // Metacentric height GM = KM − KG
+  r => { const km = 8 + r(30) / 10, kg = km - [0.6, 0.8, 1.1, 1.4, 1.8][r(5)], gm = km - kg;
+    return { prompt: `The stability sheet gives KM = ${fmt(km)} m and KG = ${fmt(kg)} m. What is the metacentric height GM?`, correct: `${fmt(gm)} m`,
+      distractors: [`${fmt(km + kg)} m`, `${fmt(gm + 0.5)} m`, `${fmt(kg / km, 2)} m`], explanation: `GM = KM − KG = ${fmt(km)} − ${fmt(kg)} = ${fmt(gm)} m. A positive GM means the ship is stable.`,
+      value: gm, tolerance: 0.05, unit: 'm', hint: 'GM = KM − KG.' }; },
+  // Sinkage from tonnes per centimetre immersion
+  r => { const tpc = [20, 25, 30, 32, 40][r(5)], cm = [5, 8, 10, 12, 15][r(5)], load = tpc * cm;
+    return { prompt: `TPC is ${tpc} tonnes per cm. The ship loads ${load} tonnes of cargo. By how many centimetres does her mean draft increase?`, correct: `${cm} cm`,
+      distractors: [`${cm * 2} cm`, `${fmt(load / 100)} cm`, `${cm + 5} cm`], explanation: `Sinkage = load ÷ TPC = ${load} ÷ ${tpc} = ${cm} cm.`, value: cm, unit: 'cm', hint: 'Sinkage = weight ÷ TPC.' }; },
+  // Fuel consumption varies with the cube of speed
+  r => { const v1 = [12, 14, 15, 16][r(4)], v2 = v1 - [1, 2, 3][r(3)], c1 = [24, 30, 36, 40][r(4)], c2 = c1 * (v2 / v1) ** 3;
+    return { prompt: `At ${v1} knots the main engine burns ${c1} t/day. Fuel use varies with the cube of speed. About how much will it burn at ${v2} knots?`, correct: `${fmt(c2)} t/day`,
+      distractors: [`${fmt(c1 * v2 / v1)} t/day`, `${fmt(c1 * (v2 / v1) ** 2)} t/day`, `${fmt(c1 - (v1 - v2))} t/day`], explanation: `${c1} × (${v2} ÷ ${v1})³ = ${fmt(c2, 2)} t/day.`,
+      value: c2, tolerance: 0.2, unit: 't/day', hint: 'New = old × (new speed ÷ old speed)³.' }; },
+  // Specific fuel oil consumption
+  r => { const sfoc = [170, 175, 180, 185][r(4)], kw = [6000, 8000, 9000, 10000][r(4)], hours = 24, t = sfoc * kw * hours / 1e6;
+    return { prompt: `The engine's SFOC is ${sfoc} g/kWh at ${kw.toLocaleString('en-US')} kW. How many tonnes of fuel does it use in ${hours} hours?`, correct: `${fmt(t)} t`,
+      distractors: [`${fmt(t * 10)} t`, `${fmt(sfoc * kw / 1e6)} t`, `${fmt(t / 2)} t`], explanation: `${sfoc} g/kWh × ${kw} kW × ${hours} h = ${fmt(sfoc * kw * hours / 1000)} kg = ${fmt(t)} t.`,
+      value: t, tolerance: 0.1, unit: 't', hint: 'grams = g/kWh × kW × hours; 1 t = 1,000,000 g.' }; },
+  // Pressure: bar to kPa
+  r => { const bar = [2.5, 3, 4.2, 6, 7.5, 9][r(6)];
+    return { prompt: `A gauge reads ${fmt(bar)} bar. 1 bar = 100 kPa. What is the pressure in kPa?`, correct: `${fmt(bar * 100)} kPa`,
+      distractors: [`${fmt(bar * 10)} kPa`, `${fmt(bar * 1000)} kPa`, `${fmt(bar / 100, 3)} kPa`], explanation: `${fmt(bar)} × 100 = ${fmt(bar * 100)} kPa.`, value: bar * 100, unit: 'kPa' }; },
+  // Temperature: Celsius to Fahrenheit
+  r => { const c = [10, 20, 35, 40, 60, 85][r(6)], f = c * 9 / 5 + 32;
+    return { prompt: `Cooling water leaves at ${c} °C. What is that in °F? (°F = °C × 9 ÷ 5 + 32)`, correct: `${fmt(f)} °F`,
+      distractors: [`${fmt(c * 5 / 9 + 32)} °F`, `${fmt(c + 32)} °F`, `${fmt(c * 2)} °F`], explanation: `${c} × 9 ÷ 5 + 32 = ${fmt(f)} °F.`, value: f, tolerance: 0.5, unit: '°F' }; },
+  // Efficiency
+  r => { const input = [500, 800, 1000, 1200][r(4)], pct = [35, 40, 45, 50][r(4)], out = input * pct / 100;
+    return { prompt: `A generator engine receives ${input} kW of fuel energy and is ${pct}% efficient. What useful power does it deliver?`, correct: `${fmt(out)} kW`,
+      distractors: [`${fmt(input - pct)} kW`, `${fmt(input * (100 - pct) / 100)} kW`, `${fmt(input / pct)} kW`], explanation: `${input} × ${pct}% = ${fmt(out)} kW.`, value: out, unit: 'kW' }; },
+  // Pump fill time
+  r => { const volume = [60, 90, 120, 150][r(4)], rate = [20, 30, 40][r(3)], hours = volume / rate;
+    return { prompt: `A ${volume} m³ tank is filled by a pump delivering ${rate} m³/h. How many hours will it take?`, correct: `${fmt(hours)} hours`,
+      distractors: [`${fmt(hours + 1)} hours`, `${fmt(volume * rate / 100)} hours`, `${fmt(rate / 10)} hours`], explanation: `${volume} ÷ ${rate} = ${fmt(hours)} h.`, value: hours, tolerance: 0.05, unit: 'h' }; },
+  // Current drift
+  r => { const rate = [0.5, 1, 1.5, 2, 2.5][r(5)], hours = [2, 3, 4, 6][r(4)], drift = rate * hours;
+    return { prompt: `A current sets the ship at ${fmt(rate)} knots for ${hours} hours. How far does it drift her?`, correct: `${fmt(drift)} NM`,
+      distractors: [`${fmt(rate + hours)} NM`, `${fmt(drift * 2)} NM`, `${fmt(hours / rate)} NM`], explanation: `Drift = rate × time = ${fmt(rate)} × ${hours} = ${fmt(drift)} NM.`, value: drift, tolerance: 0.05, unit: 'NM' }; },
+  // Rule of twelfths
+  r => { const range = [2.4, 3.6, 4.8, 6][r(4)], hours = [1, 2, 3][r(3)], parts = [1, 3, 6][hours - 1], rise = range * parts / 12;
+    return { prompt: `The tidal range is ${fmt(range)} m. By the rule of twelfths, how much does the tide rise in the first ${hours} hour${hours > 1 ? 's' : ''} after low water?`, correct: `${fmt(rise, 2)} m`,
+      distractors: [`${fmt(range * hours / 12, 2)} m`, `${fmt(range / 2 + 0.1, 2)} m`, `${fmt(range * (parts + 2) / 12, 2)} m`], explanation: `Twelfths rise 1, 2, 3, 3, 2, 1. After ${hours} h: ${parts}/12 × ${fmt(range)} = ${fmt(rise, 2)} m.`,
+      value: rise, tolerance: 0.02, unit: 'm', hint: 'Hour by hour the tide rises 1, 2, 3, 3, 2 and 1 twelfths of the range.' }; },
+  // Algebra: speed needed for the remaining leg
+  r => { const total = [120, 144, 180, 200][r(4)], firstSpeed = [10, 12][r(2)], firstHours = [4, 5, 6][r(3)], hoursLeft = [4, 5, 6][r(3)], need = (total - firstSpeed * firstHours) / hoursLeft;
+    return { prompt: `A ${total} NM passage must take ${firstHours + hoursLeft} hours. The first ${firstHours} hours were at ${firstSpeed} knots. What speed is needed for the remaining ${hoursLeft} hours?`, correct: `${fmt(need)} knots`,
+      distractors: [`${fmt(total / (firstHours + hoursLeft))} knots`, `${fmt(need + 2)} knots`, `${fmt(firstSpeed)} knots`], explanation: `Distance left = ${total} − ${firstSpeed} × ${firstHours} = ${total - firstSpeed * firstHours} NM. ${total - firstSpeed * firstHours} ÷ ${hoursLeft} = ${fmt(need)} knots.`,
+      value: need, tolerance: 0.1, unit: 'knots', hint: 'Find the distance still to run, then divide by the hours left.' }; },
+  // Fuel with a safety reserve
+  r => { const perDay = [20, 24, 28][r(3)], days = [3, 4, 5][r(3)], reserve = [10, 15, 20][r(3)], need = perDay * days * (1 + reserve / 100);
+    return { prompt: `A passage takes ${days} days at ${perDay} t/day. The company requires a ${reserve}% reserve on top. How much fuel must be on board?`, correct: `${fmt(need)} t`,
+      distractors: [`${fmt(perDay * days)} t`, `${fmt(perDay * days + reserve)} t`, `${fmt(perDay * (days + 1))} t`], explanation: `${perDay} × ${days} = ${perDay * days} t, plus ${reserve}% = ${fmt(need)} t.`, value: need, tolerance: 0.5, unit: 't' }; },
+  // Mean of readings
+  r => { const base = [70, 80, 85][r(3)], readings = [0, 1, 2, 3].map(() => base + r(9) - 4), mean = readings.reduce((a, b) => a + b, 0) / 4;
+    return { prompt: `Four cylinder exhaust temperatures read ${readings.map(x => `${x * 5} °C`).join(', ')}. What is their mean?`, correct: `${fmt(mean * 5)} °C`,
+      distractors: [`${fmt(Math.max(...readings) * 5)} °C`, `${fmt((readings[0] + readings[3]) / 2 * 5)} °C`, `${fmt(mean * 5 + 10)} °C`], explanation: `Add the four readings and divide by 4: ${fmt(mean * 5)} °C.`, value: mean * 5, tolerance: 0.5, unit: '°C' }; },
+  // Mixing ratio
+  r => { const ratio = [20, 25, 40, 50][r(4)], parts = ratio + 1, concentrate = [4, 5, 8, 10, 12][r(5)], total = parts * concentrate;
+    return { prompt: `A cleaning chemical is mixed 1 : ${ratio} with fresh water. How many litres of chemical are needed for ${total} litres of mixture?`, correct: `${fmt(concentrate)} L`,
+      distractors: [`${fmt(total / ratio)} L`, `${fmt(total * ratio / 100)} L`, `${fmt(concentrate * 2)} L`], explanation: `1 + ${ratio} = ${parts} parts. ${total} ÷ ${parts} = ${fmt(concentrate)} L of chemical.`, value: concentrate, tolerance: 0.1, unit: 'L' }; },
 ];
 
-export function mathQuestions(id, count, { semester = 1 } = {}) {
-  const order = shuffle(FAMILIES.map((_, i) => i), `${id}:families:${semester}`).slice(0, count);
+/** Difficulty (1 = Year 1 … 4 = Year 4) and the major whose work each family describes. */
+const META = [
+  [1, 'deck'], [1, 'deck'], [1, 'deck'], [2, 'deck'], [2, 'deck'], [1, 'common'], [1, 'deck'], [2, 'deck'], [2, 'engine'], [2, 'deck'],
+  [1, 'engine'], [2, 'deck'], [2, 'deck'], [1, 'engine'], [1, 'engine'], [1, 'common'], [1, 'common'], [1, 'deck'], [1, 'engine'],
+  [3, 'deck'], [3, 'deck'], [4, 'engine'], [4, 'engine'], [2, 'engine'], [2, 'engine'], [3, 'engine'], [2, 'engine'], [2, 'deck'],
+  [3, 'deck'], [4, 'common'], [3, 'engine'], [2, 'engine'], [3, 'engine'],
+].map(([level, major]) => ({ level, major }));
+if (META.length !== FAMILIES.length) throw new Error('Every maths family needs a difficulty and major.');
+
+/** Families for a year: that year's level and the one below, for the requested major. */
+export function mathFamilies(year, major = 'common') {
+  const fits = (index, low) => META[index].level <= year && META[index].level >= low && (major === 'common' || META[index].major !== (major === 'deck' ? 'engine' : 'deck'));
+  const indexes = FAMILIES.map((_, i) => i);
+  const core = indexes.filter(i => fits(i, Math.max(1, year - 1)));
+  return core.length >= 5 ? core : indexes.filter(i => fits(i, 1));
+}
+
+export function mathQuestions(id, count, { semester = 1, major = 'common', set = '' } = {}) {
+  const year = Math.min(4, Math.max(1, Math.ceil(semester / 2)));
+  const tag = set ? `${set}-` : '';
+  const order = shuffle(mathFamilies(year, major), `${id}:families:${semester}${set ? `:${set}` : ''}`).slice(0, count);
   return order.map((family, i) => {
-    const next = rng(`${id}:${i}:${family}`); const r = n => Math.floor(next() * n);
-    const q = FAMILIES[family](r);
-    return choice({ id: `${id}-m${i + 1}`, prompt: q.prompt, correct: q.correct, distractors: q.distractors, explanation: q.explanation, label: 'Maritime mathematics' });
+    const next = rng(`${id}:${set}${i}:${family}`); const r = n => Math.floor(next() * n);
+    const q = FAMILIES[family](r), qid = `${id}-${tag}m${i + 1}`;
+    // From Year 2, every other question with an exact value is typed in rather than chosen.
+    if (year >= 2 && i % 2 === 1 && Number.isFinite(q.value)) {
+      return number({ id: qid, prompt: q.prompt, value: q.value, tolerance: q.tolerance ?? 0, unit: q.unit, explanation: q.explanation, label: 'Maritime mathematics · number entry', hint: q.hint });
+    }
+    return choice({ id: qid, prompt: q.prompt, correct: q.correct, distractors: q.distractors, explanation: q.explanation, label: 'Maritime mathematics', hint: q.hint });
   });
 }

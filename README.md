@@ -47,16 +47,22 @@ The 381 book games are generated, not hand-edited. Edit a question bank, then re
 | What | Where |
 | --- | --- |
 | Reading comprehension answers (from the book’s own questions) | `scripts/minigames/reading/unit-01.mjs` … `unit-10.mjs`, `finals.mjs` |
-| COLREG 1972, safety, grammar | `scripts/minigames/banks/colreg.mjs`, `safety.mjs`, `grammar.mjs` |
-| Maths and science calculations | `scripts/minigames/banks/math.mjs`, `science.mjs` |
+| COLREG 1972, situations and night lights | `scripts/minigames/banks/colreg.mjs`, `colreg-scenarios.mjs` (Years 3–4), `lights.mjs` |
+| Safety and step-order procedures | `scripts/minigames/banks/safety.mjs`, `sequences.mjs` |
+| Grammar per unit | `scripts/minigames/banks/grammar.mjs`, `grammar-more.mjs` |
+| Maths and science calculations, gauges | `scripts/minigames/banks/math.mjs`, `science.mjs` (difficulty by year, DECK/ENGINE contexts, number entry from Year 2) |
 | Vocabulary, trivia, scrambles, listening | Taken automatically from the book text in `scripts/minigames/source/book-activities.json` |
 
 ```sh
-npm run build:minigames   # rewrites ACTIVITIES in public/game/book-course.js and instructor/MINIGAME_ANSWER_KEY.json
+npm run build:minigames   # rewrites ACTIVITIES in book-course.js, the answer key and instructor/QUESTION_BANK.json
+npm run audit             # docs/CONTENT_AUDIT.md and docs/CURRICULUM.md
+npm run pacing            # docs/PACING.md: study days, weeks, XP and rank per semester
 npm test
 ```
 
-Game ids, semesters and locations never change, so saved progress stays valid after a rebuild. The full answer key for teachers is `instructor/MINIGAME_ANSWER_KEY.json`.
+Game ids, semesters and locations never change, so saved progress stays valid after a rebuild. Many games have equivalent alternative question sets (`variants`); each cadet plays one, chosen from their journey and major, and the set is saved with the first attempt. The full answer key for teachers is `instructor/MINIGAME_ANSWER_KEY.json`; `instructor/QUESTION_BANK.json` lists every playable question with its objective, subject, year, semester, major, difficulty, location, NPC, format, answer and tolerance, hint, explanation, skills, source and review status.
+
+Game balance (study days, mission slots, energy, XP curve, ranks) lives in `public/game/game-config.js`. The rules, the HUD and the in-game Cadet Handbook all read it.
 
 ## Beta without Cloudflare (browser saves)
 
@@ -138,13 +144,18 @@ Push your code changes to GitHub. **Check game** runs automatically on pushes an
 
 The existing D1 database and its cadets persist across deployments. Retain its ID and your Access application to keep the same account identities. See [DEPLOYMENT.md](DEPLOYMENT.md) for direct CLI deployment, troubleshooting and the storage design.
 
-## Play rules retained by this export
+## Play rules
 
-All cadets first speak to the 14 NPCs. Required book missions release per location/day and unfinished work remains available. At the dorm, complete one PT, run or football game before sleeping. The server permits **five successful sleeps per real week**, refreshing at **Monday 00:00 Asia/Bangkok (UTC+7)**. A real-week refresh restores the allowance; the cadet still sleeps to advance the game day. Starting a new journey does not replenish used weekly sleeps.
+Values below are the defaults in `public/game/game-config.js`.
 
-Tr. Dream checks the first four semesters and the 16 required staff sign-offs before approving sea training. In Year 4, Semester 2, the Loma final saves a major-specific random set of 50 games, with up to five new passes per game day. The Academic Office checks the full semester requirements before advancement and graduation.
+- **First day:** meet all 14 staff. Orientation sits outside the mission limits and uses no energy.
+- **Study days:** five rewarded study days per real week. Each sleep ends one; the fifth sleep starts **weekly rest** until **Monday 00:00 Asia/Bangkok (UTC+7)**. During rest, cadets can explore, chat and practise, but new graded missions and XP wait. Starting a new journey does not restore used days.
+- **Missions:** the Academic Office plans **four graded missions per study day** (20 per week), with at most one staff mission and a mix of places and game types. Each mission names its host NPC. Unfinished missions carry over. A new attempt uses one slot and **15 energy**, charged once; retries and reloads are free.
+- **Energy:** maximum 100. Free meal +25 and rest +20 (once each per day at Loma Café, Palm Garden or the dormitory); dorm exercise costs 10; sleep refills to 100. Meters never change while a player is away.
+- **XP and rank:** first completions earn XP (book games 10/12/14/16 by year; staff, safety and Loma 10). Level 2 needs 100 XP and each later level 35 more. Ranks run from New Cadet to Cadet Captain (level 18). Semesters advance by finishing the semester's book missions, not by level.
+- **Gates:** Tr. Dream checks Years 1–2 and the 16 staff sign-offs before Year 3. In Year 4, Semester 2, once that semester's book missions are done, the Loma final saves a major-specific random set of 50 games. It uses the same daily and weekly slots, so it takes at least 13 study days.
 
-Mini-games award XP and skill XP on their first completion; replaying them is practice. Daily care and exercise use server-recorded reward keys. The avatar’s optional BMI record does not decide grades or physical fitness. The existing course distinguishes exact-answer work from writing, speaking and presentation tasks that use explicit self-review criteria.
+Mini-games award XP and skill XP on their first completion; replaying them is practice. The avatar’s optional BMI record does not decide grades or physical fitness.
 
 ## Project layout
 

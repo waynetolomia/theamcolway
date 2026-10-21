@@ -5,9 +5,11 @@
 import { ACTIVITIES, BOOK, UNITS } from './book-course.js';
 import { NPC_MISSIONS, getNPC } from './npc-content.js';
 import { SAFETY_GAMES, getSafetyReferences } from './lifeboat-content.js';
+import { BALANCE } from './game-config.js';
 
-export const LOMA_FINAL_COUNT = 50;
-export const LOMA_DAILY_LIMIT = 5;
+export const LOMA_FINAL_COUNT = BALANCE.loma.finalCount;
+/** The final shares the normal daily mission slots. */
+export const LOMA_DAILY_LIMIT = BALANCE.missions.perDay;
 export const LOMA_SELECTION_BLUEPRINT = { major: 20, academic: 20, safety: 6, staff: 4 };
 export const LOMA_MAJOR_LABELS = { deck: 'DECK', engine: 'ENGINE' };
 
@@ -19,6 +21,10 @@ function adaptQuestion(question) {
   const answers = objectiveAnswers(question);
   if (!answers.length) return null;
   if (['choice', 'number', 'order'].includes(question.type)) return { ...question, answers };
+  // Book number-entry games keep their value and tolerance. Step-order games stay in their
+  // own location (the final's word tiles join by spaces, not by step).
+  if (question.format === 'number') return { ...question, type: 'number', answers };
+  if (question.format === 'sequence') return null;
   const options = Array.isArray(question.options) ? question.options.filter(value => typeof value === 'string') : [];
   const acceptedOptions = options.filter(option => answers.some(answer => normal(answer) === normal(option)));
   if (options.length >= 2 && acceptedOptions.length) {

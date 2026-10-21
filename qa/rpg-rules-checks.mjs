@@ -5,7 +5,8 @@ import { ACTIVITIES } from '../public/game/book-course.js';
 import { NPCS, NPC_MISSIONS, getNPCMission } from '../public/game/npc-content.js';
 import { SAFETY_GAMES, getSafetyGame } from '../public/game/lifeboat-content.js';
 import { LOMA_GAMES, getLomaGame } from '../public/game/loma-content.js';
-import { RPG_SKILLS, RPG_TRAITS, RPG_CARE, getGameSkillIds, getRPGRewardPreview, getRPGSummary, calculateBMI } from '../public/game/rpg-progress.js';
+import { RPG_SKILLS, RPG_TRAITS, RPG_CARE, getGameSkillIds, getRPGRewardPreview, getRPGSummary, calculateBMI, rewardXp } from '../public/game/rpg-progress.js';
+import { BALANCE, levelFromXp } from '../public/game/game-config.js';
 import { mutateAccount, readAccount } from '../lib/academy-store.mjs';
 
 const NOW = Date.parse('2026-10-19T11:30:00Z');
@@ -40,7 +41,9 @@ await test('every book, staff, safety and Loma game has valid XP and taught skil
       const ids = getGameSkillIds(source, game, ACTIVITIES);
       assert.ok(ids.length > 0 && ids.every(id => valid.has(id)), `${source}:${game.id}`);
       const preview = getRPGRewardPreview(source, game, ACTIVITIES);
-      assert.equal(preview.xp, 10); assert.ok(preview.skills.every(skill => skill.xp > 0 && skill.label));
+      assert.equal(preview.xp, rewardXp(source, game, ACTIVITIES)); assert.ok(preview.xp >= 10);
+      if (source === 'book') assert.equal(preview.xp, BALANCE.xp.bookByYear[Math.ceil(game.semester / 2)]);
+      assert.ok(preview.skills.every(skill => skill.xp > 0 && skill.label));
     }
   }
   assert.deepEqual(getGameSkillIds('staff', 'bank-radio-message', ACTIVITIES), ['radio', 'english']);
@@ -93,15 +96,17 @@ await test('all introductions reward two XP once, train leadership, and unlock t
   assert.equal(duplicate.changed, false); assert.ok(!duplicate.reward); assert.deepEqual(duplicate.account, account);
 });
 
-await test('graded book passes reward once; failures and completed replays neither spend care nor add XP', () => {
+await test('graded book passes reward once; entry energy is charged once per attempt and replays add no XP', () => {
   let account = initialized(), start = summary(account);
   const failed = doAction(account, { action: 'complete', activityId: customBook.id, answers: { q: 'aft' } });
-  assert.equal(failed.feedback.passed, false); assert.equal(failed.reward, null); assert.deepEqual(summary(failed.account).wellbeing, start.wellbeing);
+  assert.equal(failed.feedback.passed, false); assert.equal(failed.reward, null);
+  assert.equal(summary(failed.account).wellbeing.energy, start.wellbeing.energy - BALANCE.energy.missionEntry);
+  assert.equal(summary(failed.account).wellbeing.hydration, start.wellbeing.hydration);
   const passed = doAction(failed.account, { action: 'complete', activityId: customBook.id, answers: { q: 'bow' } });
   account = passed.account;
   assert.equal(passed.reward.xp, 10); assert.equal(passed.reward.skills[0].xp, 12); assert.equal(passed.reward.careBonus, 2);
   assert.equal(summary(account).totalXp, start.totalXp + 10);
-  assert.equal(summary(account).wellbeing.energy, 97); assert.equal(summary(account).wellbeing.hydration, 98); assert.equal(summary(account).wellbeing.nourishment, 98);
+  assert.equal(summary(account).wellbeing.energy, 85); assert.equal(summary(account).wellbeing.hydration, 98); assert.equal(summary(account).wellbeing.nourishment, 98);
   for (const answer of ['bow', 'aft']) {
     const again = doAction(account, { action: 'complete', activityId: customBook.id, answers: { q: answer } });
     assert.equal(again.reward, null); assert.deepEqual(summary(again.account), summary(account));
@@ -133,20 +138,22 @@ await test('Lifeboat rewards preserve outfit and daily rotation requirements and
   throwCode(() => doAction(done.account, { ...payload, safetyId: SAFETY_GAMES[2].id }), 'safety_game_locked');
 });
 
-await test('the saved Loma final rewards separate review games once and still limits completion to five per day', () => {
+await test('the saved Loma final rewards separate review games once and shares the four daily mission slots', () => {
   let account = initialized(); account.journey.semester = 8;
+  for (const activity of activities.filter(item => item.semester === 8)) account.journey.results[activity.id] = { completed: true, firstAssignedDay: 1 };
   account = doAction(account, { action: 'startLoma', expectedMajor: 'deck' }).account;
   const ids = [...account.journey.loma.gameIds], beforeXp = summary(account).totalXp;
-  for (const id of ids.slice(0, 5)) {
+  const perDay = BALANCE.missions.perDay;
+  for (const id of ids.slice(0, perDay)) {
     const game = getLomaGame(id), done = doAction(account, { action: 'completeLoma', gameId: id, answers: answersFor(game) });
     assert.equal(done.reward.xp, 10); assert.equal(done.reward.source, 'loma');
     assert.deepEqual(done.reward.skills.map(skill => skill.id), getGameSkillIds('loma', game, activities));
     account = done.account;
   }
-  assert.equal(summary(account).totalXp, beforeXp + 50); assert.deepEqual(account.journey.loma.gameIds, ids);
+  assert.equal(summary(account).totalXp, beforeXp + perDay * 10); assert.deepEqual(account.journey.loma.gameIds, ids);
   const duplicate = doAction(account, { action: 'completeLoma', gameId: ids[0], answers: answersFor(getLomaGame(ids[0])) });
   assert.equal(duplicate.changed, false); assert.ok(!duplicate.reward);
-  throwCode(() => doAction(account, { action: 'completeLoma', gameId: ids[5], answers: answersFor(getLomaGame(ids[5])) }), 'loma_daily_limit');
+  throwCode(() => doAction(account, { action: 'completeLoma', gameId: ids[perDay], answers: answersFor(getLomaGame(ids[perDay])) }), 'loma_daily_limit');
 });
 
 await test('fitness gives ten XP for one exercise per game day across all three exercise choices', () => {
@@ -154,7 +161,7 @@ await test('fitness gives ten XP for one exercise per game day across all three 
   throwCode(() => doAction(account, { action: 'fitness', kind: 'pt', proof: { ...proof('pt'), completedCount: 7 } }), 'fitness_incomplete');
   const first = fitness(account); account = first.account;
   assert.equal(first.reward.xp, 10); assert.equal(first.reward.skills[0].id, 'fitness'); assert.equal(summary(account).fitnessDays, 1);
-  assert.equal(summary(account).wellbeing.energy, before.wellbeing.energy - 8);
+  assert.equal(summary(account).wellbeing.energy, before.wellbeing.energy - BALANCE.fitness.energyCost);
   assert.equal(summary(account).wellbeing.hydration, before.wellbeing.hydration - 12);
   for (const kind of ['pt', 'run', 'football']) {
     const next = fitness(account, kind); assert.equal(next.reward, null); assert.deepEqual(summary(next.account), summary(account));
@@ -220,13 +227,17 @@ await test('care is available before orientation but bounded once per kind per g
   throwCode(() => doAction(account, { action: 'rpgCare', kind: 'water', location: 'dorm', expectedJourneyId: 'old-journey' }), 'stale_journey');
 });
 
-await test('depleted wellbeing never blocks learning; care restores the prospective skill bonus and never changes BMI', () => {
+await test('low energy blocks only new graded missions; free care restores energy and the skill bonus and never changes BMI', () => {
   let account = initialized();
   account = doAction(account, { action: 'rpgProfile', heightCm: 180, weightKg: 72 }).account;
   account.journey.rpg.wellbeing = { energy: 0, hydration: 0, nourishment: 0 };
+  throwCode(() => finishStaff(account, 'wayne-sentence-builder'), 'low_energy');
+  account.journey.rpg.wellbeing = { energy: 15, hydration: 0, nourishment: 0 };
   const low = finishStaff(account, 'wayne-sentence-builder'); account = low.account;
   assert.equal(low.reward.xp, 10); assert.equal(low.reward.careBonus, 0); assert.equal(low.reward.skills[0].xp, 10);
+  assert.equal(summary(account).wellbeing.energy, 0);
   for (const kind of ['water', 'meal', 'rest']) account = doAction(account, { action: 'rpgCare', kind, location: 'garden' }).account;
+  assert.equal(summary(account).wellbeing.energy, BALANCE.energy.meal + BALANCE.energy.rest);
   const cared = finishStaff(account, 'bank-radio-message'); account = cared.account;
   assert.equal(cared.reward.careBonus, 2); assert.equal(cared.reward.xp, 10);
   assert.equal(summary(account).body.bmi, 22.2); assert.equal(summary(account).body.weightKg, 72);
@@ -268,13 +279,19 @@ await test('character and skill levels follow earned XP and expose level-up meta
   let account = initialized(), earnedCharacterLevel = false;
   const missions = NPC_MISSIONS.filter(mission => mission.unlockSemester === 1 && mission.npcId !== 'amara').slice(0, 9);
   for (const mission of missions) {
+    // Fixture only: give each mission a fresh slot and full energy so the curve, not the daily plan, is tested.
+    account = copy(account); account.journey.daily && (account.journey.daily.used = []);
+    account.allowance.missions = 0; account.journey.rpg.wellbeing.energy = BALANCE.energy.max;
     const done = finishStaff(account, mission.id); account = done.account;
     earnedCharacterLevel ||= done.reward.levelUps.some(level => level.id === 'character' && level.from === 1 && level.to === 2);
   }
-  const rpg = summary(account);
-  assert.equal(rpg.totalXp, 28 + missions.length * 10); assert.equal(rpg.level, Math.floor(rpg.totalXp / 100) + 1);
-  assert.equal(rpg.xpIntoLevel, rpg.totalXp % 100); assert.equal(rpg.xpForNextLevel, 100); assert.equal(earnedCharacterLevel, true);
-  for (const skill of rpg.skills) assert.equal(skill.level, Math.floor(skill.xp / 30) + 1);
+  const rpg = summary(account), curve = levelFromXp(rpg.totalXp);
+  assert.equal(rpg.totalXp, 28 + missions.length * 10); assert.equal(rpg.level, curve.level); assert.equal(rpg.level, 2);
+  assert.equal(rpg.xpIntoLevel, rpg.totalXp - BALANCE.xp.levelBase);
+  assert.equal(rpg.xpForNextLevel, BALANCE.xp.levelBase + BALANCE.xp.levelGrowth); assert.equal(earnedCharacterLevel, true);
+  assert.equal(levelFromXp(BALANCE.xp.levelBase - 1).level, 1); assert.equal(levelFromXp(BALANCE.xp.levelBase).level, 2);
+  assert.equal(levelFromXp(BALANCE.xp.levelBase * 2 + BALANCE.xp.levelGrowth).level, 3);
+  for (const skill of rpg.skills) assert.equal(skill.level, Math.floor(skill.xp / BALANCE.xp.skillLevel) + 1);
 });
 
 function sqliteD1() {

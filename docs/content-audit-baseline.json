@@ -1,0 +1,160 @@
+﻿{
+ "summary": {
+  "book": "Maritime English 3.17 Plus",
+  "generatedAt": "2026-10-21",
+  "original": {
+   "activities": 381,
+   "questions": 1624,
+   "objective": 727,
+   "selfReview": 897
+  },
+  "now": {
+   "bookActivities": 381,
+   "bookQuestionSets": 381,
+   "playableQuestionItems": 2220,
+   "uniqueQuestions": 2083,
+   "reusedReferences": 137,
+   "generatedNumerical": 228,
+   "staffMissions": 27,
+   "staffQuestions": 110,
+   "safetyGames": 8,
+   "lomaPool": 770
+  }
+ },
+ "by": {
+  "semester": {
+   "Y1 S1": 190,
+   "Y1 S2": 198,
+   "Y2 S1": 195,
+   "Y2 S2": 188,
+   "Y3 S1": 386,
+   "Y3 S2": 365,
+   "Y4 S1": 187,
+   "Y4 S2": 369
+  },
+  "major": {
+   "COMMON": 1208,
+   "DECK": 693,
+   "ENGINE": 177
+  },
+  "subject": {
+   "English · Reading": 460,
+   "English · Vocabulary": 162,
+   "English · Grammar": 210,
+   "English · Listening": 80,
+   "English · Vocabulary & usage": 541,
+   "English · Sentence building": 150,
+   "Mathematics": 150,
+   "Science": 65,
+   "Safety": 130,
+   "Navigation · COLREG": 130,
+   "Staff mission (Capt. Chalermvut)": 8,
+   "Staff mission (Director Kobchapan)": 8,
+   "Staff mission (Dr. Wayne)": 8,
+   "Staff mission (Director Thanaphat)": 8,
+   "Staff mission (Kru Yak)": 8,
+   "Staff mission (Tr. Aphisit)": 8,
+   "Staff mission (Tr. Anne)": 8,
+   "Staff mission (Capt. Jakk)": 8,
+   "Staff mission (Chief Engineer Asawin)": 8,
+   "Staff mission (Engineer Gerald)": 8,
+   "Staff mission (Tr. Amara)": 8,
+   "Staff mission (Tr. Bank)": 8,
+   "Staff mission (Tr. Duke)": 8,
+   "Staff mission (Tr. Dream)": 6,
+   "Lifeboat safety": 32
+  },
+  "npc": {
+   "Director Thanaphat": 418,
+   "Dr. Wayne": 631,
+   "Capt. Jakk": 304,
+   "Tr. Dream": 72,
+   "Tr. Aphisit": 158,
+   "Tr. Anne": 63,
+   "Tr. Amara": 45,
+   "Capt. Chalermvut": 43,
+   "Director Kobchapan": 325,
+   "Tr. Duke": 18,
+   "Tr. Bank": 73,
+   "Chief Engineer Asawin": 12,
+   "Engineer Gerald": 18,
+   "Kru Yak": 8
+  },
+  "location": {
+   "entrance": 50,
+   "pacific / english": 518,
+   "garden": 100,
+   "imd": 140,
+   "cruise": 66,
+   "cafe": 405,
+   "dome": 160,
+   "workshop": 87,
+   "atlantic / captain": 35,
+   "academic": 377,
+   "atlantic / bridge": 51,
+   "atlantic / ecdis": 10,
+   "atlantic / gmdss": 65,
+   "atlantic / engine": 14,
+   "lifeboat": 32
+  },
+  "mechanic": {
+   "trivia": 150,
+   "match": 162,
+   "fill": 110,
+   "listen": 80,
+   "reading": 310,
+   "grammar": 100,
+   "quiz": 541,
+   "order": 150,
+   "math": 150,
+   "science": 65,
+   "safety": 130,
+   "colreg": 130,
+   "staff:order": 26,
+   "staff:choice": 55,
+   "staff:number": 29,
+   "safety:choice": 21,
+   "safety:order": 6,
+   "safety:number": 5
+  },
+  "difficulty": {
+   "Beginner": 388,
+   "Applied beginner": 383,
+   "Intermediate": 751,
+   "Advanced": 556
+  },
+  "format": {
+   "choice": 1752,
+   "scramble": 294,
+   "blank": 108,
+   "order": 32,
+   "number": 34
+  },
+  "type": {}
+ },
+ "uniqueBy": {
+  "semester": {
+   "Y1 S1": 182,
+   "Y1 S2": 189,
+   "Y2 S1": 191,
+   "Y2 S2": 181,
+   "Y3 S1": 370,
+   "Y3 S2": 349,
+   "Y4 S1": 178,
+   "Y4 S2": 362
+  },
+  "subject": {
+   "English · Reading": 422,
+   "English · Vocabulary": 162,
+   "English · Grammar": 210,
+   "English · Listening": 80,
+   "English · Vocabulary & usage": 534,
+   "English · Sentence building": 150,
+   "Mathematics": 118,
+   "Science": 54,
+   "Safety": 124,
+   "Navigation · COLREG": 128
+  }
+ }
+}
+
